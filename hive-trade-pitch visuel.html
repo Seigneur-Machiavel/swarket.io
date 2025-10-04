@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hive-Trade — Pitch Visuel Final</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg1:#0f172a;--bg2:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--brand1:#fbbf24;--brand2:#f59e0b}
+    body{font-family:'Inter',sans-serif;background:radial-gradient(circle at 20% -10%, var(--bg1), var(--bg2) 80%);color:var(--text);overflow:hidden}
+    canvas#bees-bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1}
+    header{position:fixed;top:0;left:0;right:0;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:200;background:linear-gradient(180deg,rgba(15,23,42,.8),rgba(15,23,42,.35),transparent);backdrop-filter:blur(6px);border-bottom:1px solid rgba(148,163,184,.15)}
+    .logo{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:.3px}
+    .badge{margin-left:8px;font-size:.8rem;padding:4px 10px;border-radius:999px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);color:var(--brand1)}
+    .slides{display:flex;height:100vh;width:100%;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+    .slide{flex:0 0 100%;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:96px 24px 84px;opacity:0;transform:translateY(34px);transition:opacity .7s, transform .7s}
+    .slide.active{opacity:1;transform:translateY(0)}
+    h1,h2{font-family:'Space Grotesk',sans-serif}
+    h1{font-size:clamp(2.6rem,6vw,4rem);margin-bottom:.6rem;background:linear-gradient(135deg,var(--brand1),var(--brand2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    h2{font-size:clamp(2rem,4vw,2.6rem);margin-bottom:1rem;color:var(--brand1)}
+    p{font-size:clamp(1rem,2vw,1.15rem);max-width:960px;color:#cbd5e1;line-height:1.7;margin-top:.25rem}
+    .visual{margin:18px 0;max-width:720px}
+    .cta{margin-top:16px;padding:14px 32px;border:0;border-radius:999px;cursor:pointer;color:#0f172a;font-weight:700;font-size:1.05rem;background:linear-gradient(270deg,var(--brand1),var(--brand2),var(--brand1));background-size:600% 600%;animation:grad 5.5s ease infinite;box-shadow:0 0 20px rgba(251,191,36,.45)}
+    @keyframes grad{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+    .dots{position:fixed;left:50%;transform:translateX(-50%);bottom:60px;display:flex;gap:10px;z-index:180}
+    .dots span{width:14px;height:14px;border-radius:50%;background:#475569;cursor:pointer;transition:.25s}
+    .dots span.active{background:var(--brand1);transform:scale(1.22);box-shadow:0 0 10px var(--brand1)}
+    .bar{position:fixed;left:0;bottom:44px;height:6px;width:0%;z-index:170;background:linear-gradient(90deg,var(--brand2),var(--brand1));box-shadow:0 0 10px var(--brand1);transition:width .3s}
+    footer{position:fixed;left:0;right:0;bottom:0;height:56px;display:flex;align-items:center;justify-content:center;gap:10px;color:#94a3b8;z-index:200;background:linear-gradient(0deg,rgba(15,23,42,.8),rgba(15,23,42,.3),transparent);border-top:1px solid rgba(148,163,184,.15)}
+    /* Petits helpers de mise en avant */
+    .hint{display:inline-block;padding:.15rem .5rem;border:1px solid rgba(148,163,184,.35);border-radius:8px;color:#e2e8f0;background:rgba(148,163,184,.08);margin:.15rem .2rem}
+  </style>
+</head>
+<body>
+  <canvas id="bees-bg" aria-hidden="true"></canvas>
+
+  <header>
+    <div class="logo">Hive-Trade <span class="badge">Pitch Visuel</span></div>
+  </header>
+
+  <div class="slides" id="slides">
+
+    <!-- 1 — Intro : Abeille animée -->
+    <section class="slide active">
+      <h1>🐝 Hive-Trade</h1>
+      <svg class="visual" viewBox="0 0 140 140" aria-label="Abeille dorée">
+        <circle cx="70" cy="70" r="46" fill="none" stroke="#fbbf24" stroke-width="2" opacity="0.35">
+          <animate attributeName="r" values="44;52;44" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <ellipse cx="70" cy="70" rx="34" ry="22" fill="#fbbf24" stroke="#f59e0b" stroke-width="3">
+          <animateTransform attributeName="transform" type="scale" values="1;1.04;1" dur="2.6s" repeatCount="indefinite" additive="sum"/>
+        </ellipse>
+        <rect x="52" y="58" width="36" height="6" fill="#0f172a" opacity=".85"/>
+        <rect x="52" y="70" width="36" height="6" fill="#0f172a" opacity=".85"/>
+        <circle cx="40" cy="70" r="10" fill="#0f172a"/>
+        <ellipse cx="95" cy="58" rx="16" ry="10" fill="#fff" opacity=".75">
+          <animateTransform attributeName="transform" type="translate" values="0 0;0 -1;0 0" dur="1.6s" repeatCount="indefinite"/>
+        </ellipse>
+        <ellipse cx="95" cy="82" rx="16" ry="10" fill="#fff" opacity=".75">
+          <animateTransform attributeName="transform" type="translate" values="0 0;0 1;0 0" dur="1.6s" repeatCount="indefinite"/>
+        </ellipse>
+      </svg>
+      <p>Premier monde massivement multijoueur <strong>100% décentralisé</strong>.  
+         <span class="hint">Sans serveur</span> <span class="hint">Éternel</span> <span class="hint">Porté par les joueurs</span></p>
+    </section>
+
+    <!-- 2 — Problème : Centralisé vs Distribué -->
+    <section class="slide">
+      <h2>Le problème</h2>
+      <svg class="visual" viewBox="0 0 560 180" aria-label="Serveur centralisé vs réseau distribué">
+        <!-- Serveur qui bug -->
+        <g>
+          <rect x="20" y="40" width="120" height="100" rx="10" fill="#64748b"/>
+          <rect x="35" y="55" width="90" height="12" fill="#0f172a" opacity=".7"/>
+          <rect x="35" y="75" width="90" height="12" fill="#0f172a" opacity=".7"/>
+          <rect x="35" y="95" width="90" height="12" fill="#0f172a" opacity=".7"/>
+          <line x1="30" y1="50" x2="130" y2="130" stroke="#ef4444" stroke-width="6">
+            <animate attributeName="opacity" values="1;0.25;1" dur="1s" repeatCount="indefinite"/>
+          </line>
+          <line x1="130" y1="50" x2="30" y2="130" stroke="#ef4444" stroke-width="6">
+            <animate attributeName="opacity" values="1;0.25;1" dur="1s" repeatCount="indefinite"/>
+          </line>
+        </g>
+        <text x="80" y="160" text-anchor="middle" fill="#e2e8f0" font-size="14">Serveur centralisé (fragile)</text>
+
+        <!-- Réseau distribué -->
+        <g transform="translate(300,0)">
+          <g stroke="#fbbf24" stroke-width="2" opacity=".65">
+            <line x1="60" y1="60" x2="120" y2="40"/>
+            <line x1="60" y1="60" x2="140" y2="90"/>
+            <line x1="100" y1="120" x2="140" y2="90"/>
+            <line x1="100" y1="120" x2="40" y2="140"/>
+            <line x1="40" y1="140" x2="60" y2="60"/>
+          </g>
+          <g fill="#fbbf24">
+            <circle cx="60" cy="60" r="10"><animate attributeName="r" values="9;11;9" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="120" cy="40" r="8"><animate attributeName="opacity" values="0.6;1;0.6" dur="1.8s" repeatCount="indefinite"/></circle>
+            <circle cx="140" cy="90" r="9"><animate attributeName="r" values="8;10;8" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="100" cy="120" r="8"/><circle cx="40" cy="140" r="7"/>
+          </g>
+        </g>
+        <text x="380" y="160" text-anchor="middle" fill="#e2e8f0" font-size="14">Réseau distribué (résilient)</text>
+      </svg>
+      <p>Les serveurs centralisés sont <strong>chers</strong>, <strong>limités</strong> et <strong>fragiles</strong>.  
+         Hive-Trade <strong>distribue</strong> le monde → <strong>résilience</strong> & <strong>pérennité</strong>.</p>
+    </section>
+
+    <!-- 3 — Cycle : cercle qui tourne -->
+    <section class="slide">
+      <h2>Cycle de vie du joueur</h2>
+      <svg class="visual" viewBox="0 0 260 260" aria-label="Cycle Spawn → Trade → Die → Respawn">
+        <g transform="translate(130,130)">
+          <circle r="92" fill="none" stroke="#fbbf24" stroke-width="4"/>
+          <g>
+            <g transform="rotate(0)"><text x="0" y="-110" text-anchor="middle" fill="#e2e8f0">🌱 Spawn</text></g>
+            <g transform="rotate(90)"><text x="0" y="-110" text-anchor="middle" fill="#e2e8f0">⚙️ Trade</text></g>
+            <g transform="rotate(180)"><text x="0" y="-110" text-anchor="middle" fill="#e2e8f0">💀 Die</text></g>
+            <g transform="rotate(270)"><text x="0" y="-110" text-anchor="middle" fill="#e2e8f0">🔄 Respawn</text></g>
+          </g>
+          <polygon points="0,-98 8,-84 -8,-84" fill="#f59e0b">
+            <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="8s" repeatCount="indefinite"/>
+          </polygon>
+        </g>
+      </svg>
+      <p>Énergie initiale → <strong>production/échanges</strong> → <strong>mort</strong> quand l’énergie s’épuise → <strong>renaissance</strong>.  
+         Le monde <strong>continue</strong> quelles que soient les connexions.</p>
+    </section>
+
+    <!-- 4 — Énergie : jauge animée -->
+    <section class="slide">
+      <h2>L'énergie (ressource vitale)</h2>
+      <svg class="visual" viewBox="0 0 520 70" aria-label="Jauge d’énergie">
+        <rect x="10" y="20" width="500" height="30" rx="6" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+        <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#22c55e"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs>
+        <rect x="10" y="20" width="500" height="30" rx="6" fill="url(#g)">
+          <animate attributeName="width" values="500;60;500" dur="6s" repeatCount="indefinite"/>
+        </rect>
+      </svg>
+      <p>Chaque action consomme de l’énergie. <strong>0 énergie = mort</strong> → le loot devient pillable.  
+         Stratégie : <strong>croissance</strong> (risqué) vs <strong>conservation</strong> (sécurisé).</p>
+    </section>
+
+    <!-- 5 — Rôles : cartes interactives -->
+    <section class="slide">
+      <h2>Trois styles de jeu (émergents)</h2>
+      <svg class="visual" viewBox="0 0 620 120" aria-label="Producteur, Hub, Parasite" style="overflow:visible">
+        <g transform="translate(40,10)" class="r"><rect width="160" height="100" rx="14" fill="rgba(251,191,36,.15)" stroke="#fbbf24"/><text x="80" y="44" text-anchor="middle" fill="#e2e8f0" font-size="20">🏭</text><text x="80" y="78" text-anchor="middle" fill="#e2e8f0"><tspan font-weight="700">Producteur</tspan></text></g>
+        <g transform="translate(230,10)" class="r"><rect width="160" height="100" rx="14" fill="rgba(96,165,250,.15)" stroke="#60a5fa"/><text x="80" y="44" text-anchor="middle" fill="#e2e8f0" font-size="20">🔗</text><text x="80" y="78" text-anchor="middle" fill="#e2e8f0"><tspan font-weight="700">Relay Hub</tspan></text></g>
+        <g transform="translate(420,10)" class="r"><rect width="160" height="100" rx="14" fill="rgba(244,63,94,.15)" stroke="#f43f5e"/><text x="80" y="44" text-anchor="middle" fill="#e2e8f0" font-size="20">🦠</text><text x="80" y="78" text-anchor="middle" fill="#e2e8f0"><tspan font-weight="700">Parasite</tspan></text></g>
+        <style>.r{transition:transform .35s}.r:hover{transform:translateY(-6px) scale(1.04)}</style>
+      </svg>
+      <p>Les rôles ne sont <strong>pas choisis</strong> : ils <strong>émergent</strong> des décisions (investir, relayer, parasiter).</p>
+    </section>
+
+    <!-- 6 — Production : pyramide illuminée -->
+    <section class="slide">
+      <h2>Chaînes de production</h2>
+      <svg class="visual" viewBox="0 0 360 260" aria-label="Pyramide de niveaux">
+        <polygon points="180,30 320,110 40,110" fill="#fde68a" opacity=".6"><animate attributeName="opacity" values="0.25;0.6;0.25" dur="3s" repeatCount="indefinite"/></polygon>
+        <polygon points="180,110 300,170 60,170" fill="#fbbf24" opacity=".6"><animate attributeName="opacity" values="0.2;0.6;0.2" dur="3s" begin=".6s" repeatCount="indefinite"/></polygon>
+        <polygon points="180,170 260,220 100,220" fill="#f59e0b" opacity=".7"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="3s" begin="1.2s" repeatCount="indefinite"/></polygon>
+        <text x="180" y="240" text-anchor="middle" fill="#e2e8f0"><tspan font-weight="700">T4 :</tspan> Proto-AGI (valeur max / énergie max)</text>
+      </svg>
+      <p>Plus on monte, plus la <strong>valeur est exponentielle</strong>… et la <strong>consommation d’énergie</strong> aussi → coopération.</p>
+    </section>
+
+    <!-- 7 — Écosystème : cycle régulateur -->
+    <section class="slide">
+      <h2>Écosystème auto-régulé</h2>
+      <svg class="visual" viewBox="0 0 460 220" aria-label="Cycle producteurs ↔ parasites">
+        <circle cx="230" cy="110" r="90" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+        <g fill="#e2e8f0" font-size="16">
+          <text x="230" y="18" text-anchor="middle" opacity="0">Producteurs<animate attributeName="opacity" values="0;1;1;0" dur="6s" repeatCount="indefinite"/></text>
+          <text x="410" y="116" text-anchor="end" opacity="0">Parasites<animate attributeName="opacity" values="0;0;1;1;0" dur="6s" repeatCount="indefinite"/></text>
+          <text x="230" y="212" text-anchor="middle" opacity="0">Effondrement<animate attributeName="opacity" values="0;0;0;1;1;0" dur="6s" repeatCount="indefinite"/></text>
+          <text x="50" y="116" text-anchor="start" opacity="0">Reconstruction<animate attributeName="opacity" values="0;0;0;0;1;1;0" dur="6s" repeatCount="indefinite"/></text>
+        </g>
+        <polygon points="230,18 236,36 224,36" fill="#f59e0b"><animateTransform attributeName="transform" type="rotate" from="0 230 110" to="360 230 110" dur="8s" repeatCount="indefinite"/></polygon>
+      </svg>
+      <p>Trop de <strong>producteurs</strong> → parasites → <strong>richesse baisse</strong> → parasites disparaissent → <strong>reconstruction</strong>.  
+         Pas d’équilibrage artificiel : la dynamique <strong>se régule</strong>.</p>
+    </section>
+
+    <!-- 8 — Progression : branches en séquence -->
+    <section class="slide">
+      <h2>Progression & rejouabilité</h2>
+      <svg class="visual" viewBox="0 0 360 240" aria-label="Arbre de progression">
+        <line x1="180" y1="220" x2="180" y2="60" stroke="#e2e8f0" stroke-width="3"/>
+        <line x1="180" y1="150" x2="260" y2="90" stroke="#fbbf24" stroke-width="4" opacity="0"><animate attributeName="opacity" values="0;1" dur="1s" begin=".2s" fill="freeze"/></line>
+        <line x1="180" y1="170" x2="100" y2="100" stroke="#f59e0b" stroke-width="4" opacity="0"><animate attributeName="opacity" values="0;1" dur="1s" begin="1s" fill="freeze"/></line>
+        <line x1="180" y1="120" x2="230" y2="60" stroke="#22c55e" stroke-width="4" opacity="0"><animate attributeName="opacity" values="0;1" dur="1s" begin="1.8s" fill="freeze"/></line>
+        <circle cx="260" cy="90" r="8" fill="#fbbf24"/><circle cx="100" cy="100" r="8" fill="#f59e0b"/><circle cx="230" cy="60" r="8" fill="#22c55e"/>
+      </svg>
+      <p>🎲 <strong>Améliorations aléatoires</strong> | 🔓 <strong>Déblocages persistants</strong> | ⚙️ <strong>Automatisation</strong> | 🌪️ <strong>Événements</strong>.  
+         Chaque run est <strong>unique</strong> et renforce les suivantes.</p>
+    </section>
+
+    <!-- 9 — Pourquoi : colonnes qui pulsent -->
+    <section class="slide">
+      <h2>Pourquoi c’est unique</h2>
+      <svg class="visual" viewBox="0 0 560 140" aria-label="Avantages joueurs et développeurs">
+        <g transform="translate(30,20)">
+          <rect width="220" height="100" rx="14" fill="rgba(34,197,94,.18)" stroke="#22c55e"/>
+          <text x="110" y="44" text-anchor="middle" fill="#e2e8f0" font-size="16"><tspan font-weight="700">👤 Joueurs</tspan></text>
+          <text x="110" y="72" text-anchor="middle" fill="#cbd5e1" font-size="13">Monde infini • Social • Stratégique</text>
+          <circle cx="24" cy="24" r="6" fill="#22c55e"><animate attributeName="r" values="6;8;6" dur="2s" repeatCount="indefinite"/></circle>
+        </g>
+        <g transform="translate(310,20)">
+          <rect width="220" height="100" rx="14" fill="rgba(59,130,246,.18)" stroke="#60a5fa"/>
+          <text x="110" y="44" text-anchor="middle" fill="#e2e8f0" font-size="16"><tspan font-weight="700">💻 Développeurs</tspan></text>
+          <text x="110" y="72" text-anchor="middle" fill="#cbd5e1" font-size="13">Zéro coût • Scalabilité • Résilience</text>
+          <circle cx="196" cy="24" r="6" fill="#60a5fa"><animate attributeName="r" values="6;8;6" dur="2s" begin=".6s" repeatCount="indefinite"/></circle>
+        </g>
+      </svg>
+      <p>Pour les <strong>joueurs</strong> : monde vivant, jamais fermé.  
+         Pour les <strong>devs</strong> : coûts quasi nuls, échelle massive, robustesse.</p>
+    </section>
+
+    <!-- 10 — Conclusion : abeille rayonnante -->
+    <section class="slide">
+      <h1>🚀 Rejoindre l’essaim ?</h1>
+      <svg class="visual" viewBox="0 0 180 180" aria-label="Abeille rayonnante">
+        <g stroke="#fbbf24" stroke-width="4" stroke-linecap="round" opacity=".7">
+          <line x1="90" y1="8" x2="90" y2="28"><animate attributeName="y2" values="28;20;28" dur="2s" repeatCount="indefinite"/></line>
+          <line x1="172" y1="90" x2="152" y2="90"><animate attributeName="x2" values="152;160;152" dur="2s" repeatCount="indefinite"/></line>
+          <line x1="90" y1="172" x2="90" y2="152"><animate attributeName="y2" values="152;160;152" dur="2s" repeatCount="indefinite"/></line>
+          <line x1="8" y1="90" x2="28" y2="90"><animate attributeName="x2" values="28;20;28" dur="2s" repeatCount="indefinite"/></line>
+        </g>
+        <ellipse cx="90" cy="90" rx="36" ry="24" fill="#fbbf24" stroke="#f59e0b" stroke-width="4"/>
+        <rect x="70" y="78" width="40" height="8" fill="#0f172a" opacity=".9"/>
+        <rect x="70" y="90" width="40" height="8" fill="#0f172a" opacity=".9"/>
+        <circle cx="56" cy="90" r="10" fill="#0f172a"/>
+        <ellipse cx="112" cy="76" rx="18" ry="12" fill="#fff" opacity=".8"/>
+        <ellipse cx="112" cy="104" rx="18" ry="12" fill="#fff" opacity=".8"/>
+        <polygon points="126,90 146,86 146,94" fill="#f59e0b"/>
+      </svg>
+      <p>Un monde <strong>sans serveur</strong>, <strong>auto-régulé</strong>, <strong>éternel</strong>.  
+         Ton avatar est <strong>temporaire</strong>… mais ta <strong>trace reste</strong>.</p>
+      <button class="cta">Commencer</button>
+    </section>
+  </div>
+
+  <div class="bar" id="bar"></div>
+  <div class="dots" id="dots"></div>
+  <footer><span id="page">1 / 10</span></footer>
+
+  <script>
+    // --- Navigation & UI ---
+    const slides = document.querySelectorAll('.slide');
+    const container = document.getElementById('slides');
+    const bar = document.getElementById('bar');
+    const dotsWrap = document.getElementById('dots');
+    const page = document.getElementById('page');
+    let cur = 0;
+
+    slides.forEach((_, i) => {
+      const dot = document.createElement('span');
+      dot.addEventListener('click', () => go(i));
+      dotsWrap.appendChild(dot);
+    });
+    const dots = dotsWrap.querySelectorAll('span');
+
+    function update() {
+      slides.forEach((s,i)=>s.classList.toggle('active', i===cur));
+      dots.forEach((d,i)=>d.classList.toggle('active', i===cur));
+      container.style.transform = `translateX(-${cur*100}%)`;
+      bar.style.width = ((cur+1)/slides.length*100)+'%';
+      page.textContent = `${cur+1} / ${slides.length}`;
+    }
+    function go(i){ cur = Math.max(0, Math.min(slides.length-1, i)); update(); }
+
+    document.addEventListener('keydown', e=>{
+      if(e.key==='ArrowRight') go(cur+1);
+      if(e.key==='ArrowLeft')  go(cur-1);
+    });
+    let wheelT;
+    document.addEventListener('wheel', e=>{
+      if(wheelT) return;
+      e.deltaY>0 ? go(cur+1) : go(cur-1);
+      wheelT=setTimeout(()=>wheelT=null, 520);
+    }, {passive:true});
+    let tx=0;
+    document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+    document.addEventListener('touchend',e=>{
+      const dx = e.changedTouches[0].clientX - tx;
+      if(dx<-50) go(cur+1);
+      if(dx>50)  go(cur-1);
+    }, {passive:true});
+    update();
+
+    // --- Fond "abeilles" (particules) ---
+    const canvas = document.getElementById('bees-bg'), ctx = canvas.getContext('2d');
+    function size(){ canvas.width=innerWidth; canvas.height=innerHeight; }
+    size(); addEventListener('resize', size);
+    const bees = Array.from({length:34},()=>({
+      x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+      r:Math.random()*4+2, dx:(Math.random()-.5)*1.3, dy:(Math.random()-.5)*1.3, t:Math.random()*Math.PI*2
+    }));
+    (function anim(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      bees.forEach(b=>{
+        ctx.beginPath(); ctx.arc(b.x,b.y,b.r+1.2,0,Math.PI*2); ctx.fillStyle='rgba(251,191,36,.16)'; ctx.fill();
+        ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fillStyle='rgba(251,191,36,.78)'; ctx.fill();
+        b.x += b.dx + Math.cos(b.t)*0.25; b.y += b.dy + Math.sin(b.t)*0.25; b.t += 0.015;
+        if(b.x<0) b.x=canvas.width; if(b.x>canvas.width) b.x=0;
+        if(b.y<0) b.y=canvas.height; if(b.y>canvas.height) b.y=0;
+      });
+      requestAnimationFrame(anim);
+    })();
+  </script>
+</body>
+</html>

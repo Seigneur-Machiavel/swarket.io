@@ -1,0 +1,252 @@
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <radialGradient id="bgGrad">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f0f1a;stop-opacity:1" />
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="strongGlow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <rect width="1200" height="800" fill="url(#bgGrad)"/>
+  
+  <!-- Grid subtle background -->
+  <g opacity="0.1">
+    <path d="M0,0 L1200,0 L1200,800 L0,800 Z" fill="none" stroke="#4a4a6a" stroke-width="0.5"/>
+    <line x1="0" y1="200" x2="1200" y2="200" stroke="#4a4a6a" stroke-width="0.5"/>
+    <line x1="0" y1="400" x2="1200" y2="400" stroke="#4a4a6a" stroke-width="0.5"/>
+    <line x1="0" y1="600" x2="1200" y2="600" stroke="#4a4a6a" stroke-width="0.5"/>
+    <line x1="300" y1="0" x2="300" y2="800" stroke="#4a4a6a" stroke-width="0.5"/>
+    <line x1="600" y1="0" x2="600" y2="800" stroke="#4a4a6a" stroke-width="0.5"/>
+    <line x1="900" y1="0" x2="900" y2="800" stroke="#4a4a6a" stroke-width="0.5"/>
+  </g>
+  
+  <!-- Connections (thin lines between nodes) -->
+  <g opacity="0.4" stroke-width="1">
+    <!-- Main cluster connections -->
+    <line x1="600" y1="400" x2="480" y2="280" stroke="#4ade80"/>
+    <line x1="600" y1="400" x2="720" y2="300" stroke="#60a5fa"/>
+    <line x1="600" y1="400" x2="540" y2="520" stroke="#a78bfa"/>
+    <line x1="600" y1="400" x2="680" y2="480" stroke="#fb923c"/>
+    <line x1="480" y1="280" x2="350" y2="240" stroke="#4ade80"/>
+    <line x1="720" y1="300" x2="820" y2="360" stroke="#60a5fa"/>
+    <line x1="540" y1="520" x2="420" y2="580" stroke="#a78bfa"/>
+    <line x1="680" y1="480" x2="760" y2="540" stroke="#fb923c"/>
+    <!-- Secondary connections -->
+    <line x1="350" y1="240" x2="280" y2="320" stroke="#4ade80"/>
+    <line x1="820" y1="360" x2="880" y2="280" stroke="#60a5fa"/>
+    <line x1="420" y1="580" x2="340" y2="640" stroke="#a78bfa"/>
+    <line x1="760" y1="540" x2="840" y2="600" stroke="#fb923c"/>
+  </g>
+  
+  <!-- Active trade animation (pulsing connection) -->
+  <line x1="600" y1="400" x2="720" y2="300" stroke="#60a5fa" stroke-width="3" opacity="0.8" filter="url(#strongGlow)">
+    <animate attributeName="opacity" values="0.3;0.9;0.3" dur="1.5s" repeatCount="indefinite"/>
+  </line>
+  
+  <!-- Nodes (various sizes and colors) -->
+  <!-- Player node (YOU) - center, highlighted -->
+  <g filter="url(#strongGlow)">
+    <circle cx="600" cy="400" r="14" fill="#fbbf24" stroke="#fcd34d" stroke-width="3"/>
+    <circle cx="600" cy="400" r="20" fill="none" stroke="#fcd34d" stroke-width="1" opacity="0.3">
+      <animate attributeName="r" values="20;28;20" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Compute nodes (green) -->
+  <circle cx="480" cy="280" r="10" fill="#4ade80" stroke="#86efac" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="350" cy="240" r="8" fill="#4ade80" stroke="#86efac" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="280" cy="320" r="7" fill="#4ade80" stroke="#86efac" stroke-width="1.5" filter="url(#glow)"/>
+  
+  <!-- Data nodes (blue) -->
+  <circle cx="720" cy="300" r="9" fill="#60a5fa" stroke="#93c5fd" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="820" cy="360" r="8" fill="#60a5fa" stroke="#93c5fd" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="880" cy="280" r="6" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.5" filter="url(#glow)"/>
+  
+  <!-- Model nodes (purple) -->
+  <circle cx="540" cy="520" r="9" fill="#a78bfa" stroke="#c4b5fd" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="420" cy="580" r="7" fill="#a78bfa" stroke="#c4b5fd" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="340" cy="640" r="6" fill="#a78bfa" stroke="#c4b5fd" stroke-width="1.5" filter="url(#glow)"/>
+  
+  <!-- Engineer nodes (orange) -->
+  <circle cx="680" cy="480" r="9" fill="#fb923c" stroke="#fdba74" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="760" cy="540" r="7" fill="#fb923c" stroke="#fdba74" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="840" cy="600" r="6" fill="#fb923c" stroke="#fdba74" stroke-width="1.5" filter="url(#glow)"/>
+  
+  <!-- Additional scattered nodes (smaller, dimmer) -->
+  <circle cx="200" cy="200" r="5" fill="#4ade80" opacity="0.6"/>
+  <circle cx="950" cy="450" r="5" fill="#60a5fa" opacity="0.6"/>
+  <circle cx="250" cy="550" r="5" fill="#a78bfa" opacity="0.6"/>
+  <circle cx="900" cy="150" r="5" fill="#fb923c" opacity="0.6"/>
+  
+  <!-- Context menu on selected node -->
+  <g transform="translate(720, 300)">
+    <rect x="10" y="-60" width="140" height="110" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1" opacity="0.95"/>
+    <text x="80" y="-38" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="bold">Node_a3f92b</text>
+    <line x1="20" y1="-30" x2="130" y2="-30" stroke="#475569" stroke-width="1"/>
+    
+    <text x="20" y="-12" fill="#94a3b8" font-size="10">📊 Inventory:</text>
+    <text x="25" y="2" fill="#60a5fa" font-size="9">Data: 45</text>
+    
+    <text x="20" y="20" fill="#94a3b8" font-size="10">💼 Offers:</text>
+    <text x="25" y="34" fill="#4ade80" font-size="9">Sell Data → Want Compute</text>
+    
+    <rect x="25" y="40" width="100" height="18" rx="3" fill="#3b82f6" opacity="0.8"/>
+    <text x="75" y="52" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold">PROPOSE TRADE</text>
+  </g>
+  
+  <!-- HUD - Top Left: Timer & Session Info -->
+  <g transform="translate(20, 20)">
+    <rect width="200" height="70" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1" opacity="0.9"/>
+    <text x="100" y="22" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold">CYCLE 3/12</text>
+    <text x="100" y="38" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="bold">11:23</text>
+    <text x="100" y="56" text-anchor="middle" fill="#94a3b8" font-size="10">Next reset in 11m 23s</text>
+  </g>
+  
+  <!-- HUD - Top Right: Leaderboard -->
+  <g transform="translate(980, 20)">
+    <rect width="200" height="140" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1" opacity="0.9"/>
+    <text x="100" y="22" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold">🏆 LEADERBOARD</text>
+    <line x1="10" y1="28" x2="190" y2="28" stroke="#475569" stroke-width="1"/>
+    
+    <text x="15" y="45" fill="#fcd34d" font-size="11" font-weight="bold">1. Trader_x7b</text>
+    <text x="175" y="45" text-anchor="end" fill="#fcd34d" font-size="11">2,450</text>
+    
+    <text x="15" y="62" fill="#e2e8f0" font-size="11">2. Node_k3m</text>
+    <text x="175" y="62" text-anchor="end" fill="#e2e8f0" font-size="11">2,180</text>
+    
+    <text x="15" y="79" fill="#e2e8f0" font-size="11">3. Peer_9aq</text>
+    <text x="175" y="79" text-anchor="end" fill="#e2e8f0" font-size="11">1,920</text>
+    
+    <rect x="10" y="85" width="180" height="20" rx="3" fill="#fbbf24" opacity="0.2"/>
+    <text x="15" y="99" fill="#fbbf24" font-size="11" font-weight="bold">12. YOU</text>
+    <text x="175" y="99" text-anchor="end" fill="#fbbf24" font-size="11" font-weight="bold">1,340</text>
+    
+    <text x="15" y="116" fill="#94a3b8" font-size="10">15. Node_f8c</text>
+    <text x="175" y="116" text-anchor="end" fill="#94a3b8" font-size="10">1,210</text>
+    
+    <text x="15" y="131" fill="#94a3b8" font-size="10">23. Relay_p2x</text>
+    <text x="175" y="131" text-anchor="end" fill="#94a3b8" font-size="10">890</text>
+  </g>
+  
+  <!-- HUD - Bottom Left: Your Inventory -->
+  <g transform="translate(20, 680)">
+    <rect width="280" height="100" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1" opacity="0.9"/>
+    <text x="140" y="22" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold">YOUR INVENTORY</text>
+    <line x1="10" y1="28" x2="270" y2="28" stroke="#475569" stroke-width="1"/>
+    
+    <!-- Resources -->
+    <g transform="translate(15, 40)">
+      <circle cx="0" cy="0" r="6" fill="#4ade80"/>
+      <text x="12" y="4" fill="#e2e8f0" font-size="11">Compute: 34</text>
+    </g>
+    <g transform="translate(15, 60)">
+      <circle cx="0" cy="0" r="6" fill="#60a5fa"/>
+      <text x="12" y="4" fill="#e2e8f0" font-size="11">Data: 28</text>
+    </g>
+    
+    <g transform="translate(145, 40)">
+      <circle cx="0" cy="0" r="6" fill="#a78bfa"/>
+      <text x="12" y="4" fill="#e2e8f0" font-size="11">Models: 19</text>
+    </g>
+    <g transform="translate(145, 60)">
+      <circle cx="0" cy="0" r="6" fill="#fb923c"/>
+      <text x="12" y="4" fill="#e2e8f0" font-size="11">Engineers: 3</text>
+    </g>
+    
+    <line x1="10" y1="75" x2="270" y2="75" stroke="#475569" stroke-width="1"/>
+    <text x="15" y="90" fill="#fbbf24" font-size="12" font-weight="bold">AGI Units: 2</text>
+    <text x="230" y="90" text-anchor="end" fill="#4ade80" font-size="10">+1.2/s</text>
+  </g>
+  
+  <!-- HUD - Bottom Right: Active Trades -->
+  <g transform="translate(920, 680)">
+    <rect width="260" height="100" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1" opacity="0.9"/>
+    <text x="130" y="22" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold">ACTIVE TRADES</text>
+    <line x1="10" y1="28" x2="250" y2="28" stroke="#475569" stroke-width="1"/>
+    
+    <g transform="translate(0, 40)">
+      <circle cx="20" cy="0" r="4" fill="#60a5fa"/>
+      <text x="30" y="4" fill="#e2e8f0" font-size="10">→ Node_a3f: 10 Data</text>
+      <text x="240" y="4" text-anchor="end" fill="#94a3b8" font-size="9">3 hops</text>
+    </g>
+    
+    <g transform="translate(0, 58)">
+      <circle cx="20" cy="0" r="4" fill="#4ade80"/>
+      <text x="30" y="4" fill="#e2e8f0" font-size="10">← Peer_k8m: 15 Compute</text>
+      <text x="240" y="4" text-anchor="end" fill="#4ade80" font-size="9">+30 coins</text>
+    </g>
+    
+    <rect x="10" y="70" width="240" height="20" rx="4" fill="#3b82f6" opacity="0.2" stroke="#3b82f6" stroke-width="1"/>
+    <text x="130" y="84" text-anchor="middle" fill="#60a5fa" font-size="10">Commission earned: 47 coins</text>
+  </g>
+  
+  <!-- Minimap (bottom center) -->
+  <g transform="translate(520, 690)">
+    <rect width="160" height="90" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1" opacity="0.8"/>
+    <text x="80" y="12" text-anchor="middle" fill="#94a3b8" font-size="9">NETWORK MAP</text>
+    
+    <!-- Simplified network representation -->
+    <g opacity="0.6" stroke-width="0.5">
+      <line x1="80" y1="50" x2="60" y2="35" stroke="#4ade80"/>
+      <line x1="80" y1="50" x2="100" y2="35" stroke="#60a5fa"/>
+      <line x1="80" y1="50" x2="70" y2="65" stroke="#a78bfa"/>
+      <line x1="80" y1="50" x2="90" y2="65" stroke="#fb923c"/>
+    </g>
+    
+    <circle cx="80" cy="50" r="3" fill="#fbbf24" filter="url(#glow)"/>
+    <circle cx="60" cy="35" r="2" fill="#4ade80"/>
+    <circle cx="100" cy="35" r="2" fill="#60a5fa"/>
+    <circle cx="70" cy="65" r="2" fill="#a78bfa"/>
+    <circle cx="90" cy="65" r="2" fill="#fb923c"/>
+    
+    <!-- Scattered smaller dots -->
+    <circle cx="40" cy="30" r="1" fill="#94a3b8" opacity="0.5"/>
+    <circle cx="120" cy="40" r="1" fill="#94a3b8" opacity="0.5"/>
+    <circle cx="50" cy="70" r="1" fill="#94a3b8" opacity="0.5"/>
+    <circle cx="110" cy="75" r="1" fill="#94a3b8" opacity="0.5"/>
+    
+    <text x="80" y="84" text-anchor="middle" fill="#64748b" font-size="8">43 peers connected</text>
+  </g>
+  
+  <!-- Notification toast (top center) -->
+  <g transform="translate(400, 15)">
+    <rect width="400" height="35" rx="6" fill="#065f46" stroke="#10b981" stroke-width="2" opacity="0.95"/>
+    <text x="200" y="23" text-anchor="middle" fill="#d1fae5" font-size="13" font-weight="bold">✅ Trade completed: +150 coins (+12% commission)</text>
+  </g>
+  
+  <!-- Legend (bottom center-left) -->
+  <g transform="translate(320, 715)">
+    <circle cx="0" cy="0" r="4" fill="#4ade80"/>
+    <text x="8" y="3" fill="#94a3b8" font-size="9">Compute</text>
+    
+    <circle cx="65" cy="0" r="4" fill="#60a5fa"/>
+    <text x="73" y="3" fill="#94a3b8" font-size="9">Data</text>
+    
+    <circle cx="115" cy="0" r="4" fill="#a78bfa"/>
+    <text x="123" y="3" fill="#94a3b8" font-size="9">Models</text>
+    
+    <circle cx="175" cy="0" r="4" fill="#fb923c"/>
+    <text x="183" y="3" fill="#94a3b8" font-size="9">Engineers</text>
+  </g>
+  
+  <!-- Title/Logo (top center) -->
+  <g transform="translate(600, 40)">
+    <text x="0" y="0" text-anchor="middle" fill="#fbbf24" font-size="24" font-weight="bold" letter-spacing="2">HIVE-TRADE</text>
+    <text x="0" y="16" text-anchor="middle" fill="#64748b" font-size="10" letter-spacing="1">ZERO-SERVER P2P ECONOMY</text>
+  </g>
+</svg>

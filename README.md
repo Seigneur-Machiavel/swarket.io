@@ -1,288 +1,330 @@
-# \## 📋 HIVE-TRADE - Spec condensée
+🐝 HIVE-TRADE - Game Design Document
 
-# 
+🎯 Core Concept
 
-# \### 🎯 Concept
+Monde P2P persistant. Nodes ont une durée de vie limitée par l'énergie. Économie émergente où producteurs et parasites coexistent naturellement.
 
-# Jeu P2P full décentralisé où tu construis des AGI Units en tradant des ressources. Drop-in continu avec reset économique toutes les 15min. Zéro serveur (sauf bootstraps).
 
-# 
 
-# ---
+⚙️ Core Loop
 
-# 
+Turn System (invisible)
 
-# \### 🧱 Core Mechanics
 
-# 
 
-# \*\*4 Ressources + AGI Units\*\*
+5sec ACTION → 5sec DIGEST → repeat
 
-# \- 🔋 Compute / 📊 Data / 🧠 Models / 👷 Engineers
+Joueurs sentent un rythme, pas des tours
 
-# \- Production passive : 1/sec (Engineers : 1/3sec)
 
-# \- \*\*AGI Unit\*\* = 10 Compute + 10 Data + 10 Models + 1 Engineer
 
-# \- \*\*Upgrades\*\* : Dépenser AGI Units pour booster prod de X%
+Node Lifecycle
 
-# 
 
-# \*\*Trading\*\*
 
-# \- Unicast P2P : propose/accept/reject
+Spawn avec X énergie investie
 
-# \- Commissions relay : 2% par hop automatique
+Produis/trade/taxe pendant ta vie
 
-# \- Gossip neighbors = broadcast inventaire + offres
+Énergie → 0 = mort
 
-# 
+Loot recyclable par autres nodes
 
-# \*\*Scoring\*\*
+Respawn avec énergie stockée
 
-# \- Conversion fin de cycle (15min) : ressources → coins
 
-# \- AGI Unit = 100 coins, autres = 5 coins
 
-# \- Leaderboard par coins totaux
 
-# 
 
-# ---
+🔋 Énergie (ressource meta)
 
-# 
+Usages :
 
-# \### 🔄 Architecture P2P
 
-# 
 
-# \*\*Event "connect"\*\*
+Spawner avec capacités de départ
 
-# \- Broadcast gossip initial pour sync le nouveau peer
+Upgrade pendant game
 
-# \- Tous les clients incluent le joueur dans leur state local
+Connection aux autres nodes
 
-# 
+Craft des ressources hautes
 
-# \*\*Consensus par cluster\*\*
 
-# \- Pendant la partie : state local approx (gossip normal)
 
-# \- Endgame : gossip max HOPS (quelques sec) pour consensus final
+Conservation :
 
-# \- Compute résultats distribué, pas de source de vérité unique
 
-# 
 
-# \*\*Progression persistante\*\*
+Curseur "stockage" : sacrifice croissance pour sécurité
 
-# \- \*\*Option A\*\* : Super node collecte stats + distribue unlocks (centralisation légère)
+Stocké dans hangar commun (ledger partagé)
 
-# \- \*\*Option B\*\* : Full décentralisé, stockage RAM local (triche possible)
+Pas d'énergie = mort permanente (game over, restart from 0)
 
-# \- → Décider après proto
 
-# 
 
-# ---
+Dissipation :
 
-# 
 
-# \### 🎮 Gameplay Loop
 
-# 
+Coûts actions (trading, crafting, connections)
 
-# \*\*Cycle 15min\*\*
+Si insuffisant : decay passif 0.5%/heure
 
-# 1\. Spawn → assignation prod aléatoire
 
-# 2\. Trade actif ou relay passif
 
-# 3\. Création AGI Units
 
-# 4\. Upgrades prod (optionnel)
 
-# 5\. Endgame gossip → compute scores
+📦 Ressources (5 tiers)
 
-# 6\. Reset économique, nouvelles assignations
+T1 Raw : Compute, Data, Models, Engineers (prod passive)
 
-# 
+T2 Refined : 3x T1 → 1x T2
 
-# \*\*Raids\*\* (dev fin)
+T3 Advanced : 2x T2 différents → 1x T3
 
-# \- PvP : Coût ressources, vol 20% inventaire, défense possible
+T4 Proto : 2x T3 → 1x T4
 
-# \- NPC : Bots bootstrap qui floodent/volent aléatoirement
+T5 AGI : 2x T4 + bonus → AGI Unit
 
-# 
+Crafting coûte de l'énergie. Plus haut tier = plus cher.
 
-# ---
 
-# 
 
-# \### 💎 Progression (simple)
+🔗 Networking
 
-# 
+Connections manuelles au départ
 
-# \*\*Passifs unlockables\*\* (à affiner)
 
-# \- Niveaux via XP (trades + AGI créées)
 
-# \- Boosts prod, réduction commissions, anti-raid, fog of war réduit
+Coût : Énergie selon taille du node
 
-# 
+Petit node : 1-3 slots, rapide (2-5s connect)
 
-# \*\*Cosmétiques\*\*
+Gros node : 10-20 slots, lent (15-30s connect)
 
-# \- Skins nodes (couleurs, formes)
 
-# \- Particle effects trades
 
-# \- Badges leaderboard
+Relaying \& Taxation
 
-# 
 
-# \*\*Stockage\*\* : RAM only, pas de localStorage
 
-# 
+Curseur 0-100% de commission
 
-# ---
+Taxer fort = risque d'être évité
 
-# 
+Node mort = inventaire bloqué, recyclable
 
-# \### 🎨 UI/Visualizer
 
-# 
 
-# \*\*Base\*\* : Fork ton visualizer existant (zoom, pan, pause déjà là)
+Upgrades déblocables
 
-# 
 
-# \*\*Ajouts\*\*
 
-# \- Filtres visuels (traders actifs, riches, neighbors)
+Auto-connect
 
-# \- Highlight animations trades
+Smart routing
 
-# \- Minimap coin écran
++slots
 
-# \- HUD : inventaire, trades en cours, notifs
 
-# \- Menu contextuel clic peer : view inventory/offers, propose trade
 
-# 
 
-# \*\*Couleurs rôles\*\*
 
-# \- Vert = Compute / Bleu = Data / Violet = Models / Orange = Engineers
+🎲 Progression (Vampire Survivors style)
 
-# 
+Pendant game :
 
-# ---
 
-# 
 
-# \### 📦 Distribution
+Tous les X score : choix parmi 3 compétences random
 
-# 
+Catégories : Production, Trading, Network, Automation, Defense
 
-# \*\*Browser\*\* (prioritaire)
 
-# \- Hébergement Vercel/Netlify
 
-# \- Full WebRTC cross-platform
+Meta progression :
 
-# 
 
-# \*\*Steam\*\* (secondaire)
 
-# \- Wrapper Tauri (ou NW.js si full JS)
+Plus de parties = plus de compétences dans pool
 
-# \- Free-to-play, cosmétiques optionnels
+Déblocages de merges/synergies
 
-# 
+Pas de idle, chaque run est isolée (sauf énergie stockée)
 
-# ---
 
-# 
 
-# \### ⏱️ Roadmap (11-16 jours)
 
-# 
 
-# \*\*Phase 1 : Core (5-7j)\*\*
+🌪️ Events Chaotiques (90-120sec)
 
-# HiveP2P intégré, 4 ressources, trade P2P, commissions, timer 15min, leaderboard
+Auto-générés selon état monde :
 
-# 
 
-# \*\*Phase 2 : UI (3-4j)\*\*
 
-# Fork visualizer, filtres, HUD complet, menu contextuel, notifs
+Beaucoup de richesse ? → Market Crash
 
-# 
+Peu d'activité ? → Bull Market
 
-# \*\*Phase 3 : Progression (2-3j)\*\*
+Trop de gros nodes ? → Fragmentation
 
-# XP, passifs (4-5 max), skins basiques (5 couleurs)
+Équilibré ? → Events neutres
 
-# 
 
-# \*\*Phase 4 : Package (1-2j)\*\*
 
-# Build browser, wrapper Steam optionnel, deploy
+Types :
 
-# 
 
-# \*\*Post-launch\*\*
 
-# Raids PvP/NPC, upgrades prod, achievements
+Market (prix x2 ou /2)
 
-# 
+Production (boost ou nerf)
 
-# ---
+Network (connections free ou throttle)
 
-# 
+Chaos (swaps, volatilité)
 
-# \### 🚨 Anti-scope creep
 
-# 
 
-# \*\*ON GARDE\*\*
 
-# \- 4 ressources
 
-# \- Trade + commissions
+👹 Parasites (gameplay émergent)
 
-# \- Reset 15min
+Nodes destructeurs :
 
-# \- Progression simple
 
-# 
 
-# \*\*ON SKIP (pour l'instant)\*\*
+Spawn cheap (peu d'énergie)
 
-# \- Vote arbitrage
+Petits, agiles, peu de prod
 
-# \- Alliances/guildes
+Taxent à 80-100% pour intercepter trades
 
-# \- Futures/options
+Raident nodes morts rapidement
 
-# \- Audio (sauf si rapide)
 
-# 
 
-# ---
+Régulation naturelle :
 
-# 
 
-# \*\*Nom\*\* : hive-trade.io ou hivemarkt.io ou swarket.io (domaine à checker)
 
-# 
+Parasites → Producteurs prudents → Moins à voler → Parasites meurent
 
-# \*\*Pitch\*\* : \*"Build AGI in a zero-server P2P economy. Trade resources, raid neighbors, dominate the swarm. Resets every 15 minutes."\*
+Cycle prédateur-proie auto-équilibré
 
-# 
 
-# Voilà, t'as tout. Go code ! 🐝
+
+
+
+🏛️ Consensus \& Sync
+
+Hash-based consensus
+
+
+
+Chaque DIGEST phase : compute hash état global
+
+Si divergence : pull state depuis majorité
+
+Pas de POW, juste sync gossip
+
+
+
+Ledger partagé (hangar énergie)
+
+
+
+Chaque node a slot dans livre de compte
+
+Consensus sur balances via hash
+
+Simple, pas besoin blockchain complète
+
+
+
+
+
+📊 Feedback \& Juice
+
+Nombres infinis : 1.2K → 1.2M → 1.2B → ...
+
+Damage numbers : Trades, commissions, crafts
+
+Particles : Productions, level-ups, events
+
+Annonces : Gros texte central pour events
+
+
+
+🎮 Node Types (émergents, pas forcés)
+
+Factory : Gros, statique, prod élevée
+
+Trader : Moyen, mobile, connections optimisées
+
+Relay Hub : Gros, central, faibles taxes
+
+Parasite : Petit, rapide, taxes max
+
+Recycler : Petit, agile, rush les morts
+
+
+
+🚀 Roadmap (12-15 jours)
+
+Phase 1 : Core (5j)
+
+
+
+5 tiers ressources + crafting
+
+Énergie system + spawn
+
+Turn-based 5s/5s
+
+Connections manuelles
+
+Trading P2P
+
+
+
+Phase 2 : Progression (3j)
+
+
+
+Pool 20 compétences
+
+Random picks
+
+Meta déblocages
+
+Ledger consensus
+
+
+
+Phase 3 : Juice (3j)
+
+
+
+Events chaotiques
+
+Damage numbers + particles
+
+UI polish
+
+Hash sync
+
+
+
+Phase 4 : Deploy (2j)
+
+
+
+Balance
+
+Browser deploy
+
+Leaderboard (optionnel)
 

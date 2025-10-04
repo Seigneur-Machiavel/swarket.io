@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hive-Trade Pitch Deck</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        
+        .slide {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 40px;
+            position: relative;
+        }
+        
+        .slide:nth-child(even) {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+        
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #fbbf24;
+            text-align: center;
+        }
+        
+        h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #60a5fa;
+        }
+        
+        p {
+            font-size: 1.3rem;
+            line-height: 1.8;
+            max-width: 800px;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #cbd5e1;
+        }
+        
+        .tagline {
+            font-size: 1.5rem;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        
+        .visual-box {
+            background: rgba(30, 41, 59, 0.6);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 30px;
+        }
+        
+        .feature-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: #fbbf24;
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .feature-title {
+            font-size: 1.3rem;
+            color: #fbbf24;
+            margin-bottom: 10px;
+        }
+        
+        .feature-desc {
+            font-size: 1rem;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+        
+        .cycle-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+        
+        .cycle-step {
+            background: rgba(96, 165, 250, 0.2);
+            border: 2px solid #60a5fa;
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        .cycle-arrow {
+            font-size: 2rem;
+            color: #fbbf24;
+        }
+        
+        .highlight {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        .comparison-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 900px;
+            margin: 30px 0;
+        }
+        
+        .comparison-col {
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 12px;
+            padding: 25px;
+        }
+        
+        .comparison-col h4 {
+            color: #fbbf24;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .comparison-col ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .comparison-col li {
+            padding: 8px 0;
+            border-bottom: 1px solid #475569;
+            font-size: 1.1rem;
+        }
+        
+        .comparison-col li:last-child {
+            border-bottom: none;
+        }
+        
+        .emoji-large {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        svg {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            h2 { font-size: 1.8rem; }
+            p { font-size: 1.1rem; }
+            .comparison-table { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide">
+    <div class="emoji-large">🐝</div>
+    <h1>HIVE-TRADE</h1>
+    <p class="tagline">A living, breathing P2P economy where your node is temporary, but the world is eternal</p>
+    <p>Zero servers. Infinite players. Emergent gameplay.</p>
+</div>
+
+<!-- SLIDE 2: THE PROBLEM -->
+<div class="slide">
+    <h2>The Problem with Multiplayer Games</h2>
+    <div class="comparison-table">
+        <div class="comparison-col">
+            <h4>❌ Traditional Servers</h4>
+            <ul>
+                <li>💸 Expensive infrastructure</li>
+                <li>📉 Player caps (150, 500, etc.)</li>
+                <li>⚡ Single point of failure</li>
+                <li>🌍 Geographic lag</li>
+                <li>⏱️ Server shutdown = game dead</li>
+            </ul>
+        </div>
+        <div class="comparison-col">
+            <h4>✅ Hive-Trade</h4>
+            <ul>
+                <li>💰 Zero hosting costs</li>
+                <li>♾️ Infinite scalability</li>
+                <li>🛡️ Self-healing network</li>
+                <li>🌐 Natural distribution</li>
+                <li>🔄 World never dies</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 3: CORE CONCEPT -->
+<div class="slide">
+    <h2>How It Works</h2>
+    <p>Imagine an MMO economy where <span class="highlight">YOU are temporary</span>, but <span class="highlight">the world is permanent</span>.</p>
+    
+    <div class="cycle-diagram">
+        <div class="cycle-step">
+            <div style="font-size: 2rem; margin-bottom: 10px;">🌱</div>
+            <strong>1. SPAWN</strong><br>
+            Invest energy<br>to start big or small
+        </div>
+        <div class="cycle-arrow">→</div>
+        <div class="cycle-step">
+            <div style="font-size: 2rem; margin-bottom: 10px;">⚙️</div>
+            <strong>2. TRADE</strong><br>
+            Build, produce,<br>or parasitize
+        </div>
+        <div class="cycle-arrow">→</div>
+        <div class="cycle-step">
+            <div style="font-size: 2rem; margin-bottom: 10px;">💀</div>
+            <strong>3. DIE</strong><br>
+            Energy runs out,<br>loot remains
+        </div>
+        <div class="cycle-arrow">→</div>
+        <div class="cycle-step">
+            <div style="font-size: 2rem; margin-bottom: 10px;">🔄</div>
+            <strong>4. RESPAWN</strong><br>
+            Use saved energy<br>to come back stronger
+        </div>
+    </div>
+    
+    <p style="margin-top: 40px;">The world runs 24/7. Players come and go. The economy evolves organically.</p>
+</div>
+
+<!-- SLIDE 4: ENERGY SYSTEM -->
+<div class="slide">
+    <h2>Energy: Your Lifeblood</h2>
+    
+    <div class="visual-box" style="max-width: 700px;">
+        <h3 style="color: #fbbf24; text-align: center; margin-bottom: 20px;">⚡ Energy Powers Everything</h3>
+        
+        <div style="display: flex; justify-content: space-around; margin: 30px 0;">
+            <div style="text-align: center;">
+                <div style="font-size: 3rem;">🏭</div>
+                <p style="font-size: 1rem; margin-top: 10px;">Start as a<br><strong>Big Factory</strong><br>(High investment)</p>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 3rem;">🛒</div>
+                <p style="font-size: 1rem; margin-top: 10px;">Start as a<br><strong>Trader</strong><br>(Balanced)</p>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 3rem;">🦠</div>
+                <p style="font-size: 1rem; margin-top: 10px;">Start as a<br><strong>Parasite</strong><br>(Cheap & fast)</p>
+            </div>
+        </div>
+        
+        <p style="font-size: 1.1rem; text-align: center; color: #94a3b8;">During gameplay, allocate energy between <span class="highlight">growth</span> (risky) and <span class="highlight">storage</span> (safe).</p>
+        <p style="font-size: 1.1rem; text-align: center; color: #94a3b8; margin-top: 15px;">No energy? You die. Your loot becomes available to scavengers.</p>
+    </div>
+</div>
+
+<!-- SLIDE 5: GAMEPLAY TYPES -->
+<div class="slide">
+    <h2>Three Paths to Victory</h2>
+    
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🏭</div>
+            <div class="feature-title">PRODUCER</div>
+            <p class="feature-desc">Build massive production chains. Start big, invest heavily. Become a trading empire that others rely on.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-title">RELAY HUB</div>
+            <p class="feature-desc">Position yourself strategically in the network. Earn passive commissions by being the bridge between traders.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">🦠</div>
+            <div class="feature-title">PARASITE</div>
+            <p class="feature-desc">Start cheap and fast. Tax transactions at 100%. Raid dead nodes. Thrive in chaos, but beware retaliation.</p>
+        </div>
+    </div>
+    
+    <p style="margin-top: 40px;">Your role emerges from your choices, not from a character select screen.</p>
+</div>
+
+<!-- SLIDE 6: RESOURCE SYSTEM -->
+<div class="slide">
+    <h2>Production Chains</h2>
+    
+    <div class="visual-box" style="max-width: 800px;">
+        <svg viewBox="0 0 800 400" style="max-height: 400px;">
+            <!-- Tier 1 -->
+            <text x="400" y="30" text-anchor="middle" fill="#94a3b8" font-size="16">TIER 1: Raw Resources</text>
+            <circle cx="200" cy="70" r="25" fill="#4ade80" opacity="0.8"/>
+            <text x="200" y="75" text-anchor="middle" fill="#fff" font-size="12">Compute</text>
+            
+            <circle cx="300" cy="70" r="25" fill="#60a5fa" opacity="0.8"/>
+            <text x="300" y="75" text-anchor="middle" fill="#fff" font-size="12">Data</text>
+            
+            <circle cx="500" cy="70" r="25" fill="#a78bfa" opacity="0.8"/>
+            <text x="500" y="75" text-anchor="middle" fill="#fff" font-size="12">Models</text>
+            
+            <circle cx="600" cy="70" r="25" fill="#fb923c" opacity="0.8"/>
+            <text x="600" y="75" text-anchor="middle" fill="#fff" font-size="12">Engineers</text>
+            
+            <!-- Arrows to Tier 2 -->
+            <line x1="220" y1="95" x2="240" y2="140" stroke="#94a3b8" stroke-width="2" opacity="0.5"/>
+            <line x1="280" y1="95" x2="260" y2="140" stroke="#94a3b8" stroke-width="2" opacity="0.5"/>
+            
+            <line x1="520" y1="95" x2="540" y2="140" stroke="#94a3b8" stroke-width="2" opacity="0.5"/>
+            <line x1="580" y1="95" x2="560" y2="140" stroke="#94a3b8" stroke-width="2" opacity="0.5"/>
+            
+            <!-- Tier 2 -->
+            <text x="400" y="130" text-anchor="middle" fill="#94a3b8" font-size="16">TIER 2: Refined</text>
+            <rect x="225" y="150" width="100" height="50" rx="8" fill="#4ade80" opacity="0.6"/>
+            <text x="275" y="180" text-anchor="middle" fill="#fff" font-size="12">Optimized</text>
+            
+            <rect x="475" y="150" width="100" height="50" rx="8" fill="#a78bfa" opacity="0.6"/>
+            <text x="525" y="180" text-anchor="middle" fill="#fff" font-size="12">Trained</text>
+            
+            <!-- Arrows to Tier 3 -->
+            <line x1="275" y1="200" x2="350" y2="240" stroke="#94a3b8" stroke-width="2" opacity="0.5"/>
+            <line x1="525" y1="200" x2="450" y2="240" stroke="#94a3b8" stroke-width="2" opacity="0.5"/>
+            
+            <!-- Tier 3 -->
+            <text x="400" y="230" text-anchor="middle" fill="#94a3b8" font-size="16">TIER 3: Advanced</text>
+            <rect x="350" y="250" width="100" height="50" rx="8" fill="#fbbf24" opacity="0.7"/>
+            <text x="400" y="280" text-anchor="middle" fill="#000" font-size="12">Algorithm</text>
+            
+            <!-- Arrow to Tier 4 -->
+            <line x1="400" y1="300" x2="400" y2="330" stroke="#94a3b8" stroke-width="2" opacity="0.5"/>
+            
+            <!-- Tier 4 -->
+            <text x="400" y="320" text-anchor="middle" fill="#94a3b8" font-size="16">TIER 4: Proto</text>
+            <rect x="350" y="340" width="100" height="50" rx="8" fill="#f59e0b" opacity="0.8"/>
+            <text x="400" y="370" text-anchor="middle" fill="#fff" font-size="12">Proto-AGI</text>
+        </svg>
+        
+        <p style="text-align: center; margin-top: 20px; font-size: 1.1rem;">Each tier requires more energy to craft but is worth exponentially more points.</p>
+    </div>
+</div>
+
+<!-- SLIDE 7: EMERGENT ECONOMY -->
+<div class="slide">
+    <h2>Self-Regulating Ecosystem</h2>
+    
+    <div class="visual-box" style="max-width: 700px;">
+        <h3 style="text-align: center; color: #60a5fa; margin-bottom: 30px;">The Predator-Prey Cycle</h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 30px; align-items: center;">
+            <div style="background: rgba(74, 222, 128, 0.2); border: 2px solid #4ade80; padding: 20px; border-radius: 8px; width: 100%;">
+                <p style="font-size: 1.2rem; margin: 0;"><strong>Many Producers</strong> → Lots of wealth to steal</p>
+            </div>
+            
+            <div style="font-size: 2rem; color: #fbbf24;">↓</div>
+            
+            <div style="background: rgba(251, 146, 60, 0.2); border: 2px solid #fb923c; padding: 20px; border-radius: 8px; width: 100%;">
+                <p style="font-size: 1.2rem; margin: 0;"><strong>Parasites Spawn</strong> → High taxation, raiding</p>
+            </div>
+            
+            <div style="font-size: 2rem; color: #fbbf24;">↓</div>
+            
+            <div style="background: rgba(148, 163, 184, 0.2); border: 2px solid #94a3b8; padding: 20px; border-radius: 8px; width: 100%;">
+                <p style="font-size: 1.2rem; margin: 0;"><strong>Wealth Dries Up</strong> → Nothing left to steal</p>
+            </div>
+            
+            <div style="font-size: 2rem; color: #fbbf24;">↓</div>
+            
+            <div style="background: rgba(74, 222, 128, 0.2); border: 2px solid #4ade80; padding: 20px; border-radius: 8px; width: 100%;">
+                <p style="font-size: 1.2rem; margin: 0;"><strong>Producers Rebuild</strong> → Cycle restarts</p>
+            </div>
+        </div>
+        
+        <p style="text-align: center; margin-top: 30px; font-size: 1.2rem; color: #fbbf24;"><strong>No forced balancing. The economy regulates itself.</strong></p>
+    </div>
+</div>
+
+<!-- SLIDE 8: PROGRESSION -->
+<div class="slide">
+    <h2>Progression System</h2>
+    
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🎲</div>
+            <div class="feature-title">Random Upgrades</div>
+            <p class="feature-desc">Like Vampire Survivors: choose from 3 random perks as you progress. Every run is different.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">🔓</div>
+            <div class="feature-title">Meta Unlocks</div>
+            <p class="feature-desc">More games = more perks available. Unlock synergies and powerful combos over time.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-title">Automation</div>
+            <p class="feature-desc">Unlock trade bots, auto-crafting, and smart routing. Become an architect, not a worker.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">🌪️</div>
+            <div class="feature-title">Chaotic Events</div>
+            <p class="feature-desc">Market crashes, production surges, network failures. Adapt or die. Events emerge from world state.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 9: WHY IT WORKS -->
+<div class="slide">
+    <h2>Why This Works</h2>
+    
+    <div class="visual-box" style="max-width: 900px;">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px;">
+            <div>
+                <h3 style="color: #4ade80;">✅ For Players</h3>
+                <ul style="list-style: none; padding: 0; font-size: 1.1rem; line-height: 2;">
+                    <li>🎮 No subscription fees</li>
+                    <li>♾️ Play forever (world never dies)</li>
+                    <li>🧠 Strategic, not twitch-based</li>
+                    <li>🔄 Every run feels fresh</li>
+                    <li>🤝 Emergent social dynamics</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 style="color: #60a5fa;">✅ For Developers</h3>
+                <ul style="list-style: none; padding: 0; font-size: 1.1rem; line-height: 2;">
+                    <li>💰 Zero infrastructure cost</li>
+                    <li>📈 Infinite scalability</li>
+                    <li>🛡️ No single point of failure</li>
+                    <li>🌍 Global by default</li>
+                    <li>🔧 Easy to iterate</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <p style="margin-top: 40px; font-size: 1.3rem;">This isn't just a game. It's a <span class="highlight">proof of concept</span> for the future of multiplayer.</p>
+</div>
+
+<!-- SLIDE 10: CALL TO ACTION -->
+<div class="slide">
+    <div class="emoji-large">🚀</div>
+    <h1 style="font-size: 3rem;">Ready to Build the Swarm?</h1>
+    <p style="font-size: 1.5rem; margin-top: 20px;">A living economy. No servers. Infinite players.</p>
+    <p style="font-size: 1.2rem; color: #94a3b8; margin-top: 40px;">Powered by HiveP2P - The self-optimizing P2P protocol</p>
+    
+    <div style="margin-top: 50px; padding: 30px; background: rgba(251, 191, 36, 0.1); border: 2px solid #fbbf24; border-radius: 12px; max-width: 600px;">
+        <p style="font-size: 1.3rem; color: #fbbf24; margin: 0;">🐝 <strong>Hive-Trade</strong></p>
+        <p style="font-size: 1rem; color: #cbd5e1; margin-top: 10px;">Where your node is temporary, but your legacy is eternal.</p>
+    </div>
+</div>
+
+</body>
+</html>
