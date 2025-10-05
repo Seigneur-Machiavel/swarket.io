@@ -1,330 +1,146 @@
-🐝 HIVE-TRADE - Game Design Document
+# 📋 Hive-Trade - Task List
+
+## Phase 1: Core Infrastructure (5-7 jours)
+
+**1. Setup projet**
+- [ ] Init repo + structure folders
+- [ ] Fork visualizer HiveP2P
+- [ ] Setup build pipeline (browser)
+
+**2. Turn system**
+- [ ] Timer 5s ACTION / 5s DIGEST
+- [ ] Sync hooks pour phases
+- [ ] Visual feedback du rythme (optional pulse)
+
+**3. Énergie system**
+- [ ] State: énergie par joueur
+- [ ] Spawn UI: slider investissement
+- [ ] Dissipation passive (coûts actions)
+- [ ] Mort quand énergie = 0
+
+**4. Resources basiques**
+- [ ] 5 tiers de ressources (structure data)
+- [ ] Production passive Tier 1
+- [ ] Crafting Tier 2-5 (coûts énergie)
+- [ ] Inventaire UI
+
+**5. Networking manuel**
+- [ ] Click pour connecter à un peer
+- [ ] Coût connexion (petit = cheap/rapide)
+- [ ] Slots limités selon taille
+- [ ] Visualisation connections
+
+**6. Trading P2P**
+- [ ] Propose trade (unicast)
+- [ ] Accept/reject
+- [ ] Curseur taxation (0-100%)
+- [ ] Commission relay automatique
+
+---
+
+## Phase 2: Consensus & Persistence (3-4 jours)
+
+**7. Hash consensus**
+- [ ] Compute hash état global (DIGEST phase)
+- [ ] Gossip hash entre peers
+- [ ] Detect divergence → resync
+
+**8. Ledger partagé (hangar énergie)**
+- [ ] Structure ledger: slots par joueur
+- [ ] Gossip balances
+- [ ] Curseur stockage pendant game
+- [ ] Persist entre spawns (RAM)
+
+**9. Node mort & recyclage**
+- [ ] État "dead" quand énergie = 0
+- [ ] Inventaire bloqué = lootable
+- [ ] Méca connexion pour recycler
+- [ ] Premier arrivé premier servi
+
+---
+
+## Phase 3: Progression & Upgrades (3-4 jours)
+
+**10. Système de compétences**
+- [ ] Pool de 15-20 compétences
+- [ ] Random pick tous les X score
+- [ ] UI choix (3 options)
+- [ ] Apply effects (prod, slots, auto, etc.)
+
+**11. Meta progression**
+- [ ] Track runs jouées
+- [ ] Déblocage nouvelles compétences
+- [ ] Synergies/merges (si temps)
+
+**12. Upgrades spawn**
+- [ ] Presets: Small/Medium/Large
+- [ ] Allocate énergie → capacités départ
+- [ ] Balance coûts
+
+---
+
+## Phase 4: Events & Juice (3-4 jours)
+
+**13. Events chaotiques**
+- [ ] 8-10 events (Market, Prod, Network)
+- [ ] Trigger random 90-120s
+- [ ] Annonce visuelle (gros texte)
+- [ ] Apply effects temporaires
+
+**14. Feedback visuel**
+- [ ] Damage numbers (trades, commissions)
+- [ ] Particles (prod, crafts, level-ups)
+- [ ] Notation infinie (K, M, B, T...)
+- [ ] Animations connexions/trades
+
+**15. UI polish**
+- [ ] HUD: timer, inventaire, leaderboard
+- [ ] Context menu peers (click node)
+- [ ] Event announcements stylées
+- [ ] Minimap réseau (optionnel)
+
+---
 
-🎯 Core Concept
+## Phase 5: Balance & Deploy (2-3 jours)
 
-Monde P2P persistant. Nodes ont une durée de vie limitée par l'énergie. Économie émergente où producteurs et parasites coexistent naturellement.
+**16. Balancing**
+- [ ] Coûts énergie (spawn, craft, connexions)
+- [ ] Production rates Tier 1
+- [ ] Valeurs ressources (scoring)
+- [ ] Cooldowns events
 
+**17. Testing**
+- [ ] Playtest solo (bots?)
+- [ ] Playtest multi 5-10 peers
+- [ ] Fix bugs critiques
+- [ ] Ajustements gameplay
 
+**18. Deploy**
+- [ ] Build optimisé browser
+- [ ] Hébergement static (Vercel/Netlify)
+- [ ] Bootstrap nodes (où?)
+- [ ] Landing page minimale
 
-⚙️ Core Loop
+---
 
-Turn System (invisible)
+## Phase 6: Post-Launch (optionnel)
 
+**19. Features secondaires**
+- [ ] Leaderboard global
+- [ ] Stats fin de partie
+- [ ] Achievements
+- [ ] Wrapper Steam (Tauri)
 
+**20. Content**
+- [ ] Plus de compétences (30+)
+- [ ] Plus d'events
+- [ ] Balancing continu
 
-5sec ACTION → 5sec DIGEST → repeat
+---
 
-Joueurs sentent un rythme, pas des tours
+**Total: ~16-22 jours** selon vitesse et features skippées.
 
+**Ordre critique:**
+Turn system → Énergie → Resources → Trading → Consensus → Progression → Juice
 
-
-Node Lifecycle
-
-
-
-Spawn avec X énergie investie
-
-Produis/trade/taxe pendant ta vie
-
-Énergie → 0 = mort
-
-Loot recyclable par autres nodes
-
-Respawn avec énergie stockée
-
-
-
-
-
-🔋 Énergie (ressource meta)
-
-Usages :
-
-
-
-Spawner avec capacités de départ
-
-Upgrade pendant game
-
-Connection aux autres nodes
-
-Craft des ressources hautes
-
-
-
-Conservation :
-
-
-
-Curseur "stockage" : sacrifice croissance pour sécurité
-
-Stocké dans hangar commun (ledger partagé)
-
-Pas d'énergie = mort permanente (game over, restart from 0)
-
-
-
-Dissipation :
-
-
-
-Coûts actions (trading, crafting, connections)
-
-Si insuffisant : decay passif 0.5%/heure
-
-
-
-
-
-📦 Ressources (5 tiers)
-
-T1 Raw : Compute, Data, Models, Engineers (prod passive)
-
-T2 Refined : 3x T1 → 1x T2
-
-T3 Advanced : 2x T2 différents → 1x T3
-
-T4 Proto : 2x T3 → 1x T4
-
-T5 AGI : 2x T4 + bonus → AGI Unit
-
-Crafting coûte de l'énergie. Plus haut tier = plus cher.
-
-
-
-🔗 Networking
-
-Connections manuelles au départ
-
-
-
-Coût : Énergie selon taille du node
-
-Petit node : 1-3 slots, rapide (2-5s connect)
-
-Gros node : 10-20 slots, lent (15-30s connect)
-
-
-
-Relaying \& Taxation
-
-
-
-Curseur 0-100% de commission
-
-Taxer fort = risque d'être évité
-
-Node mort = inventaire bloqué, recyclable
-
-
-
-Upgrades déblocables
-
-
-
-Auto-connect
-
-Smart routing
-
-+slots
-
-
-
-
-
-🎲 Progression (Vampire Survivors style)
-
-Pendant game :
-
-
-
-Tous les X score : choix parmi 3 compétences random
-
-Catégories : Production, Trading, Network, Automation, Defense
-
-
-
-Meta progression :
-
-
-
-Plus de parties = plus de compétences dans pool
-
-Déblocages de merges/synergies
-
-Pas de idle, chaque run est isolée (sauf énergie stockée)
-
-
-
-
-
-🌪️ Events Chaotiques (90-120sec)
-
-Auto-générés selon état monde :
-
-
-
-Beaucoup de richesse ? → Market Crash
-
-Peu d'activité ? → Bull Market
-
-Trop de gros nodes ? → Fragmentation
-
-Équilibré ? → Events neutres
-
-
-
-Types :
-
-
-
-Market (prix x2 ou /2)
-
-Production (boost ou nerf)
-
-Network (connections free ou throttle)
-
-Chaos (swaps, volatilité)
-
-
-
-
-
-👹 Parasites (gameplay émergent)
-
-Nodes destructeurs :
-
-
-
-Spawn cheap (peu d'énergie)
-
-Petits, agiles, peu de prod
-
-Taxent à 80-100% pour intercepter trades
-
-Raident nodes morts rapidement
-
-
-
-Régulation naturelle :
-
-
-
-Parasites → Producteurs prudents → Moins à voler → Parasites meurent
-
-Cycle prédateur-proie auto-équilibré
-
-
-
-
-
-🏛️ Consensus \& Sync
-
-Hash-based consensus
-
-
-
-Chaque DIGEST phase : compute hash état global
-
-Si divergence : pull state depuis majorité
-
-Pas de POW, juste sync gossip
-
-
-
-Ledger partagé (hangar énergie)
-
-
-
-Chaque node a slot dans livre de compte
-
-Consensus sur balances via hash
-
-Simple, pas besoin blockchain complète
-
-
-
-
-
-📊 Feedback \& Juice
-
-Nombres infinis : 1.2K → 1.2M → 1.2B → ...
-
-Damage numbers : Trades, commissions, crafts
-
-Particles : Productions, level-ups, events
-
-Annonces : Gros texte central pour events
-
-
-
-🎮 Node Types (émergents, pas forcés)
-
-Factory : Gros, statique, prod élevée
-
-Trader : Moyen, mobile, connections optimisées
-
-Relay Hub : Gros, central, faibles taxes
-
-Parasite : Petit, rapide, taxes max
-
-Recycler : Petit, agile, rush les morts
-
-
-
-🚀 Roadmap (12-15 jours)
-
-Phase 1 : Core (5j)
-
-
-
-5 tiers ressources + crafting
-
-Énergie system + spawn
-
-Turn-based 5s/5s
-
-Connections manuelles
-
-Trading P2P
-
-
-
-Phase 2 : Progression (3j)
-
-
-
-Pool 20 compétences
-
-Random picks
-
-Meta déblocages
-
-Ledger consensus
-
-
-
-Phase 3 : Juice (3j)
-
-
-
-Events chaotiques
-
-Damage numbers + particles
-
-UI polish
-
-Hash sync
-
-
-
-Phase 4 : Deploy (2j)
-
-
-
-Balance
-
-Browser deploy
-
-Leaderboard (optionnel)
-
+Prêt à attaquer Phase 1 ?
