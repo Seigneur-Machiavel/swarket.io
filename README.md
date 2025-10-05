@@ -3,9 +3,8 @@
 ## Phase 1: Core Infrastructure (5-7 jours)
 
 **1. Setup projet**
-- [ ] Init repo + structure folders
-- [ ] Fork visualizer HiveP2P
-- [ ] Setup build pipeline (browser)
+- [X] Init repo + structure folders
+- [x] Fork visualizer HiveP2P
 
 **2. Turn system**
 - [ ] Timer 5s ACTION / 5s DIGEST
