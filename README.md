@@ -1,15 +1,20 @@
-# 📋 Hive-Trade - Task List
+# 📋 Hive-Trade - Task List (j'aime pas trop, à construire au fur et à mesure)
 
 ## Phase 1: Core Infrastructure (5-7 jours)
 
 **1. Setup projet**
-- [X] Init repo + structure folders
-- [x] Fork visualizer HiveP2P
+- [x] Init repo + structure folders
+- [x] connection bootstrap
+- [x] UI - Console de connection
+- [] Fork visualizer HiveP2P
+- [] Visualizer in background -> console reduced in the bottom or top or left or right
 
 **2. Turn system**
 - [ ] Timer 5s ACTION / 5s DIGEST
 - [ ] Sync hooks pour phases
 - [ ] Visual feedback du rythme (optional pulse)
+
+A partir de là c'est n'importe : On fait le jeu de base et le spawn menu vient ensuite, car 0 énergie = insta spawn
 
 **3. Énergie system**
 - [ ] State: énergie par joueur

@@ -1,0 +1,121 @@
+/* === COLORS === */
+:root {
+    --bg-dark: #0a0e1a;
+    --bg-med: #1a1e2e;
+    --bg-console: #0f172a;
+    --bg-header: #1e293b;
+    
+    --border-main: #334155;
+    --border-light: #475569;
+    
+    --text-main: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-darker: #64748b;
+    
+    --color1: #f7ea79;
+    --color2: #91bff7;
+    --color3: #fbbf24;
+    --color4: #f87171;
+    
+    --scrollbar-track: #0f172a;
+    --scrollbar-thumb: #334155;
+}
+
+/* === RESET === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-med) 100%);
+    color: var(--text-main);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* === SCREENS === */
+.screen {
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* === CONSOLE === */
+.console {
+    width: 90%;
+    max-width: 700px;
+    height: 400px;
+    background: var(--bg-console);
+    border: 2px solid var(--border-main);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+.console-header {
+    background: var(--bg-header);
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-main);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.console-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--color1);
+    letter-spacing: 1px;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.console-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.console-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.console-body::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+.console-body::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+
+/* === LOGS === */
+.log-line {
+    margin-bottom: 8px;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+.log-success { color: var(--color1); }
+.log-info { color: var(--color2); }
+.log-warning { color: var(--color3); }
+.log-error { color: var(--color4); }

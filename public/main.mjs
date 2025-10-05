@@ -1,3 +1,5 @@
+import { uiRenderer } from './ui-rendering/ui-renderer.mjs';
+
 /** @type {import('hive-p2p')} */
 const HiveP2P = await import('https://unpkg.com/@hive-p2p/browser@latest/hive-p2p.min.js');
 HiveP2P.CLOCK.mockMode = true;
@@ -7,8 +9,13 @@ try {
   HiveP2P.mergeConfig(HiveP2P.CONFIG, overrides);
 } catch (e) { console.log('No hive-config.json found, using default configuration.'); }
 
-console.log(HiveP2P.CONFIG.DISCOVERY.TARGET_NEIGHBORS_COUNT);
-
+uiRenderer.renderConnectionScreen();
 const bootstraps = ['ws://localhost:3001'];
 const node = await HiveP2P.createNode({ bootstraps });
 window.hiveNode = node; // expose to global for debugging
+
+while(!node.peerStore.neighborsList.length) {
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
+
+uiRenderer.renderConnectedScreen();
