@@ -573,7 +573,7 @@ export class NetworkRenderer {
 			for (const toId of neighbors) this.connectionsStore.setHovered(toId, this.hoveredNodeId);
 		}, 60);
 	}
-	#showTooltip(x, y, nodeId, element = document.getElementById('tooltip')) {
+	#showTooltip(x, y, nodeId, element = document.getElementById('node-tooltip')) {
 		const node = this.nodesStore.get(nodeId);
 		if (!node) return;
 
@@ -590,7 +590,7 @@ export class NetworkRenderer {
 		element.style.top = y + 10 + 'px';
 		element.style.display = 'block';
 	}
-	#hideTooltip(element = document.getElementById('tooltip')) {
+	#hideTooltip(element = document.getElementById('node-tooltip')) {
 		element.style.display = 'none';
 	}
     #getNodeColor(peerId) {
