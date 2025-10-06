@@ -1,4 +1,4 @@
-import { uiRenderer } from './ui-rendering/ui-renderer.mjs';
+import { renderConnectionLogs, renderConnectedLogs } from './connection-loader.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
 
 // @type {import('hive-p2p')} 
@@ -12,7 +12,7 @@ try {
   HiveP2P.mergeConfig(HiveP2P.CONFIG, overrides);
 } catch (e) { console.log('No hive-config.json found, using default configuration.'); }
 
-uiRenderer.renderConnectionScreen();
+renderConnectionLogs();
 const bootstraps = ['ws://localhost:3001'];
 const node = await HiveP2P.createNode({ bootstraps });
 window.hiveNode = node; // expose to global for debugging
@@ -20,7 +20,7 @@ window.hiveNode = node; // expose to global for debugging
 while(!node.peerStore.neighborsList.length) // wait until connected
 	await new Promise(resolve => setTimeout(resolve, 100));
 
-uiRenderer.renderConnectedScreen();
+renderConnectedLogs();
 
 const visualizer = new NetworkVisualizer(node, HiveP2P.CryptoCodex);
 window.networkVisualizer = visualizer; // Expose for debugging

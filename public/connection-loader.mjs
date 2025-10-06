@@ -6,7 +6,7 @@ function addLog(element, text, type = 'info') {
     element.scrollTop = element.scrollHeight;
 }
 
-export async function connectionLogs(consoleLog) {
+export async function renderConnectionLogs(consoleLog = document.getElementById('console-log')) {
     const connectionLogs = [
         { text: '> Initializing HiveP2P protocol...', type: 'info', delay: 10 },
         { text: '> Generating node identity...', type: 'info', delay: 20 },
@@ -21,7 +21,7 @@ export async function connectionLogs(consoleLog) {
     }
 }
 
-export async function connectedLogs(consoleLog) {
+export async function renderConnectedLogs(consoleLog = document.getElementById('console-log')) {
 	const connectedLogs = [
         { text: '✓ WebSocket connection established', type: 'success', delay: 480 },
         { text: '> Performing handshake...', type: 'info', delay: 120 },
