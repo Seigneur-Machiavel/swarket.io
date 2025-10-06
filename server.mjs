@@ -8,13 +8,14 @@ HiveP2P.CLOCK.mockMode = true;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-//const packageRoot = path.resolve(__dirname, 'node_modules', 'hive-p2p');
+const hiveP2PRoot = path.resolve(__dirname, 'node_modules', 'hive-p2p');
 
 const DOMAIN = 'localhost'; // '0.0.0.0'
 const PORT = 3000;
 const app = express();
 app.use(express.static(join(__dirname, 'public')));
 app.listen(PORT, DOMAIN, () => console.log(`Server running at http://${DOMAIN}:${PORT}/`));
+app.use('/hive-p2p', express.static(hiveP2PRoot));
 app.get('/', (req, res) => res.sendFile(join(__dirname, 'public/index.html')));
 
 const cryptoCodex = await HiveP2P.CryptoCodex.createCryptoCodex(true);

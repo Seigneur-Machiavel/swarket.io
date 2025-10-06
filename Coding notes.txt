@@ -1,0 +1,5 @@
+Coding notes
+
+SimulationInterface => from WS to node
+
+Choose between 2D (panning only) or 3D (Rotate only)

@@ -3,66 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mycelium</title>
+	<!-- PRELOAD FILES IN ONE STACK -->
+	<script src="./hive-config.json" type="json"></script>
+	<script src="./visualizer.mjs" type="module"></script>
+	<script src="./NetworkRenderer.mjs" type="module"></script>
+	<script src="./renderer-options.mjs" type="module"></script>
+	<script src="./renderer-stores.mjs" type="module"></script>
+	<script src="./ui-rendering/ui-renderer.mjs" type="module"></script>
+	<script src="./ui-rendering/connection-loader.mjs" type="module"></script>
+	<script src="./hive-p2p/dist/browser/hive-p2p.min.js" type="module"></script>
+	<!-- END PRELOAD -->
+
+	<title>Mycelium</title>
     <link rel="stylesheet" href="style.css">
+	<script src="./hive-p2p/libs/three-4.5.min.js"></script>
 	<script type="module" src="./main.mjs"></script>
 </head>
 <body>
-    <div id="connection-screen" class="screen active">
-        <div class="console">
-            <div class="console-header">
-                <span class="console-title">⚡ MYCELIUM NETWORK</span>
-            </div>
-            <div class="console-body" id="console-log"></div>
-        </div>
+    <div class="info">
+		<div>DEV INFO  |</div>
+		<div>°°°°°°°°°°</div>
+		<button id="modeSwitchBtn">2D</button>
+        <div>FPS: <span id="fpsCount">0</span></div>
+        <div>Nodes: <span id="nodeCount">0</span></div>
+		<div>Connecting: <span id="connectingCount">0</span></div>
+		<div>Neighbors: <span id="neighborCount">0</span></div>
+		<div>Publics: <span id="publicNeighborCount">0</span></div>
+        <div>Connections: <span id="connectionsCount">0</span></div>
+		<div>Lines: <span id="linesCount">0</span></div>
     </div>
 
-    <div id="spawn-menu" class="screen">
-        <div class="menu-container">
-            <h1 class="menu-title">🍄 SPAWN NODE</h1>
-            
-            <div class="menu-section">
-                <label class="menu-label">Energy Investment</label>
-                <div class="slider-container">
-                    <input type="range" id="energy-slider" min="0" max="1000" value="100" step="10">
-                    <div class="slider-value">
-                        <span id="energy-value">100</span>
-                        <span class="energy-unit">⚡</span>
-                    </div>
-                </div>
-                <div class="energy-breakdown">
-                    <div class="stat">
-                        <span class="stat-label">Size</span>
-                        <span class="stat-value" id="node-size">Small</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Slots</span>
-                        <span class="stat-value" id="node-slots">3</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Speed</span>
-                        <span class="stat-value" id="node-speed">Fast</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Production</span>
-                        <span class="stat-value" id="node-production">1.0x</span>
-                    </div>
-                </div>
-            </div>
+	<div class="console">
+		<div class="console-header">
+			<span class="console-title">⚡ MYCELIUM NETWORK</span>
+		</div>
+		<div class="console-body" id="console-log"></div>
+	</div>
 
-            <div class="menu-section">
-                <label class="menu-label">Node Name (optional)</label>
-                <input type="text" id="node-name" class="menu-input" placeholder="Anonymous" maxlength="16">
-            </div>
-
-            <button id="spawn-btn" class="btn-primary">SPAWN NODE</button>
-            
-            <div class="menu-footer">
-                <p class="help-text">Energy = Lifespan. Invest wisely.</p>
-            </div>
-        </div>
-    </div>
-
-    <canvas id="game-canvas" style="display: none;"></canvas>
+	<div id="tooltip"></div>
 </body>
 </html>

@@ -1,7 +1,10 @@
 import { uiRenderer } from './ui-rendering/ui-renderer.mjs';
+import { NetworkVisualizer } from './visualizer.mjs';
 
-/** @type {import('hive-p2p')} */
-const HiveP2P = await import('https://unpkg.com/@hive-p2p/browser@latest/hive-p2p.min.js');
+// @type {import('hive-p2p')} 
+//const HiveP2P = await import('./hive-p2p/dist/browser/hive-p2p.min.js');
+
+while (!window.HiveP2P) await new Promise(resolve => setTimeout(resolve, 10));
 HiveP2P.CLOCK.mockMode = true;
 
 try {
@@ -14,8 +17,10 @@ const bootstraps = ['ws://localhost:3001'];
 const node = await HiveP2P.createNode({ bootstraps });
 window.hiveNode = node; // expose to global for debugging
 
-while(!node.peerStore.neighborsList.length) {
-  await new Promise(resolve => setTimeout(resolve, 100));
-}
+while(!node.peerStore.neighborsList.length) // wait until connected
+	await new Promise(resolve => setTimeout(resolve, 100));
 
 uiRenderer.renderConnectedScreen();
+
+const visualizer = new NetworkVisualizer(node, HiveP2P.CryptoCodex);
+window.networkVisualizer = visualizer; // Expose for debugging

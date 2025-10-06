@@ -20,14 +20,11 @@
     --scrollbar-track: #0f172a;
     --scrollbar-thumb: #334155;
 }
-
-/* === RESET === */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
-
 body {
     font-family: 'Courier New', monospace;
     background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-med) 100%);
@@ -36,86 +33,95 @@ body {
     width: 100vw;
     height: 100vh;
 }
-
-/* === SCREENS === */
-.screen {
-    display: none;
-    width: 100vw;
-    height: 100vh;
-    align-items: center;
-    justify-content: center;
+@keyframes fadeIn {
+    to { opacity: 1; }
 }
 
-.screen.active {
-    display: flex;
+.info {
+	position: absolute;
+	bottom: 50%;
+	right: 2%;
+	background: var(--border-main);
+	opacity: .9;
+	padding: 10px;
+	border-radius: 5px;
+	font-size: 12px;
+	transform: translateY(50%);
+}
+.info pre {
+	margin: 5px 0 0 0;
+}
+#modeSwitchBtn {
+	position: absolute;
+    top: 10px;
+    right: 10px;
 }
 
 /* === CONSOLE === */
 .console {
-    width: 90%;
-    max-width: 700px;
-    height: 400px;
+	position: absolute;
+	bottom: 2%;
+	right: 2%;
+    width: 50%;
+    max-width: 400px;
+    height: 18%;
     background: var(--bg-console);
     border: 2px solid var(--border-main);
     border-radius: 8px;
     display: flex;
     flex-direction: column;
 }
-
 .console-header {
+	display: none;
+    /*display: flex;*/
     background: var(--bg-header);
     padding: 12px 20px;
     border-bottom: 1px solid var(--border-main);
-    display: flex;
     justify-content: space-between;
     align-items: center;
 }
-
 .console-title {
     font-size: 14px;
     font-weight: bold;
     color: var(--color1);
     letter-spacing: 1px;
 }
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
 .console-body {
     flex: 1;
-    padding: 15px;
+    padding: 6px 10px;
     overflow-y: auto;
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 12px;
+    line-height: 1.2;
 }
-
 .console-body::-webkit-scrollbar {
     width: 8px;
 }
-
 .console-body::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
 }
-
 .console-body::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: 4px;
 }
-
-/* === LOGS === */
 .log-line {
-    margin-bottom: 8px;
+    margin-bottom: 2px;
     opacity: 0;
     animation: fadeIn 0.3s forwards;
 }
-
-@keyframes fadeIn {
-    to { opacity: 1; }
-}
-
 .log-success { color: var(--color1); }
 .log-info { color: var(--color2); }
 .log-warning { color: var(--color3); }
 .log-error { color: var(--color4); }
+
+#tooltip {
+	position: fixed;
+	background: rgba(0, 0, 0, 0.9);
+	color: white;
+	padding: 10px;
+	border-radius: 4px;
+	pointer-events: none;
+	z-index: 1001;
+	font-size: 12px;
+	display: none;
+	max-width: 200px;
+}

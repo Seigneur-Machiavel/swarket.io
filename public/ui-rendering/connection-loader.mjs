@@ -27,7 +27,7 @@ export async function connectedLogs(consoleLog) {
         { text: '> Performing handshake...', type: 'info', delay: 120 },
         { text: '✓ Handshake successful', type: 'success', delay: 20 },
         { text: '> Discovering network topology...', type: 'info', delay: 120 },
-        { text: '> Ready to spawn node', type: 'success', delay: 200 }
+        { text: '> Ready to enter the network', type: 'success', delay: 200 }
     ];
 
 	for (const log of connectedLogs) {
