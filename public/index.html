@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<!-- PRELOAD FILES IN ONE STACK -->
-	<script src="./hive-config.json" type="json"></script>
+	<!-- <script src="./hive-config.json" type="json"></script> -->
 	<script src="./visualizer.mjs" type="module"></script>
-	<script src="./NetworkRenderer.mjs" type="module"></script>
-	<script src="./renderer-options.mjs" type="module"></script>
-	<script src="./renderer-stores.mjs" type="module"></script>
+	<script src="./rendering/NetworkRenderer.mjs" type="module"></script>
+	<script src="./rendering/renderer-options.mjs" type="module"></script>
+	<script src="./rendering/renderer-stores.mjs" type="module"></script>
+	<script src="./game-logics/player.mjs" type="module"></script>
+	<script src="./game-logics/turn-system.mjs" type="module"></script>
+	<script src="./game-logics/resources.mjs" type="module"></script>
+	<script src="./game-logics/game-client.mjs" type="module"></script>
 	<script src="./connection-loader.mjs" type="module"></script>
 	<script src="./hive-p2p/dist/browser/hive-p2p.min.js" type="module"></script>
 	<!-- END PRELOAD -->
@@ -34,23 +38,23 @@
 
 	<div class="resources-bar">
 		<div class="resource">
-			<div class="tooltip">Compute</div>
-			<span class="resource-icon">⚡</span>
-			<span class="resource-value" id="compute-count">0</span>
+			<div class="tooltip">Chips</div>
+			<div class="resource-icon chips"></div>
+			<span class="resource-value" id="chips-count">0</span>
 		</div>
 		<div class="resource">
-			<div class="tooltip">Data</div>
-			<span class="resource-icon">📊</span>
-			<span class="resource-value" id="data-count">0</span>
+			<div class="tooltip">Datas</div>
+			<div class="resource-icon datas"></div>
+			<span class="resource-value" id="datas-count">0</span>
 		</div>
 		<div class="resource">
 			<div class="tooltip">Models</div>
-			<span class="resource-icon">🧠</span>
+			<div class="resource-icon models"></div>
 			<span class="resource-value" id="models-count">0</span>
 		</div>
 		<div class="resource">
 			<div class="tooltip">Engineers</div>
-			<span class="resource-icon">👷</span>
+			<div class="resource-icon engineers"></div>
 			<span class="resource-value" id="engineers-count">0</span>
 		</div>
 	</div>

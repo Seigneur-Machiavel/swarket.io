@@ -19,6 +19,15 @@
     
     --scrollbar-track: #0f172a;
     --scrollbar-thumb: #334155;
+
+	--chip-icon: url(assets/chip.png);
+	--chip-color: #ff6b35;
+	--data-icon: url(assets/data.png);
+	--data-color: #2196f3;
+	--model-icon: url(assets/model.png);
+	--model-color: #9c27b0;
+	--engineer-icon: url(assets/engineer.png);
+	--engineer-color: #4caf50;
 }
 * {
     margin: 0;
@@ -97,6 +106,37 @@ body {
     z-index: 1000;
 	width: fit-content;
 	transform: translateX(-50%);
+}
+.resource-icon {
+	width: 16px;
+	height: 16px;
+	display: inline-block;
+}
+.resource-icon.chips {
+	width: 22px;
+	height: 22px;
+	margin: -3px;
+	-webkit-mask: var(--chip-icon) center/contain no-repeat;
+	mask: var(--chip-icon) center/contain no-repeat;
+	background: var(--chip-color);
+}
+.resource-icon.datas {
+	-webkit-mask: var(--data-icon) center/contain no-repeat;
+	mask: var(--data-icon) center/contain no-repeat;
+	background: var(--data-color);
+}
+.resource-icon.models {
+	-webkit-mask: var(--model-icon) center/contain no-repeat;
+	mask: var(--model-icon) center/contain no-repeat;
+	background: var(--model-color);
+}
+.resource-icon.engineers {
+	width: 18px;
+	height: 18px;
+	margin: -1px;
+	-webkit-mask: var(--engineer-icon) center/contain no-repeat;
+	mask: var(--engineer-icon) center/contain no-repeat;
+	background: var(--engineer-color);
 }
 .resource {
 	height: 100%;

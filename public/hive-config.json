@@ -1,4 +1,4 @@
 {
-  "NODE": { "DEFAULT_VERBOSE": 4 },
+  "NODE": { "DEFAULT_VERBOSE": 3 },
   "DISCOVERY": { "TARGET_NEIGHBORS_COUNT": 0 }
 }

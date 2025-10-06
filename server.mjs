@@ -1,8 +1,8 @@
 import path from 'path';
 import { join } from 'path';
 import express from 'express';
-import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
+import { GameClient } from './public/game-logics/game-client.mjs';
 import HiveP2P from 'hive-p2p';
 HiveP2P.CLOCK.mockMode = true;
 
@@ -19,5 +19,11 @@ app.use('/hive-p2p', express.static(hiveP2PRoot));
 app.get('/', (req, res) => res.sendFile(join(__dirname, 'public/index.html')));
 
 const cryptoCodex = await HiveP2P.CryptoCodex.createCryptoCodex(true);
-const bee0 = await HiveP2P.createPublicNode({ domain: DOMAIN, port: PORT + 1, cryptoCodex });
+const bee0 = await HiveP2P.createPublicNode({ domain: DOMAIN, port: PORT + 1, cryptoCodex, verbose: 3 });
 console.log(`Public node id: ${bee0.id} | url: ${bee0.publicUrl}`);
+
+const gameClient = new GameClient(bee0);
+setInterval(() => { // empty intent to ensure bee0 participates in turns consensus
+	const myIntents = gameClient.turnSystem.digestPlayerActions([], gameClient.height + 1);
+	bee0.broadcast({ topic: 'turn-intents', data: myIntents });
+}, gameClient.turnSystem.turnDuration);

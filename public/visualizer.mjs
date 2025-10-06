@@ -1,4 +1,4 @@
-import { NetworkRenderer } from './NetworkRenderer.mjs';
+import { NetworkRenderer } from './rendering/NetworkRenderer.mjs';
 
 export class NetworkVisualizer {
 	node;

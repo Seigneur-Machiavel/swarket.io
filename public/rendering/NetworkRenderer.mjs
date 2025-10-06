@@ -3,6 +3,7 @@ import { Node, NodesStore, ConnectionsStore } from './renderer-stores.mjs';
 
 export class NetworkRenderer {
 	initCameraZ = 1200;
+	avoidPanning = true;
 	avoidAutoZoomUntil = 0;
 	lastAutoZoomDistance = 0;
 	fpsCountElement = document.getElementById('fpsCount');
@@ -472,7 +473,7 @@ export class NetworkRenderer {
 					const forward = new THREE.Vector3();
 					this.camera.getWorldDirection(forward);
 					this.camera.position.add(forward.multiplyScalar(deltaY * zoomSpeed2D));
-                } else if (mouseButton === 0) { // Left mouse - pan
+                } else if (!this.avoidPanning && mouseButton === 0) { // Left mouse - pan
                     const panSpeed = 1;
                     const right = new THREE.Vector3();
                     const up = new THREE.Vector3();

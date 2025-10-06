@@ -10,8 +10,8 @@
 - [x] Visualizer in background -> console reduced in the bottom or top or left or right
 
 **2. Turn system**
-- [ ] Timer 5s ACTION
-- [ ] Sync hooks pour phases
+- [x] Timer 5s ACTION
+- [x] Sync hooks pour phases
 - [ ] Visual feedback du rythme (optional pulse)
 
 A partir de là c'est n'importe quoi : On fait le jeu de base et le spawn menu vient ensuite, car 0 énergie = insta spawn
@@ -23,8 +23,8 @@ A partir de là c'est n'importe quoi : On fait le jeu de base et le spawn menu v
 - [ ] Mort quand énergie = 0
 
 **4. Resources basiques**
-- [ ] 5 tiers de ressources (structure data)
-- [ ] Production passive Tier 1
+- [4] 5 tiers de ressources (structure data)
+- [x] Production passive Tier 1
 - [ ] Crafting Tier 2-5 (coûts énergie)
 - [ ] Inventaire UI
 
