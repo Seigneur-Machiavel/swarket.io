@@ -12,12 +12,13 @@
 **2. Turn system**
 - [x] Timer 5s ACTION
 - [x] Sync hooks pour phases
-- [ ] Visual feedback du rythme (optional pulse)
 
-A partir de là c'est n'importe quoi : On fait le jeu de base et le spawn menu vient ensuite, car 0 énergie = insta spawn
+**2.5 Système de compétences**
+- [ ] Random pick tous les X score
+- [ ] Pool de 10 compétences (compétence connection en first => gros rate)
 
 **3. Énergie system**
-- [ ] State: énergie par joueur
+- [x] State: énergie par joueur
 - [ ] Spawn UI: slider investissement
 - [ ] Dissipation passive (coûts actions)
 - [ ] Mort quand énergie = 0

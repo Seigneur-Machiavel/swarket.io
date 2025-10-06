@@ -16,7 +16,7 @@ export class NetworkRenderer {
 	onNodeLeftClick = null;
 	onNodeRightClick = null;
 	colors = {
-		background: 0x1a1e2e,  // dark blue
+		background: 0x0a0e1a,  // dark blue
 		currentPeer: 0x91bff7, // light blue
 		hoveredPeer: 0xf7ea79, // yellow
 		connectedPeerNeighbor: 0x91bff7, // light blue

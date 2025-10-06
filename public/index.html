@@ -9,6 +9,7 @@
 	<script src="./rendering/NetworkRenderer.mjs" type="module"></script>
 	<script src="./rendering/renderer-options.mjs" type="module"></script>
 	<script src="./rendering/renderer-stores.mjs" type="module"></script>
+	<script src="./rendering/UI-components.mjs" type="module"></script>
 	<script src="./game-logics/player.mjs" type="module"></script>
 	<script src="./game-logics/turn-system.mjs" type="module"></script>
 	<script src="./game-logics/resources.mjs" type="module"></script>
@@ -23,59 +24,65 @@
 	<script type="module" src="./main.mjs"></script>
 </head>
 <body>
-    <div class="info">
-		<div>DEV INFO  |</div>
-		<div>°°°°°°°°°°</div>
-		<button id="modeSwitchBtn">2D</button>
-        <div>FPS: <span id="fpsCount">0</span></div>
-        <div>Nodes: <span id="nodeCount">0</span></div>
-		<div>Connecting: <span id="connectingCount">0</span></div>
-		<div>Neighbors: <span id="neighborCount">0</span></div>
-		<div>Publics: <span id="publicNeighborCount">0</span></div>
-        <div>Connections: <span id="connectionsCount">0</span></div>
-		<div>Lines: <span id="linesCount">0</span></div>
-    </div>
-
-	<div class="resources-bar">
-		<div class="resource">
-			<div class="tooltip">Chips</div>
-			<div class="resource-icon chips"></div>
-			<span class="resource-value" id="chips-count">0</span>
+	<div class="UI-wrapper">
+		<div class="info">
+			<div>DEV INFO  |</div>
+			<div>°°°°°°°°°°</div>
+			<button id="modeSwitchBtn">2D</button>
+			<div>FPS: <span id="fpsCount">0</span></div>
+			<div>Nodes: <span id="nodeCount">0</span></div>
+			<div>Connecting: <span id="connectingCount">0</span></div>
+			<div>Neighbors: <span id="neighborCount">0</span></div>
+			<div>Publics: <span id="publicNeighborCount">0</span></div>
+			<div>Connections: <span id="connectionsCount">0</span></div>
+			<div>Lines: <span id="linesCount">0</span></div>
 		</div>
-		<div class="resource">
-			<div class="tooltip">Datas</div>
-			<div class="resource-icon datas"></div>
-			<span class="resource-value" id="datas-count">0</span>
+	
+		<div class="energy-bar-wrapper">
+			<div class="tooltip" id="energy-tooltip">0/0</div>
+			<div class="energy-bar">
+				<div class="energy-fill" id="energy-fill"></div>
+				<div class="energy-text" id="energy-text"></div>
+			</div>
 		</div>
-		<div class="resource">
-			<div class="tooltip">Models</div>
-			<div class="resource-icon models"></div>
-			<span class="resource-value" id="models-count">0</span>
+	
+		<div class="resources-bar">
+			<div class="resource">
+				<div class="tooltip">Chips</div>
+				<div class="resource-icon chips"></div>
+				<span class="resource-value" id="chips-count">0</span>
+			</div>
+			<div class="resource">
+				<div class="tooltip">Datas</div>
+				<div class="resource-icon datas"></div>
+				<span class="resource-value" id="datas-count">0</span>
+			</div>
+			<div class="resource">
+				<div class="tooltip">Models</div>
+				<div class="resource-icon models"></div>
+				<span class="resource-value" id="models-count">0</span>
+			</div>
+			<div class="resource">
+				<div class="tooltip">Engineers</div>
+				<div class="resource-icon engineers"></div>
+				<span class="resource-value" id="engineers-count">0</span>
+			</div>
 		</div>
-		<div class="resource">
-			<div class="tooltip">Engineers</div>
-			<div class="resource-icon engineers"></div>
-			<span class="resource-value" id="engineers-count">0</span>
+	
+		<div class="inputs-wrapper">
+			<input type="range" id="energyStorageFactor" min="1" max="5" step="0.1" value="2" title="Energy Storage Factor">
 		</div>
+	
+		<div id="network-container"></div>
+	
+		<div class="console">
+			<div class="console-header">
+				<span class="console-title">⚡ MYCELIUM NETWORK</span>
+			</div>
+			<div class="console-body" id="console-log"></div>
+		</div>
+	
+		<div id="node-tooltip"></div>
 	</div>
-
-	<div class="energy-bar-wrapper">
-		<div class="tooltip" id="energy-tooltip">123/200</div>
-		<div class="energy-bar">
-			<div class="energy-fill" id="energy-fill"></div>
-			<div class="energy-text" id="energy-text">1:12</div>
-		</div>
-	</div>
-
-	<div id="network-container"></div>
-
-	<div class="console">
-		<div class="console-header">
-			<span class="console-title">⚡ MYCELIUM NETWORK</span>
-		</div>
-		<div class="console-body" id="console-log"></div>
-	</div>
-
-	<div id="node-tooltip"></div>
 </body>
 </html>

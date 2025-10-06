@@ -8,3 +8,8 @@ export class TransactionAction {
 	/** @type {string} */		resource;
 	/** @type {number} */		amount;
 }
+
+export class UpgradeAction {
+	/** @type {'connection' | 'energy' | 'production' | 'storage'} */
+	upgradeType;
+}

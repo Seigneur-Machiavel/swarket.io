@@ -1,5 +1,5 @@
 import { renderConnectionLogs, renderConnectedLogs } from './connection-loader.mjs';
-import { ResourcesBarComponent } from './rendering/UI-component.mjs';
+import { EnergyBarComponent, ResourcesBarComponent } from './rendering/UI-components.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
 import { GameClient } from './game-logics/game-client.mjs';
 
@@ -19,12 +19,16 @@ const bootstraps = ['ws://localhost:3001'];
 const node = await HiveP2P.createNode({ bootstraps });
 window.hiveNode = node; // expose to global for debugging
 
+const energyBar = new EnergyBarComponent();
 const resourcesBar = new ResourcesBarComponent();
+
 const visualizer = new NetworkVisualizer(node, HiveP2P.CryptoCodex);
 window.networkVisualizer = visualizer; // Expose for debugging
 const gameClient = new GameClient(node);
 gameClient.onExecutedTurn.push(() => {
-	resourcesBar.update(gameClient.players[node.id].resourcesByTier);
+	const player = gameClient.players[node.id];
+	energyBar.update(player.energy, player.maxEnergy);
+	resourcesBar.update(player.resourcesByTier);
 	//visualizer.networkRenderer.displayTurnExecution(gameClient.height);
 });
 window.gameClient = gameClient; // Expose for debugging

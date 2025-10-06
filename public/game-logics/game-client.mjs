@@ -15,7 +15,7 @@ export class GameClient {
 	constructor(node) {
 		this.node = node; this.verb = node.verbose;
 		this.turnSystem = new TurnSystem(this.node);
-		this.players[node.id] = new PlayerNode(node.id);
+		this.players[node.id] = new PlayerNode(node.id, );
 
 		//this.node.onMessageData((fromId, message) => console.log(`[${this.node.id}] from [${fromId}]: ${message}`));
 		//this.node.onGossipData((fromId, message) => console.log(`[${this.node.id}]: from [${fromId}]: ${message}`));
@@ -33,7 +33,12 @@ export class GameClient {
 			const height = this.turnSystem.getConsensusHeight();
 			this.turnSystem.organizeIntents(height);
 			this.turnSystem.execTurn();
-			for (const playerId in this.players) this.players[playerId].produceResources();
+			for (const playerId in this.players) {
+				const player = this.players[playerId];
+				player.execTurn(height);
+				if (playerId !== this.node.id) continue;
+				if (player.shouldUpgrade) console.log(`--- Player ${playerId} should upgrade at turn ${height} ---`);
+			}
 			for (const cb of this.onExecutedTurn) cb(height);
 			this.height = height;
 
