@@ -1,3 +1,20 @@
+export class UpgradeOffersComponent {
+	upgradeOffersWrapper = document.getElementById('upgrade-offers-wrapper');
+	offer1 = document.getElementById('upgrade-offer-1');
+	offer2 = document.getElementById('upgrade-offer-2');
+	offer3 = document.getElementById('upgrade-offer-3');
+	onOfferClick = (upgradeName) => { console.log(`Upgrade clicked: ${upgradeName}`); };
+
+	displayOffers(offers = []) {
+		for (let i = 1; i <= 3; i++) {
+			const offerElem = this[`offer${i}`];
+			offerElem.classList = `upgrade-offer ${offers[i - 1]}`;
+			offerElem.onclick = () => this.onOfferClick(offers[i - 1]);
+		}
+		this.upgradeOffersWrapper.classList.add('visible');
+	}
+}
+
 export class EnergyBarComponent {
 	tooltip = document.getElementById('energy-tooltip');
 	fill = document.getElementById('energy-fill');

@@ -6,11 +6,14 @@
 	<!-- PRELOAD FILES IN ONE STACK -->
 	<!-- <script src="./hive-config.json" type="json"></script> -->
 	<script src="./pre-game/connection-loader.mjs" type="module"></script>
+	<script src="./hive-p2p/libs/xxhash32.mjs" type="module"></script>
 	<script src="./visualizer.mjs" type="module"></script>
 	<script src="./rendering/NetworkRenderer.mjs" type="module"></script>
 	<script src="./rendering/renderer-options.mjs" type="module"></script>
 	<script src="./rendering/renderer-stores.mjs" type="module"></script>
 	<script src="./rendering/UI-components.mjs" type="module"></script>
+	<script src="./game-logics/seededRandom.mjs" type="module"></script>
+	<script src="./game-logics/upgrades.mjs" type="module"></script>
 	<script src="./game-logics/player.mjs" type="module"></script>
 	<script src="./game-logics/turn-system.mjs" type="module"></script>
 	<script src="./game-logics/resources.mjs" type="module"></script>
@@ -36,6 +39,18 @@
 			<div>Publics: <span id="publicNeighborCount">0</span></div>
 			<div>Connections: <span id="connectionsCount">0</span></div>
 			<div>Lines: <span id="linesCount">0</span></div>
+		</div>
+
+		<div class="upgrade-offers-wrapper" id ="upgrade-offers-wrapper">
+			<div class="upgrade-offer linker" id="upgrade-offer-1">
+				<div class="tooltip">Connection +1</div>
+			</div>
+			<div class="upgrade-offer producer" id="upgrade-offer-2">
+				<div class="tooltip">Production +40%</div>
+			</div>
+			<div class="upgrade-offer energy-drop" id="upgrade-offer-3">
+				<div class="tooltip">Recover max energy</div>
+			</div>
 		</div>
 	
 		<div class="energy-bar-wrapper">

@@ -22,8 +22,8 @@ const cryptoCodex = await HiveP2P.CryptoCodex.createCryptoCodex(true);
 const bee0 = await HiveP2P.createPublicNode({ domain: DOMAIN, port: PORT + 1, cryptoCodex, verbose: 3 });
 console.log(`Public node id: ${bee0.id} | url: ${bee0.publicUrl}`);
 
-const gameClient = new GameClient(bee0);
+const gameClient = new GameClient(bee0, true);
+gameClient.digestPlayerActions([{ type: 'noop' }], 0); // bypass first turn
 setInterval(() => { // empty intent to ensure bee0 participates in turns consensus
-	const myIntents = gameClient.turnSystem.digestPlayerActions([], gameClient.height + 1);
-	bee0.broadcast({ topic: 'turn-intents', data: myIntents });
+	gameClient.digestPlayerActions([{ type: 'noop' }]);
 }, gameClient.turnSystem.turnDuration);

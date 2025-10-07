@@ -1,70 +1,72 @@
+const xxHash32 = typeof window !== 'undefined'
+	? (await import('../hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32))
+	: (await import('../../node_modules/hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32));
+import { SeededRandom } from './seededRandom.mjs';
 /**
  * @typedef {import('hive-p2p').Node} Node
  * @typedef {import('./actions.mjs').SetParamAction} SetParamAction
  * @typedef {import('./actions.mjs').TransactionAction} TransactionAction
- * 
- * @typedef {Object} NodeIntents
- * @property {string} nodeId
- * @property {number} height
- * @property {Array<SetParamAction | TransactionAction>} intents
  */
 
 export class TurnSystem {
 	node;
+	lastTurnHash = 'hive-p2p-is-the-best-p2p'; // hash of last executed turn
 	turnDuration = 2000; // ms
-	nextTurnIntents = {}; // { nodeId: { height, intents }, ... }
-	/** @type {Array<NodeIntents>} */ turnIntents = [];
+	playersIntents = {}; // { height: { nodeId: [intents...], ... } }
 	
 	/** @param {Node} node */
 	constructor(node) { this.node = node; }
 
-	/** @param {Array<SetParamAction | TransactionAction>} actions @param {number} height should be height + 1 */
-	digestPlayerActions(actions, height) {
-		const playerIntents = { nodeId: this.node.id, height, intents: [] };
-		for (const action of actions) playerIntents.intents.push(action);
-		this.addNodeIntents(this.node.id, playerIntents);
-		return playerIntents;
-	}
-	/** @param {string} nodeId @param {NodeIntents} intents */
-	addNodeIntents(nodeId, intents) {
-		this.nextTurnIntents[nodeId] = intents;
-	}
-
-	// PRIVATE
-	getConsensusHeight() {
+	getConsensus() { // DEPRECATED => should be based on turn hash
 		const heightsCount = {};
+		const idsByHeight = {};
 		for (const nodeId in this.nextTurnIntents) {
 			const { height } = this.nextTurnIntents[nodeId];
 			heightsCount[height] = (heightsCount[height] || 0) + 1;
+			if (!idsByHeight[height]) idsByHeight[height] = [];
+			idsByHeight[height].push(nodeId);
 		}
 
-		let consensusHeight = { occurence: 0, height: 0 };
+		let consensus = { occurence: 0, height: 0, ids: [] };
 		for (const h in heightsCount) {
-			if (heightsCount[h] < consensusHeight.occurence) continue;
-			const areEqual = heightsCount[h] === consensusHeight.occurence;
-			if (areEqual && Number(h) < consensusHeight.height) continue;
-			consensusHeight = { occurence: heightsCount[h], height: Number(h) };
+			if (heightsCount[h] < consensus.occurence) continue;
+			const areEqual = heightsCount[h] === consensus.occurence;
+			if (areEqual && Number(h) < consensus.height) continue;
+			consensus = { occurence: heightsCount[h], height: Number(h), ids: idsByHeight[h] };
 		}
 
-		return consensusHeight.height;
+		return consensus;
 	}
 	organizeIntents(height = 0) {
-		const nodeIds = [];
-		for (const nodeId in this.nextTurnIntents)
-			if (this.nextTurnIntents[nodeId].height === height) nodeIds.push(nodeId);
-
-		this.turnIntents = []; // reset
-		let state = height; // seed
-		for (let i = nodeIds.length - 1; i > 0; i--) {
-			state = (state * 1664525 + 1013904223) % 4294967296; // LCG
-			const j = Math.floor((state / 4294967296) * (i + 1));
-			[nodeIds[i], nodeIds[j]] = [nodeIds[j], nodeIds[i]];
+		const nodeIds = Object.keys(this.playersIntents[height]);
+		const turnIntents = {};
+		let newTurnHashSeed = `${this.lastTurnHash}-${height}`;
+		for (const nodeId of SeededRandom.shuffle(nodeIds, this.lastTurnHash)) {
+			turnIntents[nodeId] = this.playersIntents[height][nodeId];
+			newTurnHashSeed += `-${nodeId}`;
 		}
-		
-		for (const nodeId of nodeIds)
-			this.turnIntents.push(this.nextTurnIntents[nodeId]);
+		delete this.playersIntents[height]; // free memory
+
+		/** @type {string} */
+		const newTurnHash = xxHash32(newTurnHashSeed).toString(16); // new turn hash
+		return { newTurnHash, turnIntents };
 	}
-	execTurn() {
+	/** @param {Object<string, Array<SetParamAction | TransactionAction>>} */ turnIntents;
+	execTurnIntents(turnIntents) {
+		const activePlayerIds = [];
+		for (const nodeId in turnIntents) {
+			for (const intent of turnIntents[nodeId]) this.#execPlayerIntent(nodeId, intent);
+			activePlayerIds.push(nodeId);
+		}
+
 		//this.node.peerStore
+		return activePlayerIds;
+	}
+
+	// PRIVATE
+	#execPlayerIntent(nodeId, intent) {
+		if (intent.type === 'set-param') console.log(`[${nodeId}] Set param:`, intent.param, intent.value);
+		else if (intent.type === 'transaction') console.log(`[${nodeId}] Transaction:`, intent.amount, intent.resource, '->', intent.to);
+		else if (intent.type === 'upgrade') console.log(`[${nodeId}] Upgrade:`, intent.upgradeName);
 	}
 }

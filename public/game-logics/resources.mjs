@@ -1,4 +1,4 @@
-/*export const resourcesByTiers = {
+/*const resourcesByTiers = { // TEMPLATE
 	1: { chips: 0, datas: 0, models: 0, engineers: 0 }, 			// raw materials
 	2: { algorithms: 0, datasets: 0, prototypes: 0 }, 				// basic products
 	3: { aiModules: 0, trainingJobs: 0, renderJobs: 0, robots: 0 }, // advanced products
@@ -14,10 +14,14 @@ const rawResourcesProductionBasis = {
 };
 const rawResources = Object.keys(rawResourcesProductionBasis);
 
-/** @param {'chips' | 'datas' | 'models' | 'engineers' | undefined} operatingResource Randomly selected if undefined */
+export function randomOperatingResource() {
+	return rawResources[Math.floor(Math.random() * rawResources.length)];
+}
+
+/** @param {'chips' | 'datas' | 'models' | 'engineers'} operatingResource */
 export function newRawResourcesSet(operatingResource) {
 	const set = { chips: 0, datas: 0, models: 0, engineers: 0 };
-	const operating = operatingResource || rawResources[Math.floor(Math.random() * rawResources.length)];
+	const operating = operatingResource;
 	set[operating] = rawResourcesProductionBasis[operating];
 	return set;
 }
