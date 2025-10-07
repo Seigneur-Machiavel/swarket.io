@@ -12,7 +12,8 @@ export async function renderConnectionLogs(consoleLog = document.getElementById(
         { text: '> Generating node identity...', type: 'info', delay: 20 },
         { text: '✓ Identity created', type: 'success', delay: 60 },
         { text: '> Connecting to bootstrap nodes...', type: 'info', delay: 10 },
-        { text: '> ws://bootstrap.mycelium.network', type: 'info', delay: 20 },
+        { text: '> ws://bootstrap.hive-p2p:77642', type: 'info', delay: 20 },
+		{ text: '> Initializing WebSocket connection...', type: 'info', delay: 120 },
 	];
 
     for (const log of connectionLogs) {

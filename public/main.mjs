@@ -1,12 +1,11 @@
-import { renderConnectionLogs, renderConnectedLogs } from './connection-loader.mjs';
+import { renderConnectionLogs, renderConnectedLogs } from './pre-game/connection-loader.mjs';
 import { EnergyBarComponent, ResourcesBarComponent } from './rendering/UI-components.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
 import { GameClient } from './game-logics/game-client.mjs';
 
-// @type {import('hive-p2p')} 
-//const HiveP2P = await import('./hive-p2p/dist/browser/hive-p2p.min.js');
-
 while (!window.HiveP2P) await new Promise(resolve => setTimeout(resolve, 10));
+/** @type {import('hive-p2p')} */
+const HiveP2P = window.HiveP2P;
 HiveP2P.CLOCK.mockMode = true;
 
 try {
