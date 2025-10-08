@@ -8,7 +8,7 @@ export class NetworkVisualizer {
 	peersList = {};
 
 	/** @param {import('hive-p2p').Node} node @param {import('hive-p2p').CryptoCodex} CryptoCodex @param {boolean} isSimulation */
-	constructor(node, CryptoCodex) {
+	constructor(node, CryptoCodex, updateInfoInterval = 400) {
 		this.#resetNetwork(node.id);
 		this.node = node;
 		this.CryptoCodex = CryptoCodex;
@@ -17,24 +17,25 @@ export class NetworkVisualizer {
 			const info = this.#getPeerInfo();
 			this.#updateNetworkFromPeerInfo(info);
 			this.networkRenderer.updateStats(this.node.topologist.NEIGHBORS_TARGET);
-		}, 200);
+		}, updateInfoInterval);
 
 		window.addEventListener('keydown', (e) => {
 			if (e.key === 'ArrowUp') console.log('ArrowUp');
 			if (e.key === 'ArrowDown') console.log('ArrowDown');
 		});
 		if (false) {
-
 			this.simulationInterface.onPeerMessage = (remoteId, data) => {
 				if (data.route) this.networkRenderer.displayDirectMessageRoute(remoteId, data.route);
 				else if (data.topic) this.networkRenderer.displayGossipMessageRoute(remoteId, data.senderId, data.topic, data.data);
 			};
-
-			this.networkRenderer.onNodeLeftClick = (nodeId) => console.log('Left click on node', nodeId);
-				//this.simulationInterface.tryToConnectNode(this.node.id, nodeId);
-			this.networkRenderer.onNodeRightClick = (nodeId) => console.log('Right click on node', nodeId);
 		}
 	}
+	/** Param: nodeId:string */
+	onNodeLeftClick(callback) { this.networkRenderer.onNodeLeftClick = callback; }
+	/** Param: nodeId:string */
+	onNodeRightClick(callback) { this.networkRenderer.onNodeRightClick = callback; }
+	displayDirectMessageRoute(fromId, route) { this.networkRenderer.displayDirectMessageRoute(fromId, route); }
+	displayGossipMessageRoute(fromId, data) { this.networkRenderer.displayGossipMessageRoute(fromId, data.senderId, data.topic, data.data); }
 
 	#resetNetwork(nodeId) {
 		this.networkRenderer.maxDistance = 0; // reset maxDistance to show all nodes

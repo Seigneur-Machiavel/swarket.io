@@ -37,7 +37,7 @@ export class NetworkRenderer {
 		toTravelConnection: 0x03b5fc, // even lighter blue for the remaining distance
 		// GOSSIP MESSAGES
 		gossipIncomingColor: 0xf542f5, // fuchsia
-		gossipOutgoingColor: 0xc24cc2, // dark fuchsia
+		gossipOutgoingColor: 0xf542f5, // dark fuchsia
 	};
 
 	// Internal state
@@ -366,6 +366,22 @@ export class NetworkRenderer {
         this.renderer.dispose();
         if (this.renderer.domElement.parentNode) this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
     }
+	getNodePositionRelativeToCanvas(nodeId) {
+		const instanceIndex = this.nodeIndexMap[nodeId];
+		if (instanceIndex === undefined) return null;
+
+		const matrix = new THREE.Matrix4();
+		const pos = new THREE.Vector3();
+		
+		this.instancedMesh.getMatrixAt(instanceIndex, matrix);
+		matrix.decompose(pos, new THREE.Quaternion(), new THREE.Vector3());
+		pos.project(this.camera); // Modifie pos en place
+		
+		return {
+			x: (pos.x + 1) / 2 * window.innerWidth,
+			y: (-pos.y + 1) / 2 * window.innerHeight
+		};
+	}
 
     // Internal methods
 	/** @param {string} axis @param {'3d'|'2d'|null} restrictToMode */
@@ -397,6 +413,7 @@ export class NetworkRenderer {
 		this.camera.position.normalize().multiplyScalar(newDistance);
 		this.camera.lookAt(0, 0, 0);
 	}
+	rightMouseButtonIsDown = false;
     #setupControls() {
 		let setupAutoRotateTimeout;
 		const initZoomSpeed2D = .1;
@@ -418,6 +435,7 @@ export class NetworkRenderer {
 
             isMouseDown = true;
             mouseButton = e.button;
+			if (mouseButton === 2) this.rightMouseButtonIsDown = true;
             previousMousePosition.x = e.clientX;
             previousMousePosition.y = e.clientY;
 			if (mouseDownGrabCursorTimeout) clearTimeout(mouseDownGrabCursorTimeout);
@@ -427,6 +445,7 @@ export class NetworkRenderer {
         domElement.addEventListener('mouseup', () => {
             isMouseDown = false;
             mouseButton = null;
+			if (this.rightMouseButtonIsDown) this.rightMouseButtonIsDown = false;
 			zoomSpeed2D = initZoomSpeed2D;
 			lastZoomDirection = null;
 			if (mouseDownGrabCursorTimeout) clearTimeout(mouseDownGrabCursorTimeout);
@@ -504,7 +523,7 @@ export class NetworkRenderer {
         });
 
 		this.elements.modeSwitchBtn.addEventListener('click', () => this.switchMode());
-		domElement.addEventListener('click', () => this.onNodeLeftClick?.(this.hoveredNodeId));
+		domElement.addEventListener('click', () => this.hoveredNodeId ? this.onNodeLeftClick?.(this.hoveredNodeId) : null);
         domElement.addEventListener('contextmenu', (e) => {
 			e.preventDefault();
 			if (domElement.style.cursor === 'grabbing') return;
@@ -560,19 +579,18 @@ export class NetworkRenderer {
 		// Set hover color
 		const instanceIndex = this.nodeIndexMap[this.hoveredNodeId];
 		if (instanceIndex === undefined) return;
-		
 		const hoverColor = new THREE.Color(this.colors.hoveredPeer);
-		this.instancedMesh.setColorAt(instanceIndex, hoverColor);
-		this.instancedMesh.instanceColor.needsUpdate = true;
 		this.renderer.domElement.style.cursor = 'pointer';
-
+		
 		// Set hovered connections flag
 		this.hoveredNodeRepaintInterval = setInterval(() => {
+			this.instancedMesh.setColorAt(instanceIndex, hoverColor);
+			this.instancedMesh.instanceColor.needsUpdate = true;
 			const hoveredNode = this.nodesStore.get(this.hoveredNodeId);
-			console.log(`Repainting hovered node ${this.hoveredNodeId} and its neighbors`);
+			//console.log(`Repainting hovered node ${this.hoveredNodeId} and its neighbors`);
 			const neighbors = hoveredNode ? hoveredNode.neighbors : [];
 			for (const toId of neighbors) this.connectionsStore.setHovered(toId, this.hoveredNodeId);
-		}, 60);
+		}, 240);
 	}
 	#showTooltip(x, y, nodeId, element = document.getElementById('node-tooltip')) {
 		const node = this.nodesStore.get(nodeId);

@@ -47,4 +47,13 @@ export class Upgrader {
 		}
 		return offers;
 	}
+	/** @param {import('./player.mjs').PlayerNode} player @param {string} upgradeName */
+	static applyUpgradeEffects(player, upgradeName) {
+		if (!player.energy) return;
+		switch (upgradeName) {
+			case 'energyDrop':
+				player.energy = player.maxEnergy;
+				break;
+		}
+	}
 }

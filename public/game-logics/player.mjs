@@ -31,22 +31,27 @@ export class PlayerNode {
 	execIntent(nodeId, intent) {
 		if (intent.type === 'set-param') console.log(`[${nodeId}] Set param:`, intent.param, intent.value);
 		else if (intent.type === 'transaction') console.log(`[${nodeId}] Transaction:`, intent.amount, intent.resource, '->', intent.to);
-		else if (intent.type === 'upgrade') this.handleUpgradeIntent(intent.upgradeName);
+		else if (intent.type === 'upgrade') this.#handleUpgradeIntent(intent.upgradeName);
 	}
-	handleUpgradeIntent(upgradeName) {
+	#handleUpgradeIntent(upgradeName = '') {
+		if (!this.energy) return;
 		if (this.upgradeOffers.length === 0) return this.verb > 1 ? console.warn(`[${this.id}] No upgrade offers available.`) : null;
 		if (this.upgradeOffers[0].indexOf(upgradeName) === -1) return this.verb > 1 ? console.warn(`[${this.id}] Upgrade not available:`, upgradeName) : null;
 		if (UpgradesTool.isMaxedUpgrade(this.upgradeSet, upgradeName)) return this.verb > 1 ? console.warn(`[${this.id}] Upgrade already maxed:`, upgradeName) : null;
 		this.upgradeOffers.shift();
 		this.upgradeSet[upgradeName].level++;
+		Upgrader.applyUpgradeEffects(this, upgradeName);
 	}
 	execTurn(turnHash = 'toto', height = 0) {
-		if (this.startTurn === 0 || this.energy <= 0) return; // inactive
+		if (this.startTurn === 0 || !this.energy) return; // inactive
 		this.lifetime++;
 		const energyReduceBasis = 1 + (Math.floor(this.lifetime / 100) * 0.02); // +2% every 100 turns
 		this.#deductEnergy(energyReduceBasis);
-		this.#produceResources();
-		this.#addUpgradeOffer(turnHash);
+		if (!this.energy) this.upgradeOffers = []; // clear offers if dead
+		else {
+			this.#produceResources();
+			this.#addUpgradeOffer(turnHash);
+		}
 	}
 	extract() {
 		const sendable = {};
@@ -56,12 +61,13 @@ export class PlayerNode {
 
 	// PRIVATE
 	#produceResources() {
-		for (const r in this.production) this.resourcesByTier[1][r] += this.production[r];
+		const multiplier = 1 + (this.upgradeSet.producer.level * 0.4);
+		for (const r in this.production) this.resourcesByTier[1][r] += this.production[r] * multiplier;
 	}
 	#deductEnergy(basis = 1) {
 		this.energy -= basis;
-		if (this.energy < 0) this.energy = 0;
 		if (this.energy > this.maxEnergy) this.energy = this.maxEnergy;
+		if (this.energy < 0) this.energy = 0;
 	}
 	#addUpgradeOffer(turnHash) {
 		if (!Upgrader.shouldUpgrade(this.lifetime)) return;

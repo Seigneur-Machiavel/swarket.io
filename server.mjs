@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { GameClient } from './public/game-logics/game.mjs';
 import HiveP2P from 'hive-p2p';
 HiveP2P.CLOCK.mockMode = true;
+//HiveP2P.CONFIG.NODE.DEFAULT_VERBOSE = 4;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +24,7 @@ const bee0 = await HiveP2P.createPublicNode({ domain: DOMAIN, port: PORT + 1, cr
 console.log(`Public node id: ${bee0.id} | url: ${bee0.publicUrl}`);
 
 const gameClient = new GameClient(bee0, true);
+gameClient.myPlayer.name = 'bootstrap: Bee0';
 gameClient.digestPlayerActions([{ type: 'noop' }], 0); // bypass first turn
 setInterval(() => { // empty intent to ensure bee0 participates in turns consensus
 	gameClient.digestPlayerActions([{ type: 'noop' }]);

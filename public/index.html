@@ -45,6 +45,7 @@
 					<div class="tooltip">Connection Status</div>
 					<img src="./assets/linker.png" alt="Connection Capacity" style="transform: scale(.9);">
 					<span id="connectionCount">0</span>/<span id="connectionMax">0</span>
+					<div id="connection-offer-notification">!</div>
 				</div>
 			</div>
 		</div>
@@ -119,6 +120,16 @@
 		</div>
 	
 		<div id="node-tooltip"></div>
+		<div id="node-card">
+			<div id="node-card-close-btn">x</div>
+			<div><span id="node-card-name">PlayerName</span></div>
+			<div><span id="node-card-id">Node ID</span></div>
+
+			<div class="node-actions">
+				<button id="node-card-connect-btn" disabled>Link offer</button>
+				<button id="node-card-chat-btn">Open chat</button>
+			</div>
+		</div>
 	</div>
 </body>
 </html>

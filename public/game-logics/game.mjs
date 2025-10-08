@@ -1,5 +1,6 @@
 import { PlayerNode } from './player.mjs';
 import { TurnSystem } from './turn-system.mjs';
+import { NodeInteractor } from './node-interactions.mjs';
 
 /**
  * @typedef {import('hive-p2p').Node} Node
@@ -12,14 +13,27 @@ export class GameClient {
 	T0 = null; 	// time of first turn
 	T0Reference = null; // reference time to calculate T0 drift
 	node; verb; height = 0; // number of turns
+	nodeInteractor;
 	turnSystem;
 	/** @type {Record<string, PlayerNode>} */ players = {};
 	onExecutedTurn = []; 	// callbacks
 	syncAskedBy = []; 		// ids of nodes who asked for sync
 
+	/** @type {Record<string, { offer: {signal: string, offerHash: string}, expiration: number }>} */
+	connectionOffers = {}; // pending connection offers { nodeId: { offer: object, expiration: number } }
+	connectionOffersCleanupInterval = setInterval(() => {
+		const now = Date.now();
+		for (const nodeId in this.connectionOffers) {
+			if (this.connectionOffers[nodeId].expiration > now) continue;
+			delete this.connectionOffers[nodeId];
+			if (this.verb > 1) console.log(`Connection offer from ${nodeId} expired and removed.`);
+		}
+	}, 2000);
+
 	/** @param {Node} node */
 	constructor(node, createPlayerAndStart = false) {
 		this.node = node; this.verb = node.verbose;
+		this.nodeInteractor = new NodeInteractor(node, this.players);
 		this.turnSystem = new TurnSystem(this.node);
 
 		node.onPeerConnect((peerId, direction) => {
@@ -148,6 +162,7 @@ export class GameClient {
 			this.#sendSyncToAskers(startTime - Date.now(), newTurnHash);
 			
 			this.turnSystem.lastTurnHash = newTurnHash;
+			if (!this.myPlayer.energy) this.connectionOffers = {}; // clear offers if dead
 			
 			const timeDrift = Date.now() - this.T0 - (this.turnSystem.turnDuration * this.height);
 			if (this.verb > 1) console.log(`> Turn ${this.height} executed | Drift: ${timeDrift}ms`);
