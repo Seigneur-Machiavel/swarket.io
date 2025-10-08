@@ -154,8 +154,13 @@ export class GameClient {
 			this.#execTurnIntents(turnIntents);
 			
 			// EXECUTE PLAYER TURNS (RESOURCE PRODUCTION, ENERGY DEDUCTION, UPGRADE OFFERS...)
-			for (const playerId in this.players)
+			const deadPlayers = [];
+			for (const playerId in this.players) {
 				this.players[playerId].execTurn(newTurnHash, this.height);
+				if (this.players[playerId].energy === 0) deadPlayers.push(playerId);
+			}
+			
+			this.#removeDeadPlayers(deadPlayers);
 
 			for (const cb of this.onExecutedTurn) cb(this.height);
 			if (this.height === 0) { this.T0 = Date.now(); console.log(`%cT0: ${this.T0}`, 'color: green'); }
@@ -174,10 +179,20 @@ export class GameClient {
 	#execTurnIntents(turnIntents) {
 		for (const nodeId in turnIntents) {
 			const player = this.players[nodeId];
+			if (!player) continue;
 			if (player.startTurn === 0) player.startTurn = this.height;
 			for (const intent of turnIntents[nodeId]) player.execIntent(nodeId, intent);
 		}
 
 		//this.node.peerStore
+	}
+	/** @param {Array<string>} deadPlayers @param {number} minDeathAge in turns */
+	#removeDeadPlayers(deadPlayers, minDeathAge = 60) {
+		for (const playerId of deadPlayers) {
+			if (playerId === this.node.id) continue;
+			if (this.height - this.players[playerId].lifetime < minDeathAge) continue;
+			delete this.players[playerId];
+			if (this.verb > 1) console.log(`Player ${playerId} removed from game (dead).`);
+		}
 	}
 }

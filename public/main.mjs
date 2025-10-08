@@ -57,6 +57,7 @@ gameClient.onExecutedTurn.push((height = 0) => {
 	energyBar.update(player.energy, player.maxEnergy);
 	resourcesBar.update(player.resourcesByTier);
 	if (player.upgradeOffers.length) upgradeOffers.displayOffers(player.upgradeOffers[0]);
+	if (!player.energy) upgradeOffers.hideOffers();
 	//console.log(`--- Turn ${height} executed --- | upgradeOffers: ${player.upgradeOffers.length}`);
 });
 window.gameClient = gameClient; // Expose for debugging

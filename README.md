@@ -14,14 +14,16 @@
 - [x] Sync hooks pour phases
 
 **2.5 Système de compétences**
-- [ ] Random pick tous les X score
-- [ ] Pool de 10 compétences (compétence connection en first => gros rate)
+- [x] Random pick tous les X turns
+- [3/10] Pool de 10 compétences (compétence connection en first => gros rate)
+=> add lifetime and other requirements to importants upgrades
 
 **3. Énergie system**
 - [x] State: énergie par joueur
 - [ ] Spawn UI: slider investissement
-- [ ] Dissipation passive (coûts actions)
-- [ ] Mort quand énergie = 0
+- [X] Dissipation passive
+- [ ] Dissipation active (coûts actions)
+- [x] Mort quand énergie = 0
 
 **4. Resources basiques**
 - [4] 5 tiers de ressources (structure data)
@@ -30,7 +32,7 @@
 - [ ] Inventaire UI
 
 **5. Networking manuel**
-- [ ] Click pour connecter à un peer
+- [X] Click pour connecter à un peer
 - [ ] Coût connexion (petit = cheap/rapide)
 - [ ] Slots limités selon taille
 - [ ] Visualisation connections
@@ -57,10 +59,9 @@
 - [ ] Persist entre spawns (RAM)
 
 **9. Node mort & recyclage**
-- [ ] État "dead" quand énergie = 0
-- [ ] Inventaire bloqué = lootable
-- [ ] Méca connexion pour recycler
-- [ ] Premier arrivé premier servi
+- [!energy === dead] État "dead" quand énergie = 0
+- [ ] UI notification -> click -> intents recycling
+- [ ] Premiers arrivés premiers servi (procédural "random")
 
 ---
 
@@ -68,9 +69,6 @@
 
 **10. Système de compétences**
 - [ ] Pool de 15-20 compétences
-- [ ] Random pick tous les X score
-- [ ] UI choix (3 options)
-- [ ] Apply effects (prod, slots, auto, etc.)
 
 **11. Meta progression**
 - [ ] Track runs jouées
