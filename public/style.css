@@ -66,26 +66,74 @@ canvas {
 
 .tooltip {
 	user-select: none;
+	white-space: nowrap;
 	display: none;
 	pointer-events: none;
 	position: absolute;
 	background: rgba(0, 0, 0, 0.9);
+	text-align: center;
+	border: 1px solid var(--border-light);
 	color: white;
 	padding: 10px;
 	border-radius: 4px;
 	z-index: 1001;
 	font-size: 12px;
-	max-width: 200px;
 	top: 120%;
 	left: 50%;
 	transform: translateX(-50%);
 }
-.resource:hover .tooltip, .energy-bar-wrapper:hover .tooltip, .upgrade-offer:hover .tooltip {
+.resource:hover .tooltip, .upgrade-offer:hover .tooltip,
+.hoverable-tooltip:hover .tooltip {
 	display: block;
 }
 
+/* === PLAYER INFO PANEL === */
+.player-info {
+	pointer-events: initial;
+	opacity: 0;
+	position: absolute;
+	top: 2%;
+	left: 2%;
+	color: var(--text-main);
+	padding: 10px;
+	border-radius: 5px;
+	font-size: 12px;
+	animation: fadeIn .8s 1.4s forwards;
+}
+.player-info .tooltip {
+	text-align: center;
+	font-weight: normal !important;
+	transform: translateX(0%);
+}
+.player-id {
+	margin-top: 2px;
+	position: relative;
+}
+.player-stats-wrapper {
+	user-select: none;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-top: 6px;
+	padding-top: 6px;
+	border-top: 1px solid var(--border-light);
+	font-weight: bold;
+}
+.player-stat {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.player-stat img {
+	width: 16px;
+	height: 16px;
+	vertical-align: middle;
+	filter: invert(1);
+}
+
 /* === DEV INFO PANEL === */
-.info {
+.dev-info {
 	pointer-events: initial;
 	opacity: 0;
 	position: absolute;
@@ -98,7 +146,7 @@ canvas {
 	font-size: 12px;
 	animation: fadeIn 1s 1s forwards;
 }
-.info pre {
+.dev-info pre {
 	margin: 5px 0 0 0;
 }
 #modeSwitchBtn {
@@ -113,19 +161,20 @@ canvas {
 	opacity: 0;
 	user-select: none;
 	position: absolute;
-	top: 8%;
+	top: 7%;
 	right: 50%;
-	transform: translateX(50%);
+	transform: translateX(50%) scale(0);
 	display: flex;
 	flex-direction: row;
 	gap: 12px;
-	filter: blur(4px);
-	animation: opacity .4s .4s;
+	filter: blur(8px) grayscale(1);
+	transition: opacity .4s ease-in-out, filter .3s .3s cubic-bezier(0.875, 0.285, 0.52, .75),
+	transform .4s .2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .upgrade-offers-wrapper.visible {
 	opacity: 1;
-	filter: blur(0px);
-	animation: opacity .4s, filter .4s .2s;
+	filter: blur(0px) grayscale(0);
+	transform: translateX(50%) scale(1);
 }
 .upgrade-offer {
 	cursor: pointer;
@@ -140,7 +189,7 @@ canvas {
 	height: 80px;
 	gap: 8px;
 	transform: scale(1);
-	transition: border-color .2s .06s ease-in-out, scale .14s .12s ease-in-out;
+	transition: border-color .2s .06s ease-in-out, transform .14s .12s ease-in-out;
 }
 .upgrade-offer::before {
 	content: '';
@@ -171,11 +220,6 @@ canvas {
 }
 .upgrade-offer:hover::before {
 	filter: invert(1) brightness(1);
-}
-.upgrade-offer .tooltip {
-	text-align: center;
-	border: 1px solid var(--border-light);
-	min-width: 160px;
 }
 
 /* === ENERGY BAR === */

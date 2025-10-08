@@ -92,6 +92,8 @@ export class GameClient {
 
 		console.log('Imported players:');
 		for (const playerId in this.players) console.log(this.players[playerId]);
+
+		this.digestPlayerActions([{ type: 'start' }]); // dispatch our presence
 	}
 	#handleDesync(heightDelta = 1, consensusIds = []) {
 		console.warn(`Desync detected! | Delta: ${heightDelta}`);
@@ -135,8 +137,7 @@ export class GameClient {
 			const { newTurnHash, turnIntents } = this.turnSystem.organizeIntents(this.height);
 			
 			// EXECUTE INTENTS (PLAYERS ACTIONS) => Set startTurn for new active players
-			for (const id of this.turnSystem.execTurnIntents(turnIntents))
-				if (this.players[id].startTurn === 0) this.players[id].startTurn = this.height;
+			this.#execTurnIntents(turnIntents);
 			
 			// EXECUTE PLAYER TURNS (RESOURCE PRODUCTION, ENERGY DEDUCTION, UPGRADE OFFERS...)
 			for (const playerId in this.players)
@@ -153,5 +154,15 @@ export class GameClient {
 			this.height++; // next turn
 			this.#scheduleNextTurn();
 		}, scheduleIn);
+	}
+	/** @param {Object<string, Array<SetParamAction | TransactionAction>>} */ turnIntents;
+	#execTurnIntents(turnIntents) {
+		for (const nodeId in turnIntents) {
+			const player = this.players[nodeId];
+			if (player.startTurn === 0) player.startTurn = this.height;
+			for (const intent of turnIntents[nodeId]) player.execIntent(nodeId, intent);
+		}
+
+		//this.node.peerStore
 	}
 }

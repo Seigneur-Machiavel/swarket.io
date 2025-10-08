@@ -1,3 +1,21 @@
+import { UpgradesTool } from '../game-logics/upgrades.mjs';
+
+export class PlayerStatsComponent {
+	playerNameElem = document.getElementById('player-name');
+	playerIdElem = document.getElementById('player-id');
+	lifetimeElem = document.getElementById('lifetimeCount');
+	connectionElem = document.getElementById('connectionCount');
+	connectionMaxElem = document.getElementById('connectionMax');
+
+	setPlayerName(name) { this.playerNameElem.textContent = name; }
+	setPlayerId(id) { this.playerIdElem.textContent = id; }
+	update(lifetime, connections, maxConnections) {
+		this.lifetimeElem.textContent = lifetime;
+		this.connectionElem.textContent = connections;
+		this.connectionMaxElem.textContent = maxConnections;
+	}
+}
+
 export class UpgradeOffersComponent {
 	upgradeOffersWrapper = document.getElementById('upgrade-offers-wrapper');
 	offer1 = document.getElementById('upgrade-offer-1');
@@ -10,9 +28,12 @@ export class UpgradeOffersComponent {
 			const offerElem = this[`offer${i}`];
 			offerElem.classList = `upgrade-offer ${offers[i - 1]}`;
 			offerElem.onclick = () => this.onOfferClick(offers[i - 1]);
+			const tooltipText = UpgradesTool.getUpgradeTooltipText(offers[i - 1]);
+			offerElem.querySelector('.tooltip').textContent = tooltipText;
 		}
 		this.upgradeOffersWrapper.classList.add('visible');
 	}
+	hideOffers() { this.upgradeOffersWrapper.classList.remove('visible'); }
 }
 
 export class EnergyBarComponent {

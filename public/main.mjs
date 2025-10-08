@@ -1,7 +1,9 @@
 import { renderConnectionLogs, renderConnectedLogs } from './pre-game/connection-loader.mjs';
-import { UpgradeOffersComponent, EnergyBarComponent, ResourcesBarComponent } from './rendering/UI-components.mjs';
+import { PlayerStatsComponent, UpgradeOffersComponent, EnergyBarComponent, ResourcesBarComponent
+	
+} from './rendering/UI-components.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
-import { GameClient } from './game-logics/game-client.mjs';
+import { GameClient } from './game-logics/game.mjs';
 
 while (!window.HiveP2P) await new Promise(resolve => setTimeout(resolve, 10));
 
@@ -23,19 +25,27 @@ window.hiveNode = node; // expose to global for debugging
 const visualizer = new NetworkVisualizer(node, HiveP2P.CryptoCodex);
 window.networkVisualizer = visualizer; // Expose for debugging
 const gameClient = new GameClient(node);
+const playerStats = new PlayerStatsComponent();
 const upgradeOffers = new UpgradeOffersComponent();
 const energyBar = new EnergyBarComponent();
 const resourcesBar = new ResourcesBarComponent();
 
 // SETUP CALLBACKS
-upgradeOffers.onOfferClick = (upgradeName) => gameClient.digestPlayerActions([{ type: 'upgrade', upgradeName }]);
+upgradeOffers.onOfferClick = (upgradeName) => {
+	gameClient.digestPlayerActions([{ type: 'upgrade', upgradeName }]);
+	upgradeOffers.hideOffers();
+}
 
 // ON TURN EXECUTION
 gameClient.onExecutedTurn.push((height = 0) => {
 	const player = gameClient.myPlayer;
+	HiveP2P.CONFIG.DISCOVERY.TARGET_NEIGHBORS_COUNT = player.upgradeSet.linker.level;
 	energyBar.update(player.energy, player.maxEnergy);
 	resourcesBar.update(player.resourcesByTier);
 	if (player.upgradeOffers.length) upgradeOffers.displayOffers(player.upgradeOffers[0]);
+	playerStats.setPlayerName(player.name);
+	playerStats.setPlayerId(player.id);
+	playerStats.update(player.lifetime, node.peerStore.standardNeighborsList.length, player.upgradeSet.linker.level);
 	//console.log(`--- Turn ${height} executed --- | upgradeOffers: ${player.upgradeOffers.length}`);
 });
 window.gameClient = gameClient; // Expose for debugging

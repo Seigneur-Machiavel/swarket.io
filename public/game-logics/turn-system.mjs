@@ -38,7 +38,7 @@ export class TurnSystem {
 		return consensus;
 	}
 	organizeIntents(height = 0) {
-		const nodeIds = Object.keys(this.playersIntents[height]);
+		const nodeIds = Object.keys(this.playersIntents[height] || {});
 		const turnIntents = {};
 		let newTurnHashSeed = `${this.lastTurnHash}-${height}`;
 		for (const nodeId of SeededRandom.shuffle(nodeIds, this.lastTurnHash)) {
@@ -50,23 +50,5 @@ export class TurnSystem {
 		/** @type {string} */
 		const newTurnHash = xxHash32(newTurnHashSeed).toString(16); // new turn hash
 		return { newTurnHash, turnIntents };
-	}
-	/** @param {Object<string, Array<SetParamAction | TransactionAction>>} */ turnIntents;
-	execTurnIntents(turnIntents) {
-		const activePlayerIds = [];
-		for (const nodeId in turnIntents) {
-			for (const intent of turnIntents[nodeId]) this.#execPlayerIntent(nodeId, intent);
-			activePlayerIds.push(nodeId);
-		}
-
-		//this.node.peerStore
-		return activePlayerIds;
-	}
-
-	// PRIVATE
-	#execPlayerIntent(nodeId, intent) {
-		if (intent.type === 'set-param') console.log(`[${nodeId}] Set param:`, intent.param, intent.value);
-		else if (intent.type === 'transaction') console.log(`[${nodeId}] Transaction:`, intent.amount, intent.resource, '->', intent.to);
-		else if (intent.type === 'upgrade') console.log(`[${nodeId}] Upgrade:`, intent.upgradeName);
 	}
 }

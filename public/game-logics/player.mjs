@@ -1,9 +1,9 @@
 import { randomOperatingResource, newRawResourcesSet, newResourcesSet } from './resources.mjs';
-import { UpgradeSet, Upgrader } from './upgrades.mjs';
+import { UpgradesTool, UpgradeSet, Upgrader } from './upgrades.mjs';
 
 const upgradeTriggersLifetime = new Set([10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900]);
 export class PlayerNode {
-	id; idHash = 0; verb = 0;
+	name = 'PlayerName'; id; idHash = 0; verb = 0;
 	operatingResource; 	// 'chips' | 'datas' | 'models' | 'engineers' => first assigned
 	lifetime = 0;		// in turns
 	startTurn = 0;
@@ -27,6 +27,18 @@ export class PlayerNode {
 		const p = new PlayerNode(data.id);
 		for (const k in data) p[k] = data[k];
 		return p;
+	}
+	execIntent(nodeId, intent) {
+		if (intent.type === 'set-param') console.log(`[${nodeId}] Set param:`, intent.param, intent.value);
+		else if (intent.type === 'transaction') console.log(`[${nodeId}] Transaction:`, intent.amount, intent.resource, '->', intent.to);
+		else if (intent.type === 'upgrade') this.handleUpgradeIntent(intent.upgradeName);
+	}
+	handleUpgradeIntent(upgradeName) {
+		if (this.upgradeOffers.length === 0) return this.verb > 1 ? console.warn(`[${this.id}] No upgrade offers available.`) : null;
+		if (this.upgradeOffers[0].indexOf(upgradeName) === -1) return this.verb > 1 ? console.warn(`[${this.id}] Upgrade not available:`, upgradeName) : null;
+		if (UpgradesTool.isMaxedUpgrade(this.upgradeSet, upgradeName)) return this.verb > 1 ? console.warn(`[${this.id}] Upgrade already maxed:`, upgradeName) : null;
+		this.upgradeOffers.shift();
+		this.upgradeSet[upgradeName].level++;
 	}
 	execTurn(turnHash = 'toto', height = 0) {
 		if (this.startTurn === 0 || this.energy <= 0) return; // inactive

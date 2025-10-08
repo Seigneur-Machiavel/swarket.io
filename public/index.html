@@ -17,7 +17,7 @@
 	<script src="./game-logics/player.mjs" type="module"></script>
 	<script src="./game-logics/turn-system.mjs" type="module"></script>
 	<script src="./game-logics/resources.mjs" type="module"></script>
-	<script src="./game-logics/game-client.mjs" type="module"></script>
+	<script src="./game-logics/game.mjs" type="module"></script>
 	<script src="./hive-p2p/dist/browser/hive-p2p.min.js" type="module"></script>
 	<!-- END PRELOAD -->
 
@@ -28,7 +28,28 @@
 </head>
 <body>
 	<div class="UI-wrapper">
-		<div class="info">
+		<div class="player-info">
+			<div class="player-name"><span id="player-name">PlayerName</span></div>
+			<div class="player-id hoverable-tooltip">
+				<div class="tooltip">My player/node identifier</div>
+				<span id="player-id">...</span>
+			</div>
+			<div class="player-stats-wrapper">
+				<div class="player-stat hoverable-tooltip">
+					<div class="tooltip">Lifetime</div>
+					<img src="./assets/lifetime.png" alt="Lifetime">
+					<span id="lifetimeCount">0</span>
+				</div>
+
+				<div class="player-stat hoverable-tooltip">
+					<div class="tooltip">Connection Status</div>
+					<img src="./assets/linker.png" alt="Connection Capacity" style="transform: scale(.9);">
+					<span id="connectionCount">0</span>/<span id="connectionMax">0</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="dev-info">
 			<div>DEV INFO  |</div>
 			<div>°°°°°°°°°°</div>
 			<button id="modeSwitchBtn">2D</button>
@@ -53,7 +74,7 @@
 			</div>
 		</div>
 	
-		<div class="energy-bar-wrapper">
+		<div class="energy-bar-wrapper hoverable-tooltip">
 			<div class="tooltip" id="energy-tooltip">0/0</div>
 			<div class="energy-bar">
 				<div class="energy-fill" id="energy-fill"></div>

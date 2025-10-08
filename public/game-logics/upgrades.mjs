@@ -2,14 +2,26 @@ import { SeededRandom } from './seededRandom.mjs';
 
 // When adding a new upgrade => also update UpgradeSet
 const upgradesInfo = {
-	linker: { maxLevel: 10 }, // Number of node connection permitted (excluding bootstrap nodes)
-	producer: { maxLevel: 10 }, // Multiplier to production rate of operating resource
-	energyDrop: { maxLevel: Infinity }, // one-shot energy refill -> To MaxEnergy
+	/** Number of node connection permitted (excluding bootstrap nodes) */
+	linker: { maxLevel: 10, tooltip: 'Increases the connectivity of your nodes by 1' },
+	/** Multiplier to production rate of operating resource */
+	producer: { maxLevel: 10, tooltip: 'Increases the production rate of your resources by 40%' },
+	/** one-shot energy refill -> To MaxEnergy */
+	energyDrop: { maxLevel: Infinity, tooltip: 'Instantly refills energy to maximum' },
 }
 
 /** The triggers to release upgrades offer */
 const upgradeTriggersLifetime = new Set([5, 50, 100, 200, 300, 450, 600, 800, 1000]);
 const upgradeNames = Object.keys(upgradesInfo);
+export class UpgradesTool {
+	static isMaxedUpgrade(upgradeSet, upgradeName) {
+		return upgradeSet[upgradeName].level >= upgradesInfo[upgradeName].maxLevel;
+	}
+	static getUpgradeTooltipText(upgradeName = 'linker') {
+		if (!upgradesInfo[upgradeName]) return 'Unknown upgrade';
+		return upgradesInfo[upgradeName].tooltip;
+	}
+} 
 
 export class UpgradeSet {
 	linker = { level: 0 };

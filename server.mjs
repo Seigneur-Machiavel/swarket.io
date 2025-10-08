@@ -2,7 +2,7 @@ import path from 'path';
 import { join } from 'path';
 import express from 'express';
 import { fileURLToPath } from 'url';
-import { GameClient } from './public/game-logics/game-client.mjs';
+import { GameClient } from './public/game-logics/game.mjs';
 import HiveP2P from 'hive-p2p';
 HiveP2P.CLOCK.mockMode = true;
 
