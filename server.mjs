@@ -19,13 +19,16 @@ app.listen(PORT, DOMAIN, () => console.log(`Server running at http://${DOMAIN}:$
 app.use('/hive-p2p', express.static(hiveP2PRoot));
 app.get('/', (req, res) => res.sendFile(join(__dirname, 'public/index.html')));
 
+const verbose = 2;
 const cryptoCodex = await HiveP2P.CryptoCodex.createCryptoCodex(true);
-const bee0 = await HiveP2P.createPublicNode({ domain: DOMAIN, port: PORT + 1, cryptoCodex, verbose: 3 });
+const bee0 = await HiveP2P.createPublicNode({ domain: DOMAIN, port: PORT + 1, cryptoCodex, verbose });
 console.log(`Public node id: ${bee0.id} | url: ${bee0.publicUrl}`);
 
 const gameClient = new GameClient(bee0, true);
 gameClient.myPlayer.name = 'bootstrap: Bee0';
-gameClient.digestPlayerActions([{ type: 'noop' }], 0); // bypass first turn
+gameClient.myPlayer.energy = 100_000_000_000; // infinite energy
+gameClient.myPlayer.maxEnergy = 100_000_000_000; // infinite energy
+gameClient.digestMyAction({ type: 'noop' }); // bypass first turn
 setInterval(() => { // empty intent to ensure bee0 participates in turns consensus
-	gameClient.digestPlayerActions([{ type: 'noop' }]);
+	gameClient.digestMyAction({ type: 'noop' });
 }, gameClient.turnSystem.turnDuration);

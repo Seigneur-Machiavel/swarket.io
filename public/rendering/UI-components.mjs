@@ -25,6 +25,7 @@ export class PlayerStatsComponent {
 }
 
 export class UpgradeOffersComponent {
+	offerSelectedOnLastTurn = false;
 	upgradeOffersWrapper = document.getElementById('upgrade-offers-wrapper');
 	offer1 = document.getElementById('upgrade-offer-1');
 	offer2 = document.getElementById('upgrade-offer-2');
@@ -32,10 +33,15 @@ export class UpgradeOffersComponent {
 	onOfferClick = (upgradeName) => { console.log(`Upgrade clicked: ${upgradeName}`); };
 
 	displayOffers(offers = []) {
+		if (this.offerSelectedOnLastTurn) return this.offerSelectedOnLastTurn = false; // prevent re-showing if already selected
+
 		for (let i = 1; i <= 3; i++) {
 			const offerElem = this[`offer${i}`];
 			offerElem.classList = `upgrade-offer ${offers[i - 1]}`;
-			offerElem.onclick = () => this.onOfferClick(offers[i - 1]);
+			offerElem.onclick = () => {
+				this.onOfferClick(offers[i - 1]);
+				this.offerSelectedOnLastTurn = true;
+			}
 			const tooltipText = UpgradesTool.getUpgradeTooltipText(offers[i - 1]);
 			offerElem.querySelector('.tooltip').textContent = tooltipText;
 		}
@@ -69,6 +75,66 @@ export class ResourcesBarComponent {
 		this.datasCount.textContent = Math.round(resources[1].datas);
 		this.modelsCount.textContent = Math.round(resources[1].models);
 		this.engineersCount.textContent = Math.round(resources[1].engineers);
+	}
+}
+
+export class DeadNodesComponent {
+	deadNodesWrapper = document.getElementById('dead-nodes-wrapper');
+	deadNodeTemplate = this.deadNodesWrapper.querySelector('.dead-node-notification');
+	deadNodes = {};
+	gameClient;
+	selectedDeadNodeId = null;
+
+	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
+	constructor(gameClient) {
+		this.deadNodesWrapper.innerHTML = '';
+		this.gameClient = gameClient;
+	}
+
+	showDeadNodes() {
+		const nodeIds = this.gameClient.deadPlayers;
+		for (const nodeId of nodeIds)
+			if (this.gameClient.myPlayer.id === nodeId) continue; // don't show self
+			else if (this.deadNodes[nodeId]) continue; // already shown
+			else this.#pushDeadNodeNotification(nodeId);
+
+		for (const nodeId in this.deadNodes)
+			if (!nodeIds.has(nodeId)) this.#removeDeadNodeNotification(nodeId);
+
+		if (this.gameClient.selectedDeadNodeId === this.selectedDeadNodeId) return;
+		if (this.selectedDeadNodeId) this.deadNodes[this.selectedDeadNodeId]?.classList.remove('selected');
+		this.selectedDeadNodeId = null;
+		this.gameClient.selectedDeadNodeId = null;
+	}
+	#pushDeadNodeNotification(nodeId = '') {
+		//console.log('Adding dead node notification for', nodeId);
+		const deadNodeElem = this.deadNodeTemplate.cloneNode(true);
+		deadNodeElem.onclick = () => {
+			if (this.selectedDeadNodeId === nodeId) return; // already selected
+			if (this.selectedDeadNodeId) this.deadNodes[this.selectedDeadNodeId].classList.remove('selected');
+			deadNodeElem.classList.add('selected');
+			this.gameClient.selectedDeadNodeId = nodeId;
+			this.selectedDeadNodeId = nodeId;
+		}
+
+		// dead-node-tooltip-id
+		const tooltip = deadNodeElem.querySelector('.dead-node-tooltip-id');
+		tooltip.textContent = nodeId;
+		const resources = deadNodeElem.querySelectorAll('.resource-value');
+		for (const r of resources) {
+			const resourceName = r.getAttribute('data-resource-name');
+			r.textContent = Math.round(this.gameClient.players[nodeId]?.resourcesByTier[1][resourceName] || 0);
+		}
+
+		this.deadNodes[nodeId] = deadNodeElem;
+		this.deadNodesWrapper.appendChild(deadNodeElem);
+		console.log(`Dead node notification added: ${nodeId}`);
+	}
+	#removeDeadNodeNotification(nodeId = '') {
+		if (!this.deadNodes[nodeId]) return;
+		this.deadNodes[nodeId].remove();
+		delete this.deadNodes[nodeId];
+		console.log(`Dead node notification removed: ${nodeId}`);
 	}
 }
 

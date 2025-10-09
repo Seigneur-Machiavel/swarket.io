@@ -12,6 +12,7 @@ export class TurnSystem {
 	node;
 	lastTurnHash = 'hive-p2p-is-the-best-p2p'; // hash of last executed turn
 	turnDuration = 2000; // ms
+	/** @type {Record<number, Record<string, Array<SetParamAction | TransactionAction>>>} */
 	playersIntents = {}; // { height: { nodeId: [intents...], ... } }
 	
 	/** @param {Node} node */
@@ -40,15 +41,15 @@ export class TurnSystem {
 	organizeIntents(height = 0) {
 		const nodeIds = Object.keys(this.playersIntents[height] || {});
 		const turnIntents = {};
-		let newTurnHashSeed = `${this.lastTurnHash}-${height}`;
-		for (const nodeId of SeededRandom.shuffle(nodeIds, this.lastTurnHash)) {
+		for (const nodeId of SeededRandom.shuffle(nodeIds, this.lastTurnHash))
 			turnIntents[nodeId] = this.playersIntents[height][nodeId];
-			newTurnHashSeed += `-${nodeId}`;
-		}
+		
 		delete this.playersIntents[height]; // free memory
-
+		return turnIntents;
+	}
+	getTurnHash(height, playersData = []) {
 		/** @type {string} */
-		const newTurnHash = xxHash32(newTurnHashSeed).toString(16); // new turn hash
-		return { newTurnHash, turnIntents };
+		const newTurnHash = xxHash32(`${this.lastTurnHash}-${height}-${JSON.stringify(playersData)}`).toString(16);
+		return newTurnHash;
 	}
 }

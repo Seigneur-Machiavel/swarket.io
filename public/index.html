@@ -43,7 +43,7 @@
 
 				<div class="player-stat hoverable-tooltip">
 					<div class="tooltip">Connection Status</div>
-					<img src="./assets/linker.png" alt="Connection Capacity" style="transform: scale(.9);">
+					<img src="./assets/upgrades/linker.png" alt="Connection Capacity" style="transform: scale(.9);">
 					<span id="connectionCount">0</span>/<span id="connectionMax">0</span>
 					<div id="connection-offer-notification">!</div>
 				</div>
@@ -117,6 +117,30 @@
 				<span class="console-title">⚡ MYCELIUM NETWORK</span>
 			</div>
 			<div class="console-body" id="console-log"></div>
+		</div>
+
+		<div id="dead-nodes-wrapper">
+			<div class="dead-node-notification"> <!-- TEMPLATE -->
+				<div class="tooltip">
+					<div class="dead-node-tooltip-id">NodeID</div>
+					<div class="resource">
+						<div class="resource-icon chips"></div>
+						<span class="resource-value" data-resource-name="chips">0</span>
+					</div>
+					<div class="resource">
+						<div class="resource-icon datas"></div>
+						<span class="resource-value" data-resource-name="datas">0</span>
+					</div>
+					<div class="resource">
+						<div class="resource-icon models"></div>
+						<span class="resource-value" data-resource-name="models">0</span>
+					</div>
+					<div class="resource">
+						<div class="resource-icon engineers"></div>
+						<span class="resource-value" data-resource-name="engineers">0</span>
+					</div>
+				</div>
+			</div>
 		</div>
 	
 		<div id="node-tooltip"></div>

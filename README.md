@@ -15,7 +15,7 @@
 
 **2.5 Système de compétences**
 - [x] Random pick tous les X turns
-- [3/10] Pool de 10 compétences (compétence connection en first => gros rate)
+- [4/10] Pool de 10 compétences (compétence connection en first => gros rate)
 => add lifetime and other requirements to importants upgrades
 
 **3. Énergie system**
@@ -35,7 +35,7 @@
 - [X] Click pour connecter à un peer
 - [ ] Coût connexion (petit = cheap/rapide)
 - [ ] Slots limités selon taille
-- [ ] Visualisation connections
+- [x] Visualisation connections
 
 **6. Trading P2P**
 - [ ] Propose trade (unicast)
@@ -48,7 +48,7 @@
 ## Phase 2: Consensus & Persistence (3-4 jours)
 
 **7. Hash consensus**
-- [ ] Compute hash état global (DIGEST phase)
+- [x] Compute hash état global (DIGEST phase)
 - [ ] Gossip hash entre peers
 - [ ] Detect divergence → resync
 

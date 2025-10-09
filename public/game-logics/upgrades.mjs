@@ -6,8 +6,16 @@ const upgradesInfo = {
 	linker: { maxLevel: 10, tooltip: 'Increases the connectivity of your nodes by 1' },
 	/** Multiplier to production rate of operating resource */
 	producer: { maxLevel: 10, tooltip: 'Increases the production rate of your resources by 40%' },
-	/** one-shot energy refill -> To MaxEnergy */
+	/** One-shot energy refill -> To MaxEnergy */
 	energyDrop: { maxLevel: Infinity, tooltip: 'Instantly refills energy to maximum' },
+	/** Recycling efficiency => maxed = auto recycle */
+	cleaner: { maxLevel: 5, tooltip: 'Increases the resources recycled by 10%' },
+}
+export class UpgradeSet {
+	linker = { level: 0 };
+	producer = { level: 0 };
+	energyDrop = { level: 0 };
+	cleaner = { level: 0 };
 }
 
 /** The triggers to release upgrades offer */
@@ -22,12 +30,6 @@ export class UpgradesTool {
 		return upgradesInfo[upgradeName].tooltip;
 	}
 } 
-
-export class UpgradeSet {
-	linker = { level: 0 };
-	producer = { level: 0 };
-	energyDrop = { level: 0 };
-}
 
 export class Upgrader {
 	static shouldUpgrade(nodeLifetime = 0) { return upgradeTriggersLifetime.has(nodeLifetime); }

@@ -18,11 +18,11 @@ export function randomOperatingResource() {
 	return rawResources[Math.floor(Math.random() * rawResources.length)];
 }
 
-/** @param {'chips' | 'datas' | 'models' | 'engineers'} operatingResource */
+/** @param {'chips' | 'datas' | 'models' | 'engineers' | undefined} operatingResource */
 export function newRawResourcesSet(operatingResource) {
 	const set = { chips: 0, datas: 0, models: 0, engineers: 0 };
 	const operating = operatingResource;
-	set[operating] = rawResourcesProductionBasis[operating];
+	if (operating && rawResourcesProductionBasis[operating]) set[operating] = rawResourcesProductionBasis[operating];
 	return set;
 }
 

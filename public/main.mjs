@@ -1,6 +1,6 @@
 import { renderConnectionLogs, renderConnectedLogs } from './pre-game/connection-loader.mjs';
 import { PlayerStatsComponent, UpgradeOffersComponent, EnergyBarComponent, ResourcesBarComponent,
-	NodeCardComponent,
+	NodeCardComponent, DeadNodesComponent,
 } from './rendering/UI-components.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
 import { GameClient } from './game-logics/game.mjs';
@@ -33,7 +33,7 @@ node.onMessageData((fromId, message) => visualizer.displayDirectMessageRoute(fro
 node.onGossipData((fromId, message) => visualizer.displayGossipMessageRoute(fromId, message));
 node.onSignalOffer((fromId, offer) => {
 	console.log(`Connection offer received from ${fromId}`, offer);
-	gameClient.connectionOffers[fromId] = { offer, expiration: Date.now() + 30000 };
+	gameClient.connectionOffers[fromId] = { offer, expiration: node.time + 30000 };
 });
 visualizer.onNodeLeftClick((nodeId = 'toto') => nodeCard.show(nodeId));
 
@@ -42,22 +42,31 @@ const playerStats = new PlayerStatsComponent();
 const upgradeOffers = new UpgradeOffersComponent();
 const energyBar = new EnergyBarComponent();
 const resourcesBar = new ResourcesBarComponent();
+const deadNodes = new DeadNodesComponent(gameClient);
 const nodeCard = new NodeCardComponent(gameClient, visualizer);
 
 // SETUP CALLBACKS
 upgradeOffers.onOfferClick = (upgradeName) => {
-	gameClient.digestPlayerActions([{ type: 'upgrade', upgradeName }]);
+	gameClient.digestMyAction({ type: 'upgrade', upgradeName });
 	upgradeOffers.hideOffers();
 }
 
 // ON TURN EXECUTION
 gameClient.onExecutedTurn.push((height = 0) => {
 	const player = gameClient.myPlayer;
-	node.topologist.setNeighborsTarget(player.upgradeSet.linker.level);
+	if (!player.energy) { // IF DEAD => disable auto-connect
+		gameClient.alive = false; // stop the game client
+		node.topologist.automation.incomingOffer = false; // disable auto-accept if dead
+		node.topologist.automation.connectBootstraps = false; // disable auto-connect to bootstraps if dead
+	}
+
+	if (player.energy) node.topologist.setNeighborsTarget(player.upgradeSet.linker.level);
+	else node.topologist.setNeighborsTarget(0); // stop connectings if dead
 	energyBar.update(player.energy, player.maxEnergy);
 	resourcesBar.update(player.resourcesByTier);
 	if (player.upgradeOffers.length) upgradeOffers.displayOffers(player.upgradeOffers[0]);
 	if (!player.energy) upgradeOffers.hideOffers();
+	deadNodes.showDeadNodes();
 	//console.log(`--- Turn ${height} executed --- | upgradeOffers: ${player.upgradeOffers.length}`);
 });
 window.gameClient = gameClient; // Expose for debugging
