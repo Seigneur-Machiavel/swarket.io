@@ -41,11 +41,31 @@
 					<span id="lifetimeCount">0</span>
 				</div>
 
-				<div class="player-stat hoverable-tooltip">
+				<div class="player-stat hoverable-tooltip" id="connectionCountWrapper">
 					<div class="tooltip">Connection Status</div>
 					<img src="./assets/upgrades/linker.png" alt="Connection Capacity" style="transform: scale(.9);">
 					<span id="connectionCount">0</span>/<span id="connectionMax">0</span>
 					<div id="connection-offer-notification">!</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="connections-list-wrapper">
+			<div class="close-btn" id="connections-list-close-btn">x</div>
+			<div class="connections-list-header">
+				<div class="connection-item-name">Name</div>
+				<div class="connection-item-id">Node ID</div>
+				<div class="connection-item-status">Status</div>
+				<div class="connection-item-action accept">Action</div>
+				<div class="connection-item-view-card">Show</div>
+			</div>
+			<div class="connections-list-body" id="connections-list">
+				<div class="connection-item"> <!-- TEMPLATE -->
+					<div class="connection-item-name">PlayerName</div>
+					<div class="connection-item-id">bd86d7d3a566ad5a</div>
+					<div class="connection-item-status">Pending</div> <!-- or Connected -->
+					<div class="connection-item-action accept">Accept</div>  <!-- or Remove -->
+					<div class="connection-item-view-card">👁</div>
 				</div>
 			</div>
 		</div>
@@ -145,7 +165,7 @@
 	
 		<div id="node-tooltip"></div>
 		<div id="node-card">
-			<div id="node-card-close-btn">x</div>
+			<div class="close-btn" id="node-card-close-btn">x</div>
 			<div><span id="node-card-name">PlayerName</span></div>
 			<div><span id="node-card-id">Node ID</span></div>
 

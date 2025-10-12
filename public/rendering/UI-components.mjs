@@ -5,11 +5,12 @@ export class PlayerStatsComponent {
 	playerNameElem = document.getElementById('player-name');
 	playerIdElem = document.getElementById('player-id');
 	lifetimeElem = document.getElementById('lifetimeCount');
+	connectionCountWrapper = document.getElementById('connectionCountWrapper');
 	connectionElem = document.getElementById('connectionCount');
 	connectionMaxElem = document.getElementById('connectionMax');
 	connectionOfferNotification = document.getElementById('connection-offer-notification');
 
-	setPlayerName(name) { this.playerNameElem.textContent = name; }
+	setPlayerName(playerName) { this.playerNameElem.textContent = playerName; }
 	setPlayerId(id) { this.playerIdElem.textContent = id; }
 	update(lifetime, connections, maxConnections) {
 		this.lifetimeElem.textContent = lifetime;
@@ -21,6 +22,67 @@ export class PlayerStatsComponent {
 	}
 	hideConnectionOfferNotification() {
 		this.connectionOfferNotification.classList.remove('visible');
+	}
+}
+
+export class ConnectionsListComponent {
+	connectionsListWrapper = document.getElementById('connections-list-wrapper');
+	connectionsListCloseBtn = document.getElementById('connections-list-close-btn');
+	connectionsList = document.getElementById('connections-list');
+	connectionsItemTemplate = this.connectionsList.querySelector('.connection-item');
+
+	/** @type {Record<string, HTMLElement>} */
+	connections = {}; // { nodeId: element, ... }
+	gameClient;
+
+	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
+	constructor(gameClient) {
+		this.gameClient = gameClient;
+		this.connectionsListCloseBtn.onclick = () => this.hide();
+	}
+
+	update() {
+		this.connectionsList.innerHTML = '';
+		this.connections = {};
+		const offers = this.gameClient.connectionOffers;
+		for (const nodeId in offers) this.#createConnectionItem(nodeId, 'Pending');
+
+		const neighbors = this.gameClient.node.peerStore.standardNeighborsList;
+		for (const nodeId of neighbors) this.#createConnectionItem(nodeId, 'Connected');
+
+		if (Object.keys(this.connections).length === 0) {
+			const noConnectionsElem = document.createElement('div');
+			noConnectionsElem.classList = 'connection-item';
+			noConnectionsElem.textContent = 'No connections, no offers...';
+			noConnectionsElem.style.opacity = '0.5';
+			noConnectionsElem.style.fontSize = '0.9em';
+			noConnectionsElem.style.padding = '8px';
+			this.connectionsList.appendChild(noConnectionsElem);
+		}
+	}
+	/** @param {string} nodeId @param {'Connected' | 'Pending'} connStatus */
+	#createConnectionItem(nodeId, connStatus) {
+		if (this.connections[nodeId]) return; // already exists
+		const playerName = this.gameClient.players[nodeId]?.name || 'PlayerName';
+		const item = this.connectionsItemTemplate.cloneNode(true);
+		item.querySelector('.connection-item-name').textContent = playerName;
+		item.querySelector('.connection-item-id').textContent = nodeId;
+		item.querySelector('.connection-item-status').textContent = connStatus;
+		item.querySelector('.connection-item-action').textContent = connStatus === 'Pending' ? 'Accept' : 'Remove';
+		item.querySelector('.connection-item-action').classList = `connection-item-action ${connStatus === 'Pending' ? 'accept' : 'remove'}`;
+		item.querySelector('.connection-item-action').onclick = () => {
+			if (connStatus === 'Connected') this.gameClient.node.kickPeer(nodeId);
+			else NodeInteractor.digestConnectionOffer(this.gameClient, nodeId);
+		}
+		item.querySelector('.connection-item-view-card').onclick = () => this.gameClient.showingCardOfId = nodeId;
+		this.connections[nodeId] = item;
+		this.connectionsList.appendChild(item);
+	}
+	show() {
+		this.connectionsListWrapper.classList.add('visible');
+	}
+	hide() {
+		this.connectionsListWrapper.classList.remove('visible');
 	}
 }
 
@@ -46,6 +108,7 @@ export class UpgradeOffersComponent {
 			offerElem.querySelector('.tooltip').textContent = tooltipText;
 		}
 		this.upgradeOffersWrapper.classList.add('visible');
+		// console.log(`%cUpgrade offers displayed: ${offers.join(', ')}`, 'color: green; font-weight: bold;');
 	}
 	hideOffers() { this.upgradeOffersWrapper.classList.remove('visible'); }
 }
@@ -81,6 +144,8 @@ export class ResourcesBarComponent {
 export class DeadNodesComponent {
 	deadNodesWrapper = document.getElementById('dead-nodes-wrapper');
 	deadNodeTemplate = this.deadNodesWrapper.querySelector('.dead-node-notification');
+
+	/** @type {Record<string, HTMLElement>} */
 	deadNodes = {};
 	gameClient;
 	selectedDeadNodeId = null;
@@ -109,15 +174,6 @@ export class DeadNodesComponent {
 	#pushDeadNodeNotification(nodeId = '') {
 		//console.log('Adding dead node notification for', nodeId);
 		const deadNodeElem = this.deadNodeTemplate.cloneNode(true);
-		deadNodeElem.onclick = () => {
-			if (this.selectedDeadNodeId === nodeId) return; // already selected
-			if (this.selectedDeadNodeId) this.deadNodes[this.selectedDeadNodeId].classList.remove('selected');
-			deadNodeElem.classList.add('selected');
-			this.gameClient.selectedDeadNodeId = nodeId;
-			this.selectedDeadNodeId = nodeId;
-		}
-
-		// dead-node-tooltip-id
 		const tooltip = deadNodeElem.querySelector('.dead-node-tooltip-id');
 		tooltip.textContent = nodeId;
 		const resources = deadNodeElem.querySelectorAll('.resource-value');
@@ -128,7 +184,16 @@ export class DeadNodesComponent {
 
 		this.deadNodes[nodeId] = deadNodeElem;
 		this.deadNodesWrapper.appendChild(deadNodeElem);
+		deadNodeElem.onclick = () => this.setSelectedDeadNode(nodeId);
 		console.log(`Dead node notification added: ${nodeId}`);
+	}
+	setSelectedDeadNode(nodeId = '') {
+		const deadNodeElem = this.deadNodes[nodeId];
+		if (this.selectedDeadNodeId === nodeId) return; // already selected
+		if (this.selectedDeadNodeId) this.deadNodes[this.selectedDeadNodeId].classList.remove('selected');
+		deadNodeElem.classList.add('selected');
+		this.gameClient.selectedDeadNodeId = nodeId;
+		this.selectedDeadNodeId = nodeId;
 	}
 	#removeDeadNodeNotification(nodeId = '') {
 		if (!this.deadNodes[nodeId]) return;
@@ -148,8 +213,6 @@ export class NodeCardComponent {
 
 	gameClient;
 	visualizer;
-	/** @type {string | null} */
-	showingCardOfId = null;
 	lastPosition = { x: 0, y: 0 };
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient @param {import('../visualizer.mjs').NetworkVisualizer} visualizer */
@@ -163,30 +226,35 @@ export class NodeCardComponent {
 	}
 	show(playerId = 'toto') {
 		if (!this.gameClient.players[playerId]) return;
-		this.showingCardOfId = playerId;
+		this.gameClient.showingCardOfId = playerId;
 		this.nodeCardElem.classList.add('visible');
 		this.nodeNameElem.textContent = this.gameClient.players[playerId].name || 'PlayerName';
 		this.nodeIdElem.textContent = playerId;
-		this.nodeCardElem.style.display = 'flex';
 	}
 	hide() {
-		this.showingCardOfId = null;
+		this.gameClient.showingCardOfId = null;
 		this.nodeCardElem.classList.remove('visible');
 	}
-
 	#updateCard(positionTolerance = 2) {
-		if (!this.showingCardOfId) return;
-		const position = this.visualizer.networkRenderer.getNodePositionRelativeToCanvas(this.showingCardOfId);
+		const playerId = this.gameClient.showingCardOfId;
+		if (!playerId) return this.nodeCardElem.classList.remove('visible');
+
+		this.nodeCardElem.classList.add('visible');
+		this.nodeNameElem.textContent = this.gameClient.players[playerId].name || 'PlayerName';
+		this.nodeIdElem.textContent = playerId;
+
+		const position = this.visualizer.networkRenderer.getNodePositionRelativeToCanvas(playerId);
 		if (!position) return this.hide();
 
-		const canConnect = NodeInteractor.canTryToConnect(this.gameClient, this.showingCardOfId);
+		const canConnect = NodeInteractor.canTryToConnect(this.gameClient, playerId);
 		this.connectBtn.disabled = !canConnect;
-		this.connectBtn.textContent = this.gameClient.connectionOffers[this.showingCardOfId] ? 'Confirm link' : 'Link offer';
-		if (this.connectBtn.textContent === 'Link offer') this.connectBtn.onclick = () => NodeInteractor.tryToConnect(this.gameClient, this.showingCardOfId);
-		else this.connectBtn.onclick = () => NodeInteractor.digestConnectionOffer(this.gameClient, this.showingCardOfId);
+		this.connectBtn.textContent = this.gameClient.connectionOffers[playerId] ? 'Confirm link' : 'Link offer';
+		if (this.connectBtn.textContent === 'Link offer') this.connectBtn.onclick = () => NodeInteractor.tryToConnect(this.gameClient, playerId);
+		else this.connectBtn.onclick = () => NodeInteractor.digestConnectionOffer(this.gameClient, playerId);
 
 		const rightMouseButtonIsDown = this.visualizer.networkRenderer.rightMouseButtonIsDown;
-		this.nodeCardElem.style.pointerEvents = rightMouseButtonIsDown ? 'none' : 'auto';
+		if (rightMouseButtonIsDown) this.nodeCardElem.classList.add('noPointerEvents');
+		else this.nodeCardElem.classList.remove('noPointerEvents');
 		if (!positionTolerance >= 0 && Math.abs(position.x - this.lastPosition.x) < positionTolerance && Math.abs(position.y - this.lastPosition.y) < positionTolerance) return;
 		this.lastPosition = position;
 		this.nodeCardElem.style.transform = `translate(${position.x + 4}px, ${position.y + 4}px)`;

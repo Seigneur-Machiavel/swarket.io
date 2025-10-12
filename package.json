@@ -1,6 +1,6 @@
 {
   "dependencies": {
     "express": "^5.1.0",
-    "hive-p2p": "^1.0.55"
+    "hive-p2p": "^1.0.56"
   }
 }

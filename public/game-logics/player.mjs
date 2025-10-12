@@ -1,7 +1,6 @@
 import { randomOperatingResource, newRawResourcesSet, newResourcesSet } from './resources.mjs';
 import { UpgradesTool, UpgradeSet, Upgrader } from './upgrades.mjs';
 
-const upgradeTriggersLifetime = new Set([10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900]);
 export class PlayerNode {
 	name = 'PlayerName'; id;
 	operatingResource; 	// 'chips' | 'datas' | 'models' | 'engineers' => first assigned
@@ -109,6 +108,6 @@ export class PlayerNode {
 		const offerSeed = `${this.id}-${turnHash}`;
 		const offer = Upgrader.getRandomUpgradeOffer(this.upgradeSet, offerSeed);
 		this.upgradeOffers.push(offer);
-		// console.log(`[${this.id}] New upgrade offer: ${offer.join(', ')}`);
+		// console.log(`%c[${this.id}] New upgrade offer: ${offer.join(', ')}`, 'color: green; font-weight: bold;');
 	}
 }

@@ -18,12 +18,10 @@
 - [4/10] Pool de 10 compétences (compétence connection en first => gros rate)
 => add lifetime and other requirements to importants upgrades
 
-**3. Énergie system**
-- [x] State: énergie par joueur
-- [ ] Spawn UI: slider investissement
-- [X] Dissipation passive
-- [ ] Dissipation active (coûts actions)
-- [x] Mort quand énergie = 0
+**3. Bot (debug) **
+- [x] auto upgrades
+- [x] auto recycle
+- [x] auto respawn
 
 **4. Resources basiques**
 - [4] 5 tiers de ressources (structure data)
@@ -31,17 +29,29 @@
 - [ ] Crafting Tier 2-5 (coûts énergie)
 - [ ] Inventaire UI
 
-**5. Networking manuel**
-- [X] Click pour connecter à un peer
-- [ ] Coût connexion (petit = cheap/rapide)
-- [ ] Slots limités selon taille
-- [x] Visualisation connections
+**4.1 Buildings**
+- [ ] energy central 	=> carte d'upgrade
+- [ ] resource factory 	=> carte d'upgrade
 
-**6. Trading P2P**
+**4.5 Trading P2P**
 - [ ] Propose trade (unicast)
 - [ ] Accept/reject
 - [ ] Curseur taxation (0-100%)
 - [ ] Commission relay automatique
+
+**5. Networking manuel**
+- [X] Click pour connecter à un peer
+- [ ] Coût connexion (petit = cheap/rapide)
+- [x] Slots limités selon les upgrades
+- [x] Visualisation connections
+
+**7. Énergie system**
+- [x] State: énergie par joueur
+- [ ] Energie storage
+- [ ] Spawn UI: slider investissement
+- [X] Dissipation passive
+- [ ] Dissipation active (coûts actions)
+- [x] Mort quand énergie = 0
 
 ---
 
@@ -49,19 +59,18 @@
 
 **7. Hash consensus**
 - [x] Compute hash état global (DIGEST phase)
-- [ ] Gossip hash entre peers
-- [ ] Detect divergence → resync
+- [x] Gossip hash entre peers
+- [x] Detect divergence → resync
 
 **8. Ledger partagé (hangar énergie)**
 - [ ] Structure ledger: slots par joueur
-- [ ] Gossip balances
 - [ ] Curseur stockage pendant game
 - [ ] Persist entre spawns (RAM)
 
 **9. Node mort & recyclage**
 - [!energy === dead] État "dead" quand énergie = 0
-- [ ] UI notification -> click -> intents recycling
-- [ ] Premiers arrivés premiers servi (procédural "random")
+- [x] UI notification -> click -> intents recycling
+- [x] Premiers arrivés premiers servi (procédural "random")
 
 ---
 

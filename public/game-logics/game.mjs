@@ -1,7 +1,6 @@
 import { PlayerNode } from './player.mjs';
 import { TurnSystem } from './turn-system.mjs';
 import { NodeInteractor } from './node-interactions.mjs';
-import { filterValidActions } from './actions.mjs';
 
 /**
  * @typedef {import('hive-p2p').Node} Node
@@ -15,19 +14,18 @@ import { filterValidActions } from './actions.mjs';
 
 export class GameClient {
 	alive = true; // Flag to indicate the game is running
-	T0 = null; 	// time of first turn
-	T0Reference = null; // reference time to calculate T0 drift
 	node; verb; height = 0; // number of turns
 	nodeInteractor;
 	turnSystem;
 	gameStateAskedFrom = null; // id of node we asked game state from
-	nextTurnScheduledAt = 0;
 
 	/** @type {Record<string, PlayerNode>} */ players = {};
-	deadPlayers = new Set();	 // temp storage of dead players to be removed
+	get alivePlayersCount() { let count = 0; for (const p in this.players) if (this.players[p].energy) count++; return count; }
+	deadPlayers = new Set();	// temp storage of dead players to be removed
 	onExecutedTurn = []; 		// callbacks
 	syncAskedBy = []; 			// ids of nodes who asked for sync
 	selectedDeadNodeId = null; 	// selected node to recycle from UI
+	showingCardOfId = null;		// id of node currently shown in node card UI
 
 	/** @type {Record<string, { offer: {signal: string, offerHash: string}, expiration: number }>} */
 	connectionOffers = {}; // pending connection offers { nodeId: { offer: object, expiration: number } }
@@ -48,37 +46,22 @@ export class GameClient {
 		this.turnSystem = new TurnSystem(this.node);
 
 		node.onPeerConnect((peerId, direction) => this.#onPeerConnect(peerId, direction));
-		this.node.onMessageData((fromId, message) => this.#onDirectMessage(fromId, message));
-		this.node.onGossipData((fromId, message) => this.#onGossipMessage(fromId, message));
+		this.node.onMessageData((id, message) => this.#onDirectMessage(id, message));
+		this.node.onGossipData((id, message) => this.#onGossipMessage(id, message));
 
 		if (!createPlayerAndStart) return;
 		this.players[node.id] = new PlayerNode(node.id); // operatingResource randomly assigned
 		this.players[node.id].verb = this.verb;
-		this.#scheduleNextTurn();
+		this.turnSystem.scheduleNextTurn(0, node.time); // schedule first turn
 	}
 
 	get myPlayer() { return this.players[this.node.id]; }
 
 	/** @param {Action} action @param {number} [height] default to this/height or this.height + 1 */
-	digestMyAction(action, height) {
-		const maxSentTimeForCurrentTurn = this.nextTurnScheduledAt - (this.turnSystem.turnDuration * .55);
-		const maxSentTimeReached = this.node.time > maxSentTimeForCurrentTurn;
-		const h = height === undefined && !maxSentTimeReached ? this.height : this.height + 1;
-		if (this.verb > 3 && height === undefined && !maxSentTimeReached) console.info(`%cAdding action for current turn #${this.height}`, 'color: pink', action);
-		if (!this.turnSystem.playersIntents[h]) this.turnSystem.playersIntents[h] = {};
-		if (!this.turnSystem.playersIntents[h][this.node.id]) this.turnSystem.playersIntents[h][this.node.id] = [];
-		this.turnSystem.playersIntents[h][this.node.id].push(action);
-		if (this.verb > 2) console.log(`Our action added for turn #${h}:`, action);
-	}
-	/** @param {Action[]} actions @param {number} height @param {string} id */
-	digestPlayerActions(actions, height, id) {
-		if (!this.turnSystem.playersIntents[height]) this.turnSystem.playersIntents[height] = {};
-		if (this.turnSystem.playersIntents[height][id]) return; // already have intents for this height from this id
-		this.turnSystem.playersIntents[height][id] = filterValidActions(actions);
-		
-		if (id === this.node.id) console.warn(`We received our own intents back from gossip, ignoring.`);
-		else if (this.verb > 2) console.log(`Intents received for turn #${height} from ${id}:`, this.turnSystem.playersIntents[height][id]);
-	}
+	digestMyAction(action, height) { this.turnSystem.digestMyAction(action, height, this.height); }
+	
+	/** @param {Action[]} intents @param {number} height @param {string} prevHash @param {string} id */
+	digestPlayerIntents(intents, height, prevHash, id) { this.turnSystem.digestPlayerIntents(intents, height, prevHash, id); }
 	
 	// NODE EVENTS HANDLERS
 	/** @param {string} peerId @param {'in'|'out'} direction */
@@ -92,21 +75,22 @@ export class GameClient {
 		this.node.broadcast({ topic: 'new-player', data: p.extract() });
 		this.syncAskedBy.push(peerId); // request sync on next turn
 	}
-	/** @param {string} fromId @param {import('../../node_modules/hive-p2p/core/unicast.mjs').DirectMessage} message */
-	#onDirectMessage(fromId, message) {
+	/** @param {string} id @param {import('../../node_modules/hive-p2p/core/unicast.mjs').DirectMessage} message */
+	#onDirectMessage(id, message) {
 		const { type, data } = message;
-		if (type === 'get-game-state') this.syncAskedBy.push(fromId);
-		else if (type === 'game-state-incoming') this.T0Reference = this.node.time - data; 
+		if (type === 'get-game-state') this.syncAskedBy.push(id);
+		else if (type === 'game-state-incoming') this.turnSystem.T0Reference = this.node.time - data;
 		else if (type === 'game-state' && this.height === 0) {
-			if (!this.T0Reference) return console.warn(`T0Reference not set, cannot calculate T0 drift`);
-			if (!this.node.cryptoCodex.isPublicNode(fromId) && this.gameStateAskedFrom !== fromId) return; // ignore if not from public node or not the one we asked from
+			if (!this.turnSystem.T0Reference) return console.warn(`T0Reference not set, cannot calculate T0 drift`);
+			if (!this.node.cryptoCodex.isPublicNode(id) && this.gameStateAskedFrom !== id) return; // ignore if not from public node or not the one we asked from
 			this.#importGameState(data);
-			this.#scheduleNextTurn();
+			this.turnSystem.scheduleNextTurn(this.height, this.node.time); // schedule next turn
 		}
 	}
-	/** @param {string} fromId @param {import('../../node_modules/hive-p2p/core/gossip.mjs').GossipMessage} message */
-	#onGossipMessage(fromId, message) {
-		const { topic, data, timestamp } = message;
+	/** @param {string} id @param {import('../../node_modules/hive-p2p/core/gossip.mjs').GossipMessage} message */
+	#onGossipMessage(id, message) {
+		if (id === this.node.id) return console.warn(`We received our own gossip message back, ignoring.`);
+		const { senderId, topic, data, timestamp } = message;
 		//if (this.node.time - timestamp > this.turnSystem.turnDuration / 2) return; // too old message
 		if (topic === 'new-player' && !this.players[data.id]) {
 			this.players[data.id] = PlayerNode.playerFromData(data);
@@ -114,9 +98,12 @@ export class GameClient {
 		} else if (topic === 'turn-intents') {
 			// IF INTENT FOR COMING TURN, SHOULD BE SENT AT A MAXIMUM HALFWAY THROUGH THE TURN
 			const isForComingTurn = data.height === this.height;
-			const maxSentTime = this.nextTurnScheduledAt - (this.turnSystem.turnDuration * .45);
-			if (isForComingTurn && this.node.time > maxSentTime) return; // too late for coming turn
-			this.digestPlayerActions(data.intents, data.height, fromId);
+			if (isForComingTurn && this.node.time > this.turnSystem.maxSentTime) {
+				if (this.verb > 1) console.warn(`Intent for turn #${data.height} from ${id} received too late (at ${this.node.time}, max was ${this.turnSystem.maxSentTime}), ignoring.`);
+				return this.node.arbiter.adjustTrust(id, -10_000, 'Peer sent intents too late');
+			}
+
+			this.digestPlayerIntents(data.intents, data.height, data.prevHash, id);
 		}
 	}
 
@@ -129,19 +116,18 @@ export class GameClient {
 	#extractGameState() {
 		return {
 			height: this.height,
+			prevHash: this.turnSystem.prevHash,
 			playersData: this.#extractPlayersData(),
 			playersIntents: this.turnSystem.playersIntents,
 		}
 	}
 	#importGameState(data) { // CALL ONLY IF T0Reference IS SET!
-		const { height, playersData, lastTurnHash, playersIntents } = data;
-		this.height = height + 1; // next turn
-		this.T0 = this.T0Reference - (this.turnSystem.turnDuration * height);
-		console.log(`T0: ${this.T0}`);
-
-		this.T0Reference = null; 	// reset
-		this.players = {}; 			// reset
-		this.turnSystem.lastTurnHash = lastTurnHash;
+		const { height, playersData, prevHash, playersIntents } = data;
+		this.height = height; 				// next turn
+		this.turnSystem.setT0(height);
+		this.turnSystem.T0Reference = null; // reset
+		this.players = {}; 					// reset
+		this.turnSystem.prevHash = prevHash;
 		this.turnSystem.playersIntents = playersIntents;
 		for (const playerData of playersData)
 			this.players[playerData.id] = PlayerNode.playerFromData(playerData);
@@ -149,70 +135,77 @@ export class GameClient {
 		console.log('Imported players:');
 		for (const playerId in this.players) console.log(this.players[playerId]);
 	}
-	#handleDesync(heightDelta = 1, consensusIds = []) {
-		console.warn(`Desync detected! | Delta: ${heightDelta}`);
-		if (heightDelta < 0) // we are ahead, just continue
-			return this.#scheduleNextTurn();
+	/** @param {Set<string>} nodeIds */
+	#handleDesync(nodeIds = new Set()) {
+		console.warn(`%cDesync detected! => trying to resync`, 'color: yellow');
+		//if (this.gameStateAskedFrom && nodeIds.has(this.gameStateAskedFrom))
+			//nodeIds.delete(this.gameStateAskedFrom); // already asked from this one, try another...
 
-			// too much behind, request full state
-		if (heightDelta >= 5 && consensusIds.length) {
-			this.height = 0; // permit resync only if we are at turn 0
-			this.node.sendMessage(consensusIds[0], { type: 'get-game-state' });
-			this.gameStateAskedFrom = consensusIds[0];
-		}
+		this.turnSystem.nextTurnScheduledAt += this.turnSystem.turnDuration; // wait for next turn
+		let peerId = this.node.peerStore.publicNeighborsList[0]; // prefer public nodes
+		// TRY SYNC FROM NEIGHBORS FIRST (if possible)
+		if (!peerId) for (const id of this.node.peerStore.neighborsList)
+			if (nodeIds.has(id)) { peerId = id; break; }
 
-		// TODO => request missing turns intents from peers
-		// until implementation => just continue
-		this.#scheduleNextTurn(this.turnSystem.turnDuration); // TEMPORARY
+		// IF NO NEIGHBORS, TRY FROM ANY PEER
+		if (!peerId) peerId = nodeIds.values().next().value;
+		if (!peerId) return console.warn(`No peer to ask for game state!`);
+		
+		this.turnSystem.nextTurnScheduledAt = 0; // this.node.time + 5000;
+		this.height = 0; // resync only permitted if we are at turn 0
+		this.gameStateAskedFrom = peerId; // good luck ;)
+		this.node.sendMessage(peerId, { type: 'get-game-state' });
+		console.log(`%cAsked game state from ${peerId}`, 'color: yellow');
 	}
-	#sendSyncToAskers(turnExecTime = 0,	newTurnHash = '') {
+	#sendSyncToAskers(turnExecTime = 0) {
 		if (this.syncAskedBy.length === 0) return;
 		for (const fromId of this.syncAskedBy) // small message for clock synchronization
 			this.node.sendMessage(fromId, { type: 'game-state-incoming', data: turnExecTime });
 		
 		const data = this.#extractGameState();
-		data.lastTurnHash = newTurnHash;
 		for (const fromId of this.syncAskedBy) // heavy data
 			this.node.sendMessage(fromId, { type: 'game-state', data });
 
-		if (this.verb > 1) console.log(`%cSent game state #${this.height} to ${this.syncAskedBy.length} askers`, 'color: green');
+		if (this.verb > 1) console.log(`%cSent game state #${this.height} to ${this.syncAskedBy.length} askers: ${this.syncAskedBy.join(', ')}`, 'color: green');
 		this.syncAskedBy = []; // reset
 	}
 	async #turnExecutionLoop(frequency = 10) {
-		let turnHalfwaySent = false;
+		let myIntentsSent = false;
 		while (this.alive) {
 			await new Promise(r => setTimeout(r, frequency));
-			if (!this.nextTurnScheduledAt) continue;
+			const [time, scheduleTime] = [this.node.time, this.turnSystem.nextTurnScheduledAt];
+			if (!scheduleTime) continue;
 
 			// CHECK IF WE HAVE HALFWAY INTENTS TO SEND FOR THE CURRENT TURN
-			const minSentTime = this.nextTurnScheduledAt - (this.turnSystem.turnDuration * .55);
-			const maxSentTime = this.nextTurnScheduledAt - (this.turnSystem.turnDuration * .5);
-			if (!turnHalfwaySent && this.node.time > minSentTime && this.node.time < maxSentTime) {
-				this.#dispatchMyPlayerIntents();
-				turnHalfwaySent = true;
-				if (this.verb > 3) console.log(`%cHalfway through turn #${this.height}, dispatched our intents`, 'color: purple');
-			}
+			const { min, max } = this.turnSystem.intentsSendingWindow;
+			if (!myIntentsSent && time > min && time < max)
+				if (this.#cleanAndDispatchMyPlayerIntents()) myIntentsSent = true;
 
 			// CHECK IF THE TURN SHOULD BE EXECUTED
-			if (this.nextTurnScheduledAt > this.node.time) continue;
+			if (scheduleTime > time) continue;
 
-			const startTime = this.node.time;
-			this.#execTurn(startTime);
-			const timeDrift = this.node.time - this.T0 - (this.turnSystem.turnDuration * this.height);
-			if (this.verb > 1) console.log(`> #${this.height} | LTH: ${this.turnSystem.lastTurnHash} | Drift: ${timeDrift}ms`);
-			this.height++; // next turn
-			turnHalfwaySent = false; // reset
+			// CHECK IF WE ARE DESYNCED: 3 or more peers have a different prevHash than us
+			const consensus = this.turnSystem.getConsensus(this.height);
+			const needSync = !consensus.prevHash
+			|| (consensus.nodeIds.size > 1 && consensus.prevHash !== this.turnSystem.prevHash);
+			console.log(`> #${this.height.toString().padStart(4, '0')} | co: ${consensus.prevHash} <=> $${consensus.nodeIds.size}/${consensus.total} nodes`);
+			if (needSync) { this.#handleDesync(consensus.nodeIds); continue; }
+
+			const startTime = time;
+			const newTurnHash = this.#execTurn();
+			const timeDrift = time - this.turnSystem.T0 - (this.turnSystem.turnDuration * this.height);
+			if (this.verb > 2) console.log(`> #${this.height.toString().padStart(4, '0')} | ph: ${this.turnSystem.prevHash} | Drift: ${timeDrift}ms | T0: ${this.turnSystem.T0 / 1000}`);
 			
-			this.#dispatchMyPlayerIntents();
-			this.#scheduleNextTurn();
+			this.height++; // next turn
+			this.turnSystem.prevHash = newTurnHash;
+			myIntentsSent = false; // reset
+
+			for (const cb of this.onExecutedTurn) cb(this.height);
+			if (this.height > 2) this.#sendSyncToAskers(startTime - time);
+			this.turnSystem.scheduleNextTurn(this.height, this.node.time);
 		}
 	}
-	#scheduleNextTurn() {
-		const scheduleIn = Math.max(0, this.T0 + (this.turnSystem.turnDuration * this.height) - this.node.time);
-		if (this.verb > 3) console.log(`Scheduling #${this.height} in ${scheduleIn}ms`);
-		this.nextTurnScheduledAt = this.node.time + scheduleIn;
-	}
-	#execTurn(startTime = this.node.time) {
+	#execTurn() {
 		// EXECUTE INTENTS (PLAYERS ACTIONS) => Set startTurn for new active players
 		const turnIntents = this.turnSystem.organizeIntents(this.height);
 		this.#execTurnIntents(turnIntents);
@@ -223,29 +216,25 @@ export class GameClient {
 		this.#execPlayersTurn(newTurnHash); // will fill deadPlayers set
 		this.#removeDeadPlayers();
 
-		for (const cb of this.onExecutedTurn) cb(this.height);
-		if (!this.height) { this.T0 = this.node.time; console.log(`%cT0: ${this.T0}`, 'color: green'); }
-		if (this.height > 1) this.#sendSyncToAskers(startTime - this.node.time, newTurnHash);
+		// MANAGE OUR NODE IF WE ARE DEAD
+		if (!this.myPlayer.energy) {
+			this.alive = false; // stop the game client
+			this.connectionOffers = {}; // clear offers if dead
+			this.node.topologist.automation.incomingOffer = false; // disable auto-accept if dead
+			this.node.topologist.automation.connectBootstraps = false; // disable auto-connect to bootstraps if dead
+		}
 
-		this.turnSystem.lastTurnHash = newTurnHash;
-		if (!this.myPlayer.energy) this.connectionOffers = {}; // clear offers if dead
+		if (!this.height) { this.turnSystem.T0 = this.node.time; console.log(`%cT0: ${this.turnSystem.T0 / 1000}`, 'color: green'); }
+		return newTurnHash;
 	}
-	#dispatchMyPlayerIntents(height = this.height) {
-		const playersIntents = this.turnSystem.playersIntents;
-		if (!this.selectedDeadNodeId && !playersIntents[height]?.[this.node.id]) return; // no intents at all
-
-		// IF WE ARE TRYING TO RECYCLE A NODE, ADD THE INTENT
-		if (!playersIntents[height]) playersIntents[height] = {};
-		if (!playersIntents[height][this.node.id]) playersIntents[height][this.node.id] = [];
-		const actions = playersIntents[height][this.node.id];
-		if (this.selectedDeadNodeId) actions.push({ type: 'recycle', fromDeadNodeId: this.selectedDeadNodeId });
+	#cleanAndDispatchMyPlayerIntents(height = this.height) {
+		const validActions = this.turnSystem.getMyCleanIntents(this.selectedDeadNodeId, height);
 		this.selectedDeadNodeId = null; // reset
+		if (!validActions) return; // no valid actions to send
 
-		const validActions = filterValidActions(actions);
-		if (actions.length && validActions.length === 0) console.warn(`Our actions were all invalid:`, actions);
-		if (validActions.length === 0) return;
-		this.node.broadcast({ topic: 'turn-intents', data: { height, intents: validActions } });
-		if (this.verb > 3) console.log(`Dispatched intents for turn #${height}:`, validActions);
+		this.node.broadcast({ topic: 'turn-intents', data: { height, prevHash: this.turnSystem.prevHash, intents: validActions } });
+		if (this.verb > 3) console.log(`%c[${this.node.id}] Dispatched intents for turn #${height}`, 'color: white');
+		return true;
 	}
 	/** @param {Object<string, Action[]>} turnIntents */
 	#execTurnIntents(turnIntents) {
@@ -255,13 +244,9 @@ export class GameClient {
 			if (!player.startTurn) player.startTurn = this.height;
 			for (const intent of turnIntents[nodeId]) {
 				if (!player.execIntent(this, nodeId, intent)) continue;
-				//if (player.id === this.node.id) continue;
-				if (intent.type === 'noop') continue;
 				if (this.verb > 2) console.log(`%cExecuted intent of ${player.id}:`, 'color: orange', intent.type);
 			}
 		}
-
-		//this.node.peerStore
 	}
 	#execPlayersTurn(newTurnHash = '') {
 		for (const playerId in this.players)

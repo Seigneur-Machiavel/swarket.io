@@ -9,6 +9,7 @@ export class SeededRandom {
 
 	/** Shuffles array in-place with deterministic seed @param {string | number} seed */
 	static shuffle(array = [], seed = 0) {
+		array.sort();
 		let state = typeof seed === 'string' ? xxHash32(seed) : seed;
 		for (let i = array.length - 1; i > 0; i--) {
 			state = lcg(state);

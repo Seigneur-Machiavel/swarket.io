@@ -1,26 +1,29 @@
 import { renderConnectionLogs, renderConnectedLogs } from './pre-game/connection-loader.mjs';
-import { PlayerStatsComponent, UpgradeOffersComponent, EnergyBarComponent, ResourcesBarComponent,
-	NodeCardComponent, DeadNodesComponent,
+import { PlayerStatsComponent, ConnectionsListComponent, UpgradeOffersComponent, EnergyBarComponent,
+	ResourcesBarComponent, NodeCardComponent, DeadNodesComponent,
 } from './rendering/UI-components.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
 import { GameClient } from './game-logics/game.mjs';
-import { NodeInteractor } from './game-logics/node-interactions.mjs';
 
 while (!window.HiveP2P) await new Promise(resolve => setTimeout(resolve, 10));
+
+const params = new URLSearchParams(window.location.search);
+const IS_DEBUG = params.has('debug');
 
 /** @type {import('hive-p2p')} */
 const HiveP2P = window.HiveP2P;
 HiveP2P.CLOCK.mockMode = true;
 
+// LOAD CONFIG OVERRIDES IF ANY
 try {
   const { default: overrides } = await import('./hive-config.json', { with: { type: 'json' } });
   HiveP2P.mergeConfig(HiveP2P.CONFIG, overrides);
 } catch (e) { console.log('No hive-config.json found, using default configuration.'); }
-
 renderConnectionLogs();
+
 // NODE & GAMECLIENT SETUP
 const bootstraps = ['ws://localhost:3001'];
-const node = await HiveP2P.createNode({ bootstraps });
+const node = await HiveP2P.createNode({ bootstraps, verbose: 2 });
 node.topologist.automation.incomingOffer = false;	// disable auto-accept incoming offers
 node.topologist.automation.spreadOffers = false; 	// disable auto-spread offers
 const gameClient = new GameClient(node);
@@ -39,6 +42,8 @@ visualizer.onNodeLeftClick((nodeId = 'toto') => nodeCard.show(nodeId));
 
 // UI COMPONENTS SETUP
 const playerStats = new PlayerStatsComponent();
+const connectionsList = new ConnectionsListComponent(gameClient);
+playerStats.connectionCountWrapper.onclick = () => connectionsList.show();
 const upgradeOffers = new UpgradeOffersComponent();
 const energyBar = new EnergyBarComponent();
 const resourcesBar = new ResourcesBarComponent();
@@ -52,38 +57,44 @@ upgradeOffers.onOfferClick = (upgradeName) => {
 }
 
 // ON TURN EXECUTION
-gameClient.onExecutedTurn.push((height = 0) => {
+gameClient.onExecutedTurn.push(async (height = 0) => {
 	const player = gameClient.myPlayer;
-	if (!player.energy) { // IF DEAD => disable auto-connect
-		gameClient.alive = false; // stop the game client
-		node.topologist.automation.incomingOffer = false; // disable auto-accept if dead
-		node.topologist.automation.connectBootstraps = false; // disable auto-connect to bootstraps if dead
-	}
-
-	if (player.energy) node.topologist.setNeighborsTarget(player.upgradeSet.linker.level);
+	if (gameClient.alive) node.topologist.setNeighborsTarget(player.upgradeSet.linker.level);
 	else node.topologist.setNeighborsTarget(0); // stop connectings if dead
-	energyBar.update(player.energy, player.maxEnergy);
-	resourcesBar.update(player.resourcesByTier);
-	if (player.upgradeOffers.length) upgradeOffers.displayOffers(player.upgradeOffers[0]);
-	if (!player.energy) upgradeOffers.hideOffers();
-	deadNodes.showDeadNodes();
-	//console.log(`--- Turn ${height} executed --- | upgradeOffers: ${player.upgradeOffers.length}`);
-});
-window.gameClient = gameClient; // Expose for debugging
 
-// PLAYER-STATS UPDATE INTERVAL
-setInterval(() => {
-	const player = gameClient.myPlayer;
-	if (!player) return;
 	playerStats.setPlayerName(player.name);
 	playerStats.setPlayerId(player.id);
 	playerStats.update(player.lifetime, node.peerStore.standardNeighborsList.length, player.upgradeSet.linker.level);
+	connectionsList.update();
+	energyBar.update(player.energy, player.maxEnergy);
+	resourcesBar.update(player.resourcesByTier);
+	deadNodes.showDeadNodes();
+
+	// UPGRADE OFFERS
+	if (player.upgradeOffers.length) upgradeOffers.displayOffers(player.upgradeOffers[0]);
+	if (!gameClient.alive) upgradeOffers.hideOffers();
+
+	// CONNECTION OFFERS
 	const hasPendingConnectionOffer = Object.keys(gameClient.connectionOffers).length > 0;
 	if (hasPendingConnectionOffer) playerStats.showConnectionOfferNotification();
 	else playerStats.hideConnectionOfferNotification();
-}, 1000);
+	//console.log(`--- Turn ${height} executed --- | upgradeOffers: ${player.upgradeOffers.length}`);
 
-while(!node.peerStore.neighborsList.length) // wait until connected
+	// THIS ONE USEFUL TO DEBUG CONSENSUS
+	await new Promise(resolve => setTimeout(resolve, Math.round(gameClient.turnSystem.turnDuration / 10)));
+	gameClient.digestMyAction({ type: `noop_${Math.random()}` });
+});
+window.gameClient = gameClient; // Expose for debugging
+
+// WAIT UNTIL CONNECTED TO BOOTSTRAP
+while(!node.peerStore.neighborsList.length)
 	await new Promise(resolve => setTimeout(resolve, 100));
 
 renderConnectedLogs();
+
+// AUTO-PLAY SETUP (DEBUG ONLY)
+if (IS_DEBUG) {
+	const { AutoPlayer } = await import('./auto-play.mjs');
+	const autoPlayer = new AutoPlayer(gameClient, deadNodes, upgradeOffers);
+	window.autoPlayer = autoPlayer; 					// expose to global for debugging
+}

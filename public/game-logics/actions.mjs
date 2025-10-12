@@ -1,12 +1,11 @@
-
-
 /** @param {Array<{type: string}>} actions */
 export function filterValidActions(actions) {
-	const includesActions = new Set(); // to avoid duplicates of same action type
+	/** @type {Array<string>} */
 	const validActions = [];
+	const includesActions = new Set(); // to avoid duplicates of same action type
 	for (const action of actions) {
-		if (typeof action !== 'object' || !action.type) continue;
-		const type = action.type;
+		const type = action.type || {};
+		if (typeof action !== 'object' || typeof type !== 'string') continue;
 		if (includesActions.has(type) // CHECK DUPLICATES OF SPECIFIC ACTIONS
 			&& ['upgrade', 'recycle'].includes(type)) continue;
 			
@@ -18,13 +17,12 @@ export function filterValidActions(actions) {
 		validActions.push(action);
 	}
 
-	//if (validActions.length && validActions[0].type !== 'noop') console.log('Valid actions:', validActions);
 	return validActions;
 }
 
 export class UpgradeAction {
 	type = 'upgrade';
-	/** @type {string} */		upgradeName;
+	/** @type {string} */	upgradeName;
 }
 
 export class SetParamAction {
@@ -35,12 +33,12 @@ export class SetParamAction {
 
 export class TransactionAction {
 	type = 'transaction';
-	/** @type {string} */		to;
-	/** @type {string} */		resource;
-	/** @type {number} */		amount;
+	/** @type {string} */	to;
+	/** @type {string} */	resource;
+	/** @type {number} */	amount;
 }
 
 export class RecycleAction {
 	type = 'recycle';
-	/** @type {string} */		fromDeadNodeId;
+	/** @type {string} */	fromDeadNodeId;
 }

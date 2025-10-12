@@ -15,13 +15,12 @@ export class NodeInteractor {
 		const targetCanConnect = peerNeighborsCount < player.upgradeSet.linker.level;
 		if (selfCanConnect && targetCanConnect) return true;
 	}
-
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} nodeId */
 	static tryToConnect(gameClient, nodeId = 'toto') {
 		if (!nodeId || !gameClient.players[nodeId]) return;
 		const canConnect = NodeInteractor.canTryToConnect(gameClient, nodeId);
 		if (!canConnect) return console.log(`Cannot connect to ${nodeId}, connection conditions not met.`);
-		gameClient.node.tryConnectToPeer(nodeId);
+		gameClient.node.tryConnectToPeer(nodeId, 3);
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} nodeId */
 	static digestConnectionOffer(gameClient, nodeId = 'toto') {
