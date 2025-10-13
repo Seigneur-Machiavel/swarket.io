@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { GameClient } from './public/game-logics/game.mjs';
 import { AutoPlayer } from './public-debug/auto-play.mjs';
 import HiveP2P from 'hive-p2p';
+import { NodeInteractor } from './public/game-logics/node-interactions.mjs';
 HiveP2P.CLOCK.mockMode = true;
 //HiveP2P.CONFIG.NODE.DEFAULT_VERBOSE = 4;
 
@@ -22,7 +23,7 @@ app.listen(PORT, DOMAIN, () => console.log(`Server running at http://${DOMAIN}:$
 app.use('/hive-p2p', express.static(hiveP2PRoot));
 app.get('/', (req, res) => res.sendFile(join(__dirname, 'public/index.html')));
 
-const verbose = 2;
+const verbose = 4;
 const seedUint8Array = new Uint8Array(32);
 for (let i = 0; i < 'swarket-bee0'.length; i++) seedUint8Array[i] = 'swarket-bee0'.charCodeAt(i);
 const cryptoCodex = await HiveP2P.CryptoCodex.createCryptoCodex(true, seedUint8Array);
@@ -45,11 +46,8 @@ gameClient.onExecutedTurn.push(async(height = 0) => {
 		if (!clients[i].alive && IS_DEBUG) {
 			console.log(`%c${bees[i].id} is dead. Respawning...`, 'color: red');
 			bees[i].destroy();
-			bees[i] = await HiveP2P.createNode({ bootstraps: [bee0.publicUrl], verbose });
-			bees[i].topologist.automation.incomingOffer = false;	// disable auto-accept incoming offers
-			bees[i].topologist.automation.spreadOffers = false; 	// disable auto-spread offers
-			clients[i] = new GameClient(bees[i]);
-			if (IS_DEBUG) new AutoPlayer(clients[i]);
+			const { bee, client } = await createPlayer();
+			bees[i] = bee; clients[i] = client;
 			console.log(`%c${bees[i].id} respawned.`, 'color: green');
 		}
 	}
@@ -57,16 +55,21 @@ gameClient.onExecutedTurn.push(async(height = 0) => {
 	//if (height % 10 === 0) console.log(`%c${bee0.id} trust: ${bee0.arbiter.trustBalances[bees[0].id]}`, 'color: cyan');
 });
 
+async function createPlayer() {
+	const bee = await HiveP2P.createNode({ bootstraps: [bee0.publicUrl], verbose });
+	bee.topologist.automation.incomingOffer = false;	// disable auto-accept incoming offers
+	bee.topologist.automation.spreadOffers = false; 	// disable auto-spread offers
+	const client = new GameClient(bee);
+	if (IS_DEBUG) new AutoPlayer(client, NodeInteractor);
+	return { bee, client };
+}
 
 const bees = [];
 const clients = [];
 //await new Promise(resolve => setTimeout(resolve, 10000));
 for (let i = 0; i < 2; i++) {
-	bees.push(await HiveP2P.createNode({ bootstraps: [bee0.publicUrl], verbose }));
-	bees[i].topologist.automation.incomingOffer = false;	// disable auto-accept incoming offers
-	bees[i].topologist.automation.spreadOffers = false; 	// disable auto-spread offers
-	clients.push(new GameClient(bees[i]));
-	if (IS_DEBUG) new AutoPlayer(clients[i]);
+	const { bee, client } = await createPlayer();
+	bees.push(bee); clients.push(client);
 }
 
 // DEBUG: LOG ALL GOSSIP MESSAGES

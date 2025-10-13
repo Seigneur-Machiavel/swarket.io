@@ -3,15 +3,18 @@ export class AutoPlayer {
 	cssStyle = 'color: cyan';
 
 	gameClient;
+	NodeInteractor;
 	deadNodesComponent;
 	upgradeOffersComponent;
 
 	/** Instance of AutoPlayer - can work with or without frontend.
 	 * @param {import('../public/game-logics/game.mjs').GameClient} gameClient
+	 * @param {import('../public/game-logics/node-interactions.mjs').NodeInteractor} NodeInteractor
 	 * @param {import('../public/rendering/UI-components.mjs').DeadNodesComponent} deadNodesComponent
 	 * @param {import('../public/rendering/UI-components.mjs').UpgradeOffersComponent} upgradeOffersComponent */
-	constructor(gameClient, deadNodesComponent, upgradeOffersComponent) {
+	constructor(gameClient, NodeInteractor, deadNodesComponent, upgradeOffersComponent) {
 		this.gameClient = gameClient;
+		this.NodeInteractor = NodeInteractor;
 		this.deadNodesComponent = deadNodesComponent;
 		this.upgradeOffersComponent = upgradeOffersComponent;
 		
@@ -21,8 +24,18 @@ export class AutoPlayer {
 		else gameClient.onExecutedTurn.push(async (height = 0) => this.#onExecAutoPlayNoFront(height));
 	}
 
+	// SHARED METHODS
+	#acceptPendingConnectionOffer() {
+		const { connectionOffers, node } = this.gameClient;
+		for (const fromId in connectionOffers) {
+			this.NodeInteractor.digestConnectionOffer(this.gameClient, fromId);
+			break; // accept only one per turn
+		}
+	}
+
 	// AUTO PLAY WITH FRONTEND
 	#onExecAutoPlay(height) {
+		return; // disable auto-play for now DEBUG
 		const firstDeadNodeId = Array.from(this.gameClient.deadPlayers)[0];
 		const upgradeName = this.gameClient.myPlayer.upgradeOffers[0]?.[0];
 		const { node, turnSystem, myPlayer, alive, selectedDeadNodeId } = this.gameClient;
@@ -39,6 +52,8 @@ export class AutoPlayer {
 			this.upgradeOffersComponent.onOfferClick(upgradeName);
 			console.log(`%c${this.logPrefix} Upgraded: ${upgradeName}`, this.cssStyle);
 		}
+
+		this.#acceptPendingConnectionOffer();
 	}
 
 	// AUTO PLAY WITHOUT FRONTEND
@@ -58,5 +73,7 @@ export class AutoPlayer {
 			this.gameClient.digestMyAction({ type: 'upgrade', upgradeName });
 			console.log(`%c${this.logPrefix} Upgraded: ${upgradeName}`, this.cssStyle);
 		}
+
+		this.#acceptPendingConnectionOffer();
 	}
 }

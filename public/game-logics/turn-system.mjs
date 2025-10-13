@@ -17,14 +17,7 @@ export class TurnSystem {
 
 	T0 = null; 	// time of first turn
 	T0Reference = null; // reference time to calculate T0 drift
-
-	nextTurnScheduledAt = 0;
-	get maxSentTime() { return this.nextTurnScheduledAt - (this.turnDuration * .5); }
-	get intentsSendingWindow() {
-		const min = this.nextTurnScheduledAt - (this.turnDuration * .6);
-		const max = this.nextTurnScheduledAt - (this.turnDuration * .55);
-		return { min, max };
-	}
+	turnsSchedules = new Map(); // height => timestamp
 	
 	/** @type {Record<number, Record<string, { prevHash: string, actions: Array<SetParamAction | TransactionAction> }>>} */
 	playersIntents = {}; // { height: { nodeId: { prevHash: string, [intents...]} }, ... }
@@ -34,10 +27,15 @@ export class TurnSystem {
 
 	// SCHEDULING
 	setT0(height = 0) { this.T0 = this.T0Reference - (this.turnDuration * (height - 1)); console.log(`%cT0: ${this.T0 / 1000}`, 'color: green'); }
-	scheduleNextTurn(height = 0, time = 0) {
-		const scheduleIn = Math.max(0, this.T0 + (this.turnDuration * height) - time);
-		if (this.verb > 3) console.log(`Scheduling #${height} in ${scheduleIn}ms`);
-		this.nextTurnScheduledAt = time + scheduleIn;
+	getTurnSchedule(height = 0) {
+		if (!this.T0) return 0;
+		if (!this.turnsSchedules.has(height))
+			this.turnsSchedules.set(height, Math.max(0, this.T0 + (this.turnDuration * height)));
+
+		return this.turnsSchedules.get(height);
+	}
+	maxSentTime(height = 0, time = this.node.time) {
+		return this.getTurnSchedule(height, time) - (this.turnDuration * .5);
 	}
 
 	// CONSENSUS
@@ -76,7 +74,7 @@ export class TurnSystem {
 	}
 	/** @param {Action} action @param {number} [height] default to this/height or this.height + 1 @param {number} thisHeight default to this.height */
 	digestMyAction(action, height, thisHeight = 0) {
-		const maxSentTimeForCurrentTurn = this.nextTurnScheduledAt - (this.turnDuration * .6);
+		const maxSentTimeForCurrentTurn = this.getTurnSchedule(thisHeight) - (this.turnDuration * .6);
 		const maxSentTimeReached = this.node.time > maxSentTimeForCurrentTurn;
 		const h = height === undefined && !maxSentTimeReached ? thisHeight : thisHeight + 1;
 		if (this.verb > 3 && height === undefined && !maxSentTimeReached) console.info(`%cAdding action for current turn #${thisHeight}`, 'color: pink', action);

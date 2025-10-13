@@ -1,5 +1,8 @@
 import { UpgradesTool } from '../game-logics/upgrades.mjs';
 import { NodeInteractor } from '../game-logics/node-interactions.mjs';
+import { ReactorComponent } from './reactor-component.mjs';
+import { FabricatorComponent } from './fabricator-component.mjs';
+import { LinkerComponent } from './linker-component.mjs';
 
 export class PlayerStatsComponent {
 	playerNameElem = document.getElementById('player-name');
@@ -12,10 +15,11 @@ export class PlayerStatsComponent {
 
 	setPlayerName(playerName) { this.playerNameElem.textContent = playerName; }
 	setPlayerId(id) { this.playerIdElem.textContent = id; }
-	update(lifetime, connections, maxConnections) {
-		this.lifetimeElem.textContent = lifetime;
+	/** @param {import('../game-logics/player.mjs').PlayerNode} player @param {number} connections */
+	update(player, connections) {
+		this.lifetimeElem.textContent = player.lifetime;
 		this.connectionElem.textContent = connections;
-		this.connectionMaxElem.textContent = maxConnections;
+		this.connectionMaxElem.textContent = player.maxConnections;
 	}
 	showConnectionOfferNotification() {
 		this.connectionOfferNotification.classList.add('visible');
@@ -141,6 +145,50 @@ export class ResourcesBarComponent {
 	}
 }
 
+export class BuildingsComponent {
+	gameClient;
+	icons = {
+		reactor: document.getElementById('reactor-icon'),
+		fabricator: document.getElementById('fabricator-icon'),
+		linker: document.getElementById('linker-icon')
+	}
+
+	reactor;		// COMPONENT
+	fabricator;		// COMPONENT
+	linker;			// COMPONENT
+
+	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
+	constructor(gameClient) {
+		this.gameClient = gameClient;
+
+		this.reactor = new ReactorComponent(gameClient);
+		this.fabricator = new FabricatorComponent(gameClient);
+		this.linker = new LinkerComponent(gameClient);
+
+		this.icons.reactor.onclick = () => this.#handleIconClick('reactor');
+		this.icons.fabricator.onclick = () => this.#handleIconClick('fabricator');
+		this.icons.linker.onclick = () => this.#handleIconClick('linker');
+	}
+
+	updateSubComponents() {
+		const player = this.gameClient.myPlayer;
+		for (const b in this.icons) {
+			if (!player[b]) { this.icons[b].classList.remove('visible'); continue; }
+			this.icons[b].classList.add('visible');
+			this[b].update();
+		}
+	}
+
+	/** @param {'reactor' | 'fabricator' | 'linker'} buildingName */
+	#handleIconClick(buildingName) {
+		if (!this[buildingName]) return;
+
+		for (const b in this.icons)
+			if (b === buildingName) this[b].toggle();
+			else this[b].hide();
+	}
+}
+
 export class DeadNodesComponent {
 	deadNodesWrapper = document.getElementById('dead-nodes-wrapper');
 	deadNodeTemplate = this.deadNodesWrapper.querySelector('.dead-node-notification');
@@ -247,9 +295,10 @@ export class NodeCardComponent {
 		if (!position) return this.hide();
 
 		const canConnect = NodeInteractor.canTryToConnect(this.gameClient, playerId);
+		const gotConnectionOffer = this.gameClient.connectionOffers[playerId];
 		this.connectBtn.disabled = !canConnect;
-		this.connectBtn.textContent = this.gameClient.connectionOffers[playerId] ? 'Confirm link' : 'Link offer';
-		if (this.connectBtn.textContent === 'Link offer') this.connectBtn.onclick = () => NodeInteractor.tryToConnect(this.gameClient, playerId);
+		this.connectBtn.textContent = gotConnectionOffer ? 'Confirm link' : 'Link offer';
+		if (!gotConnectionOffer) this.connectBtn.onclick = () => NodeInteractor.tryToConnect(this.gameClient, playerId);
 		else this.connectBtn.onclick = () => NodeInteractor.digestConnectionOffer(this.gameClient, playerId);
 
 		const rightMouseButtonIsDown = this.visualizer.networkRenderer.rightMouseButtonIsDown;

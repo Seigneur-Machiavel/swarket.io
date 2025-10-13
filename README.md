@@ -32,6 +32,21 @@
 **4.1 Buildings**
 - [ ] energy central 	=> carte d'upgrade
 - [ ] resource factory 	=> carte d'upgrade
+- [ ] Diffusion Antenna => carte d'upgrade
+- [ ] Storage => AGI	=> carte d'upgrade
+
+-> UPGRADES:
+if (reactor)	=> production boost
+		
+
+if (factory)	=> efficiency
+		=> +tier
+		=> +simultaneous production
+
+if (antenna) 	=> economic spread
+		=> larger diffusion (hops+1)
+		=> more offers ?
+OR OPTION 2: 	=> central/factory/antenna upgrade cards => user choose what to improve
 
 **4.5 Trading P2P**
 - [ ] Propose trade (unicast)

@@ -442,7 +442,7 @@ export class NetworkRenderer {
 			mouseDownGrabCursorTimeout = setTimeout(() => domElement.style.cursor = 'grabbing', 200);
         });
 
-        domElement.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', () => {
             isMouseDown = false;
             mouseButton = null;
 			if (this.rightMouseButtonIsDown) this.rightMouseButtonIsDown = false;
@@ -452,7 +452,7 @@ export class NetworkRenderer {
 			setTimeout(() => domElement.style.cursor = 'default', 20);
         });
 
-        domElement.addEventListener('mousemove', (e) => {
+        document.addEventListener('mousemove', (e) => {
             if (isMouseDown) {
                 const deltaX = e.clientX - previousMousePosition.x;
                 const deltaY = e.clientY - previousMousePosition.y;
@@ -523,8 +523,13 @@ export class NetworkRenderer {
         });
 
 		this.elements.modeSwitchBtn.addEventListener('click', () => this.switchMode());
-		domElement.addEventListener('click', () => this.hoveredNodeId ? this.onNodeLeftClick?.(this.hoveredNodeId) : null);
-        domElement.addEventListener('contextmenu', (e) => {
+		domElement.addEventListener('click', () => {
+			clearInterval(this.hoveredNodeRepaintInterval);
+			this.hoveredNodeRepaintInterval = null;
+			if (this.hoveredNodeId === null) return;
+			this.onNodeLeftClick?.(this.hoveredNodeId);
+		});
+        document.addEventListener('contextmenu', (e) => {
 			e.preventDefault();
 			if (domElement.style.cursor === 'grabbing') return;
 			this.onNodeRightClick?.(this.hoveredNodeId)
@@ -533,13 +538,32 @@ export class NetworkRenderer {
 			if (e.code === 'Space') this.isPhysicPaused = !this.isPhysicPaused;
 		});
 	}
+	#getIntersectsWithTolerance(x, y, tolerance = 20) {
+		const results = [];
+		
+		// Cast central + 4 points cardinaux
+		const offsets = [
+			[0, 0],
+			[tolerance, 0], [-tolerance, 0],
+			[0, tolerance], [0, -tolerance]
+		];
+		
+		for (const [dx, dy] of offsets) {
+			this.raycaster.setFromCamera({ x: x + dx * 0.001, y: y + dy * 0.001 }, this.camera);
+			const hits = this.raycaster.intersectObjects(this.scene.children);
+			for (const hit of hits) results.push(hit);
+		}
+		
+		return results;
+	}
 	#handleMouseMove(event) {
 		if (this.renderer.domElement.style.cursor === 'grabbing') return;
 		this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
 		this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
 		this.raycaster.setFromCamera(this.mouse, this.camera);
-		const intersects = this.raycaster.intersectObjects(this.scene.children);
+		//const intersects = this.raycaster.intersectObjects(this.scene.children);
+		const intersects = this.#getIntersectsWithTolerance(this.mouse.x, this.mouse.y, 5);
 
 		let foundNode = null;
 		for (const intersect of intersects) {
@@ -574,7 +598,7 @@ export class NetworkRenderer {
 		}
 
 		this.#showTooltip(clientX, clientY, this.hoveredNodeId);
-		if (this.hoveredNodeId === this.currentPeerId) return;
+		//if (this.hoveredNodeId === this.currentPeerId) return;
 
 		// Set hover color
 		const instanceIndex = this.nodeIndexMap[this.hoveredNodeId];

@@ -50,6 +50,51 @@
 			</div>
 		</div>
 
+		<div id ="reactor-modal" class="building-modal modal">
+			<div class="close-btn">x</div>
+			
+			<div class="production-cycle two">
+				<div class="resource-inputs">
+					<div class="resource">
+						<div class="tooltip">Chips consumption</div>
+						<div class="resource-icon chips"></div>
+						<span class="resource-value" id="reactor-chips-input">0</span>
+					</div>
+					<div class="resource">
+						<div class="tooltip">Engineers consumption</div>
+						<div class="resource-icon engineers"></div>
+						<span class="resource-value" id="reactor-engineers-input">0</span>
+					</div>
+				</div>
+				<div class="production-chain two">
+					<div class="chain">========</div>
+					<div class="chain">========</div>
+				</div>
+				<div class="production-chain-fitting two-inputs one-output">
+					<div class="fitting">==</div>
+					<div class="fitting">==</div>
+				</div>
+				<div class="resource-outputs">
+					<div class="resource">
+						<div class="tooltip">Energy production</div>
+						<div class="resource-icon energy"></div>
+						<span class="resource-value" id="reactor-energy-output">0</span>
+					</div>
+				</div>
+				<div class="input-vertical-range">
+					<div class="five-steps-range-bars"></div>
+					<input type="range" id="reactor-production-rate" min="0" max="1" step=".25" value="1">
+				</div>
+			</div>
+		</div>
+		<div id ="fabricator-modal" class="building-modal modal">
+			<div class="close-btn">x</div>
+			
+		</div>
+		<div id ="linker-modal" class="building-modal modal">
+			<div class="close-btn">x</div>
+		</div>
+
 		<div id="connections-list-wrapper">
 			<div class="close-btn" id="connections-list-close-btn">x</div>
 			<div class="connections-list-header">
@@ -130,7 +175,20 @@
 			<input type="range" id="energyStorageFactor" min="1" max="5" step="0.1" value="2" title="Energy Storage Factor">
 		</div>
 	
-		<div id="network-container"></div>
+		<div class="buildings-wrapper">
+			<div id="reactor-icon" class="building-icon hoverable-tooltip">
+				<div class="tooltip">Reactor: Produces energy over time</div>
+				<img src="./assets/buildings/reactor.png" alt="Reactor">
+			</div>
+			<div id="fabricator-icon" class="building-icon hoverable-tooltip">
+				<div class="tooltip">Fabricator: Produces high tier resources</div>
+				<img src="./assets/buildings/fabricator.png" alt="Fabricator">
+			</div>
+			<div id="linker-icon" class="building-icon hoverable-tooltip">
+				<div class="tooltip">Linker: Networking building</div>
+				<img src="./assets/buildings/linker.png" alt="Linker">
+			</div>
+		</div>
 	
 		<div class="console">
 			<div class="console-header">

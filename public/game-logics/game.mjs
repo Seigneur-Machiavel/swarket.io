@@ -46,13 +46,18 @@ export class GameClient {
 		this.turnSystem = new TurnSystem(this.node);
 
 		node.onPeerConnect((peerId, direction) => this.#onPeerConnect(peerId, direction));
-		this.node.onMessageData((id, message) => this.#onDirectMessage(id, message));
-		this.node.onGossipData((id, message) => this.#onGossipMessage(id, message));
+		node.onMessageData((id, message) => this.#onDirectMessage(id, message));
+		node.onGossipData((id, message) => this.#onGossipMessage(id, message));
+		node.onSignalOffer((fromId, offer) => {
+			console.log(`Connection offer received from ${fromId}`, offer);
+			this.connectionOffers[fromId] = { offer, expiration: node.time + 30000 };
+		});
 
 		if (!createPlayerAndStart) return;
 		this.players[node.id] = new PlayerNode(node.id); // operatingResource randomly assigned
 		this.players[node.id].verb = this.verb;
-		this.turnSystem.scheduleNextTurn(0, node.time); // schedule first turn
+		this.turnSystem.T0 = this.node.time; // set T0 to now
+		console.log(`%cT0: ${this.turnSystem.T0 / 1000}`, 'color: green');
 	}
 
 	get myPlayer() { return this.players[this.node.id]; }
@@ -72,6 +77,10 @@ export class GameClient {
 		p.startTurn = Math.max(this.height, 1); // active from next turn
 		p.verb = 0; // reduce logs
 		this.players[peerId] = p;
+
+		if (p.production.chips) p.production.engineers = 1; // DEBUG
+		else if (p.production.engineers) p.production.chips = 5; // DEBUG
+
 		this.node.broadcast({ topic: 'new-player', data: p.extract() });
 		this.syncAskedBy.push(peerId); // request sync on next turn
 	}
@@ -84,7 +93,6 @@ export class GameClient {
 			if (!this.turnSystem.T0Reference) return console.warn(`T0Reference not set, cannot calculate T0 drift`);
 			if (!this.node.cryptoCodex.isPublicNode(id) && this.gameStateAskedFrom !== id) return; // ignore if not from public node or not the one we asked from
 			this.#importGameState(data);
-			this.turnSystem.scheduleNextTurn(this.height, this.node.time); // schedule next turn
 		}
 	}
 	/** @param {string} id @param {import('../../node_modules/hive-p2p/core/gossip.mjs').GossipMessage} message */
@@ -138,11 +146,9 @@ export class GameClient {
 	/** @param {Set<string>} nodeIds */
 	#handleDesync(nodeIds = new Set()) {
 		console.warn(`%cDesync detected! => trying to resync`, 'color: yellow');
-		//if (this.gameStateAskedFrom && nodeIds.has(this.gameStateAskedFrom))
-			//nodeIds.delete(this.gameStateAskedFrom); // already asked from this one, try another...
 
-		this.turnSystem.nextTurnScheduledAt += this.turnSystem.turnDuration; // wait for next turn
 		let peerId = this.node.peerStore.publicNeighborsList[0]; // prefer public nodes
+
 		// TRY SYNC FROM NEIGHBORS FIRST (if possible)
 		if (!peerId) for (const id of this.node.peerStore.neighborsList)
 			if (nodeIds.has(id)) { peerId = id; break; }
@@ -151,8 +157,8 @@ export class GameClient {
 		if (!peerId) peerId = nodeIds.values().next().value;
 		if (!peerId) return console.warn(`No peer to ask for game state!`);
 		
-		this.turnSystem.nextTurnScheduledAt = 0; // this.node.time + 5000;
 		this.height = 0; // resync only permitted if we are at turn 0
+		this.turnSystem.T0 = null;
 		this.gameStateAskedFrom = peerId; // good luck ;)
 		this.node.sendMessage(peerId, { type: 'get-game-state' });
 		console.log(`%cAsked game state from ${peerId}`, 'color: yellow');
@@ -173,11 +179,12 @@ export class GameClient {
 		let myIntentsSent = false;
 		while (this.alive) {
 			await new Promise(r => setTimeout(r, frequency));
-			const [time, scheduleTime] = [this.node.time, this.turnSystem.nextTurnScheduledAt];
+			const [time, scheduleTime] = [this.node.time, this.turnSystem.getTurnSchedule(this.height)];
 			if (!scheduleTime) continue;
 
 			// CHECK IF WE HAVE HALFWAY INTENTS TO SEND FOR THE CURRENT TURN
-			const { min, max } = this.turnSystem.intentsSendingWindow;
+			const turnDuration = this.turnSystem.turnDuration;
+			const [min, max] = [scheduleTime - (turnDuration * .6), scheduleTime - (turnDuration * .55)];
 			if (!myIntentsSent && time > min && time < max)
 				if (this.#cleanAndDispatchMyPlayerIntents()) myIntentsSent = true;
 
@@ -193,7 +200,7 @@ export class GameClient {
 
 			const startTime = time;
 			const newTurnHash = this.#execTurn();
-			const timeDrift = time - this.turnSystem.T0 - (this.turnSystem.turnDuration * this.height);
+			const timeDrift = time - this.turnSystem.T0 - (turnDuration * this.height);
 			if (this.verb > 2) console.log(`> #${this.height.toString().padStart(4, '0')} | ph: ${this.turnSystem.prevHash} | Drift: ${timeDrift}ms | T0: ${this.turnSystem.T0 / 1000}`);
 			
 			this.height++; // next turn
@@ -202,7 +209,6 @@ export class GameClient {
 
 			for (const cb of this.onExecutedTurn) cb(this.height);
 			if (this.height > 2) this.#sendSyncToAskers(startTime - time);
-			this.turnSystem.scheduleNextTurn(this.height, this.node.time);
 		}
 	}
 	#execTurn() {
@@ -224,7 +230,6 @@ export class GameClient {
 			this.node.topologist.automation.connectBootstraps = false; // disable auto-connect to bootstraps if dead
 		}
 
-		if (!this.height) { this.turnSystem.T0 = this.node.time; console.log(`%cT0: ${this.turnSystem.T0 / 1000}`, 'color: green'); }
 		return newTurnHash;
 	}
 	#cleanAndDispatchMyPlayerIntents(height = this.height) {

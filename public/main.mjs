@@ -2,8 +2,10 @@ import { renderConnectionLogs, renderConnectedLogs } from './pre-game/connection
 import { PlayerStatsComponent, ConnectionsListComponent, UpgradeOffersComponent, EnergyBarComponent,
 	ResourcesBarComponent, NodeCardComponent, DeadNodesComponent,
 } from './rendering/UI-components.mjs';
+import { BuildingsComponent } from './rendering/UI-components.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
 import { GameClient } from './game-logics/game.mjs';
+import { NodeInteractor } from './game-logics/node-interactions.mjs';
 
 while (!window.HiveP2P) await new Promise(resolve => setTimeout(resolve, 10));
 
@@ -34,11 +36,8 @@ const visualizer = new NetworkVisualizer(node, HiveP2P.CryptoCodex);
 window.networkVisualizer = visualizer; // Expose for debugging
 node.onMessageData((fromId, message) => visualizer.displayDirectMessageRoute(fromId, message.route));
 node.onGossipData((fromId, message) => visualizer.displayGossipMessageRoute(fromId, message));
-node.onSignalOffer((fromId, offer) => {
-	console.log(`Connection offer received from ${fromId}`, offer);
-	gameClient.connectionOffers[fromId] = { offer, expiration: node.time + 30000 };
-});
 visualizer.onNodeLeftClick((nodeId = 'toto') => nodeCard.show(nodeId));
+visualizer.onNodeRightClick((nodeId = 'toto') => console.log('Right-click on node:', nodeId));
 
 // UI COMPONENTS SETUP
 const playerStats = new PlayerStatsComponent();
@@ -47,6 +46,7 @@ playerStats.connectionCountWrapper.onclick = () => connectionsList.show();
 const upgradeOffers = new UpgradeOffersComponent();
 const energyBar = new EnergyBarComponent();
 const resourcesBar = new ResourcesBarComponent();
+const buildings = new BuildingsComponent(gameClient);
 const deadNodes = new DeadNodesComponent(gameClient);
 const nodeCard = new NodeCardComponent(gameClient, visualizer);
 
@@ -59,16 +59,18 @@ upgradeOffers.onOfferClick = (upgradeName) => {
 // ON TURN EXECUTION
 gameClient.onExecutedTurn.push(async (height = 0) => {
 	const player = gameClient.myPlayer;
-	if (gameClient.alive) node.topologist.setNeighborsTarget(player.upgradeSet.linker.level);
+	if (gameClient.alive) node.topologist.setNeighborsTarget(player.maxConnections);
 	else node.topologist.setNeighborsTarget(0); // stop connectings if dead
 
 	playerStats.setPlayerName(player.name);
 	playerStats.setPlayerId(player.id);
-	playerStats.update(player.lifetime, node.peerStore.standardNeighborsList.length, player.upgradeSet.linker.level);
+	playerStats.update(player, node.peerStore.standardNeighborsList.length);
 	connectionsList.update();
 	energyBar.update(player.energy, player.maxEnergy);
 	resourcesBar.update(player.resourcesByTier);
+	buildings.updateSubComponents();
 	deadNodes.showDeadNodes();
+	console.log(`--- Turn ${height} executed ---`);
 
 	// UPGRADE OFFERS
 	if (player.upgradeOffers.length) upgradeOffers.displayOffers(player.upgradeOffers[0]);
@@ -95,6 +97,6 @@ renderConnectedLogs();
 // AUTO-PLAY SETUP (DEBUG ONLY)
 if (IS_DEBUG) {
 	const { AutoPlayer } = await import('./auto-play.mjs');
-	const autoPlayer = new AutoPlayer(gameClient, deadNodes, upgradeOffers);
+	const autoPlayer = new AutoPlayer(gameClient, NodeInteractor, deadNodes, upgradeOffers);
 	window.autoPlayer = autoPlayer; 					// expose to global for debugging
 }
