@@ -66,7 +66,7 @@ robots		=>	chips + models + engineers			=> ingredient + reactor booster
 experts		=>	datas + models + engineers			=> ingredient + linker booster
 
 Tier 4 -- Complex Products
-aiCores	=>	chips + aiModules + experts			=> ingredient + fabricator booster
+aiCores		=>	chips + aiModules + experts			=> ingredient + fabricator booster
 drones		=>	datas + robots + experts			=> ingredient + linker booster
 superconductors => models + aiModules + robots => ingredient
 

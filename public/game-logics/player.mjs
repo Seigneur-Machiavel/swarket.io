@@ -35,9 +35,9 @@ export class PlayerNode {
 		this.upgradeSet = upgradeSet;
 
 		this.reactor = new Reactor(); // DEBUG
-		this.upgradeSet.buildReactor.level = 1; // DEBUG bypass
+		this.upgradeSet.buildReactor = 1; // DEBUG bypass
 		this.fabricator = new Fabricator(); // DEBUG
-		this.upgradeSet.buildFabricator.level = 1; // DEBUG bypass
+		this.upgradeSet.buildFabricator = 1; // DEBUG bypass
 	}
 	
 	static playerFromData(data) {
@@ -111,7 +111,7 @@ export class PlayerNode {
 		if (this.upgradeOffers[0].indexOf(upgradeName) === -1) return verb > 1 ? console.warn(`[${this.id}] Upgrade not available:`, upgradeName) : null;
 		if (UpgradesTool.isMaxedUpgrade(this.upgradeSet, upgradeName)) return verb > 1 ? console.warn(`[${this.id}] Upgrade already maxed:`, upgradeName) : null;
 		this.upgradeOffers.shift();
-		this.upgradeSet[upgradeName].level++;
+		this.upgradeSet[upgradeName]++;
 		Upgrader.applyUpgradeEffects(this, upgradeName);
 		return true;
 	}
@@ -123,7 +123,7 @@ export class PlayerNode {
 		if (deadPlayer.energy) return verb > 1 ? console.warn(`[${this.id}] Cannot recycle alive node:`, fromDeadNodeId) : null;
 		if (!deadPlayer.startTurn) return verb > 1 ? console.warn(`[${this.id}] Cannot recycle unknown node:`, fromDeadNodeId) : null;
 
-		const { hasResources, resources } = deadPlayer.getRecyclingResult(this.upgradeSet.cleaner.level);
+		const { hasResources, resources } = deadPlayer.getRecyclingResult(this.upgradeSet.cleaner);
 		if (!hasResources) return verb > 2 ? console.warn(`[${this.id}] Cannot recycle empty node:`, fromDeadNodeId) : null;
 
 		for (const r in resources) this.resourcesByTier['1'][r] += resources[r];
@@ -140,7 +140,7 @@ export class PlayerNode {
 		if (amount < 0) this.turnEnergyChanges.consumptions.push(Math.abs(amount));
 		else this.turnEnergyChanges.productions.push(amount);
 	}
-	get getAndClearTotalTurnEnergyChange() {
+	get #getAndClearTotalTurnEnergyChange() {
 		if (!this.turnEnergyChanges) return { totalConso: 0, totalProd: 0 };
 		const totalConso = this.turnEnergyChanges.consumptions.reduce((a, b) => a + b, 0);
 		const totalProd = this.turnEnergyChanges.productions.reduce((a, b) => a + b, 0);
@@ -150,7 +150,7 @@ export class PlayerNode {
 	#produceResources(consumptionBasis = 1) {
 		if (!this.energy) return 0;
 		let totalConso = 0;
-		const multiplier = 1 + (this.upgradeSet.producer.level * .25);
+		const multiplier = 1 + (this.upgradeSet.producer * .25);
 		for (const r in this.production) {
 			const prod = this.production[r] * multiplier * this.rawProductionRate;
 			this.resourcesByTier[1][r] += prod;
@@ -159,7 +159,7 @@ export class PlayerNode {
 		return totalConso;
 	}
 	#applyEnergyChange() {
-		const { totalConso, totalProd } = this.getAndClearTotalTurnEnergyChange;
+		const { totalConso, totalProd } = this.#getAndClearTotalTurnEnergyChange;
 		this.energy += totalProd - totalConso;
 		if (this.energy > this.maxEnergy) this.energy = this.maxEnergy;
 		if (this.energy < 0) this.energy = 0;

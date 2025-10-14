@@ -15,8 +15,7 @@
 
 **2.5 Système de compétences**
 - [x] Random pick tous les X turns
-- [4/10] Pool de 10 compétences (compétence connection en first => gros rate)
-=> add lifetime and other requirements to importants upgrades
+- [8/10] Pool de 10 upgrades
 
 **3. Bot (debug) **
 - [x] auto upgrades
@@ -30,23 +29,10 @@
 - [ ] Inventaire UI
 
 **4.1 Buildings**
-- [ ] energy central 	=> carte d'upgrade
-- [ ] resource factory 	=> carte d'upgrade
-- [ ] Diffusion Antenna => carte d'upgrade
+- [x] reactor 	 => carte d'upgrade
+- [ ] fabricator => carte d'upgrade
+- [ ] linker 	 => carte d'upgrade
 - [ ] Storage => AGI	=> carte d'upgrade
-
--> UPGRADES:
-if (reactor)	=> production boost
-		
-
-if (factory)	=> efficiency
-		=> +tier
-		=> +simultaneous production
-
-if (antenna) 	=> economic spread
-		=> larger diffusion (hops+1)
-		=> more offers ?
-OR OPTION 2: 	=> central/factory/antenna upgrade cards => user choose what to improve
 
 **4.5 Trading P2P**
 - [ ] Propose trade (unicast)
@@ -62,22 +48,20 @@ OR OPTION 2: 	=> central/factory/antenna upgrade cards => user choose what to im
 
 **7. Énergie system**
 - [x] State: énergie par joueur
-- [ ] Energie storage
-- [ ] Spawn UI: slider investissement
 - [X] Dissipation passive
-- [ ] Dissipation active (coûts actions)
+- [x] Dissipation active (coûts actions)
 - [x] Mort quand énergie = 0
 
 ---
 
-## Phase 2: Consensus & Persistence (3-4 jours)
+## Phase 2: Persistence (3-4 jours)
 
 **7. Hash consensus**
 - [x] Compute hash état global (DIGEST phase)
 - [x] Gossip hash entre peers
 - [x] Detect divergence → resync
 
-**8. Ledger partagé (hangar énergie)**
+**8. Ledger partagé (hangar)**
 - [ ] Structure ledger: slots par joueur
 - [ ] Curseur stockage pendant game
 - [ ] Persist entre spawns (RAM)
@@ -101,14 +85,14 @@ OR OPTION 2: 	=> central/factory/antenna upgrade cards => user choose what to im
 
 **12. Upgrades spawn**
 - [ ] Presets: Small/Medium/Large
-- [ ] Allocate énergie → capacités départ
+- [ ] Allocate → capacités départ
 - [ ] Balance coûts
 
 ---
 
 ## Phase 4: Events & Juice (3-4 jours)
 
-**13. Events chaotiques**
+**13. Events chaotiques** => si on a le temps
 - [ ] 8-10 events (Market, Prod, Network)
 - [ ] Trigger random 90-120s
 - [ ] Annonce visuelle (gros texte)
@@ -131,8 +115,7 @@ OR OPTION 2: 	=> central/factory/antenna upgrade cards => user choose what to im
 ## Phase 5: Balance & Deploy (2-3 jours)
 
 **16. Balancing**
-- [ ] Coûts énergie (spawn, craft, connexions)
-- [ ] Production rates Tier 1
+- [ ] Production rates
 - [ ] Valeurs ressources (scoring)
 - [ ] Cooldowns events
 
@@ -141,12 +124,6 @@ OR OPTION 2: 	=> central/factory/antenna upgrade cards => user choose what to im
 - [ ] Playtest multi 5-10 peers
 - [ ] Fix bugs critiques
 - [ ] Ajustements gameplay
-
-**18. Deploy**
-- [ ] Build optimisé browser
-- [ ] Hébergement static (Vercel/Netlify)
-- [ ] Bootstrap nodes (où?)
-- [ ] Landing page minimale
 
 ---
 

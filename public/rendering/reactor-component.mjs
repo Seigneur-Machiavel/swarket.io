@@ -1,37 +1,4 @@
-/*
-<div class="production-cycle two"> // TEMPLATE
-	<div class="resource-inputs">
-		<div class="resource">
-			<div class="tooltip">Chips consumption</div>
-			<div class="resource-icon chips"></div>
-			<span class="resource-value">0</span>
-		</div>
-		<div class="resource">
-			<div class="tooltip">Engineers consumption</div>
-			<div class="resource-icon engineers"></div>
-			<span class="resource-value">0</span>
-		</div>
-	</div>
-	<div class="production-chain two">
-		<div class="chain">========</div>
-		<div class="chain">========</div>
-	</div>
-	<div class="production-chain-fitting two-inputs one-output">
-		<div class="fitting">==</div>
-		<div class="fitting">==</div>
-	</div>
-	<div class="resource-outputs">
-		<div class="resource">
-			<div class="tooltip">Energy production</div>
-			<div class="resource-icon energy"></div>
-			<span class="resource-value">0</span>
-		</div>
-	</div>
-	<div class="input-vertical-range">
-		<div class="five-steps-range-bars"></div>
-		<input type="range" id="reactor-production-rate" min="0" max="1" step=".25" value="1">
-	</div>
-</div>*/
+import { getModulesDescriptionRelativeToPlayer } from '../game-logics/buildings-modules.mjs';
 
 export class ReactorComponent {
 	gameClient;
@@ -42,9 +9,11 @@ export class ReactorComponent {
 	productionCycle = this.modal.querySelector('.production-cycle');
 	reactorChipsInput = this.modal.querySelector('#reactor-chips-input');
 	reactorEngineersInput = this.modal.querySelector('#reactor-engineers-input');
-	//productionChain = this.modal.querySelector('.production-chain');
-	//productionChainFitting = this.modal.querySelector('.production-chain-fitting');
 	reactorEnergyOutput = this.modal.querySelector('#reactor-energy-output');
+	// MODULES
+	modulesWrapper = this.modal.querySelector('.modules-wrapper');
+	/** @type {Record<string, HTMLElement>} */
+	moduleElements = null;
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
 	constructor(gameClient) {
@@ -59,6 +28,7 @@ export class ReactorComponent {
 	}
 
 	update() { // call only if reactor is present
+		if (!this.gameClient.alive) return this.hide();
 		const { conso, energy } = this.gameClient.myPlayer.reactor?.energyProd || {};
 		this.reactorChipsInput.textContent = conso?.chips?.toFixed(1) || '0';
 		this.reactorEngineersInput.textContent = conso?.engineers?.toFixed(1) || '0';
@@ -66,6 +36,19 @@ export class ReactorComponent {
 		const hasProducedThisTurn = this.gameClient.myPlayer.reactor?.hasProducedThisTurn;
 		if (hasProducedThisTurn) this.productionCycle.classList.add('enabled');
 		else this.productionCycle.classList.remove('enabled');
+		if (!this.moduleElements) this.#initModules();
+	}
+	#initModules() {
+		/*const modulesInfos = getModulesDescriptionRelativeToPlayer(this.gameClient.myPlayer);
+		if (!modulesInfos) return;
+		this.moduleElements = {};
+		for (const [moduleKey, { minReactorLevel, currentLevel, description }] of Object.entries(modulesInfos)) {
+			const moduleElement = document.createElement('div');
+			moduleElement.classList.add('module');
+			const { minReactorLevel}
+			this.modulesWrapper.appendChild(moduleElement);
+			this.moduleElements[moduleKey] = moduleElement;
+		}*/
 	}
 
 	show() { this.modal.classList.add('visible'); }

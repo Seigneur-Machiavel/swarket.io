@@ -16,14 +16,6 @@ export class BuildingBuilder {
 	}
 }
 
-class BuildingModules {
-	reactor = {
-		efficiency: { level: 0, maxLevel: 5, tooltip: 'Increases production rate by 20%' },
-		overload: { level: 0, maxLevel: 5, tooltip: 'Increases production rate by 50% and resources consumption by 30%' },
-		stability: { level: 0, maxLevel: 5, tooltip: 'Decreases breakdown risk by 50%' }
-	};
-}
-
 export class Reactor {
 	/** @type {0 | .25 | .5 | .75 | 1} */
 	productionRate = 1;
@@ -31,7 +23,11 @@ export class Reactor {
 	modulesLevel = {
 		efficiency: 0,
 		overload: 0,
-		stability: 0
+		synergy: 0,
+		stability: 0,
+		catalyst: 0,
+		burst: 0,
+		quantuum: 0
 	};
 
 	get energyProd() {

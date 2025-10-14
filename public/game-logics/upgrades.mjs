@@ -14,6 +14,9 @@ const upgradesInfo = {
 	producer: { maxLevel: 10, tooltip: 'Increases the production rate of your resources by 25%' },
 	energyDrop: { maxLevel: Infinity, tooltip: 'Instantly refills energy to maximum' },
 	cleaner: { maxLevel: 5, tooltip: 'Increases the resources recycled by 10%' },
+	maxEnergy: { maxLevel: 5, tooltip: 'Increases maximum energy by 50' },
+
+	// AUTOMATISATION
 	autoCleaner: { maxLevel: 1, requirement: { upgrades: { cleaner: 5 } }, tooltip: 'Automatically select a random node to recycle' },
 
 	// BUILDINGS CONSTRUCTION
@@ -22,24 +25,27 @@ const upgradesInfo = {
 	buildLinker: { maxLevel: 1, tooltip: 'Build a Linker to increase connectivity' },
 	
 	// BUILDINGS UPGRADE
-	reactor: { maxLevel: 10, requirement: { upgrades: { buildReactor: 1 } }, tooltip: 'Give upgrade point to reactor', subClass: 'levelUp' },
-	fabricator: { maxLevel: 10, requirement: { upgrades: { buildFabricator: 1 } }, tooltip: 'Give upgrade point to fabricator', subClass: 'levelUp' },
-	linker: { maxLevel: 10, requirement: { upgrades: { buildLinker: 1 } }, tooltip: 'Give upgrade point to linker', subClass: 'levelUp' },
+	reactor: { maxLevel: 10, requirement: { upgrades: { buildReactor: 1 } }, tooltip: 'Give module point to reactor', subClass: 'levelUp' },
+	fabricator: { maxLevel: 10, requirement: { upgrades: { buildFabricator: 1 } }, tooltip: 'Give module point to fabricator', subClass: 'levelUp' },
+	linker: { maxLevel: 10, requirement: { upgrades: { buildLinker: 1 } }, tooltip: 'Give module point to linker', subClass: 'levelUp' },
 
 }
 export class UpgradeSet {
-	producer = { level: 0 };
-	energyDrop = { level: 0 };
-	cleaner = { level: 0 };
-	autoCleaner = { level: 0 };
+	producer = 0;
+	energyDrop = 0;
+	cleaner = 0;
+	maxEnergy = 0;
+
+	// AUTOMATISATION
+	autoCleaner = 0;
 
 	// BUILDINGS
-	buildReactor = { level: 0 };
-	buildFabricator = { level: 0 };
-	buildLinker = { level: 0 };
-	reactor = { level: 0 };
-	fabricator = { level: 0 };
-	linker = { level: 0 };
+	buildReactor = 0;
+	buildFabricator = 0;
+	buildLinker = 0;
+	reactor = 0;
+	fabricator = 0;
+	linker = 0;
 }
 
 /** The triggers to release upgrades offer */
@@ -48,8 +54,8 @@ const upgradeNames = Object.keys(upgradesInfo);
 export class UpgradesTool {
 	/** @param {UpgradeSet} upgradeSet @param {string} upgradeName */
 	static isMaxedUpgrade(upgradeSet, upgradeName) {
-		if (!upgradesInfo[upgradeName] || !upgradeSet[upgradeName]) return true;
-		return upgradeSet[upgradeName].level >= upgradesInfo[upgradeName].maxLevel;
+		if (!upgradesInfo[upgradeName] || typeof upgradeSet[upgradeName] !== 'number') return true;
+		return upgradeSet[upgradeName] >= upgradesInfo[upgradeName].maxLevel;
 	}
 	static getUpgradeTooltipText(upgradeName = 'linker') {
 		if (!upgradesInfo[upgradeName]) return { tooltip: 'Unknown upgrade', subClass: undefined };
@@ -63,7 +69,9 @@ export class Upgrader {
 
 	/** @param {import('./player.mjs').PlayerNode} player @param {string} id @param {number} count default: 3 */
 	static getRandomUpgradeOffer(player, id, count = 3) {
-		if (!player.linker) return ['buildLinker', 'buildLinker', 'buildLinker']; // first upgrade must be linker
+		// IF NO LINKER: FIRST UPGRADE MUST BE A LINKER ?
+		if (!player.linker && player.upgradeOffers.length === 0)
+			return ['buildLinker', 'buildLinker', 'buildLinker'];
 
 		/** @type {string[]} */
 		const offers = [];
@@ -74,7 +82,7 @@ export class Upgrader {
 			for (const ps in requirement?.playerStats || {})
 				if (player[ps] === undefined || player[ps] < requirement.playerStats[ps]) continue;
 			for (const ru in requirement?.upgrades || {})
-				if (!player.upgradeSet[ru] || player.upgradeSet[ru].level < requirement.upgrades[ru]) continue;
+				if (!player.upgradeSet[ru] || player.upgradeSet[ru] < requirement.upgrades[ru]) continue;
 
 			offers.push(u);
 			if (offers.length >= count) break;
@@ -96,6 +104,10 @@ export class Upgrader {
 				break;
 			case 'energyDrop':
 				player.energy = player.maxEnergy;
+				break;
+			case 'maxEnergy':
+				player.maxEnergy += 50;
+				player.energy += 50;
 				break;
 		}
 	}
