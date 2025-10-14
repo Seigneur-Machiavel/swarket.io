@@ -102,7 +102,7 @@ export class UpgradeOffersComponent {
 		const offers = gameClient.alive ? gameClient.myPlayer.upgradeOffers[0] : [];
 		const offerSelectedOnLastTurn = this.offerSelectedOnLastTurn ? true : false;
 		this.offerSelectedOnLastTurn = false;
-		if (!offers || offers.length === 0) return this.#hideOffers();
+		if (!offers || offers.length === 0) return this.hideOffers();
 		if (offerSelectedOnLastTurn) return; // prevent re-showing if already selected
 
 		for (let i = 1; i <= 3; i++) {
@@ -121,7 +121,7 @@ export class UpgradeOffersComponent {
 		this.upgradeOffersWrapper.classList.add('visible');
 		// console.log(`%cUpgrade offers displayed: ${offers.join(', ')}`, 'color: green; font-weight: bold;');
 	}
-	#hideOffers() { this.upgradeOffersWrapper.classList.remove('visible'); }
+	hideOffers() { this.upgradeOffersWrapper.classList.remove('visible'); }
 	#setSelectedOffer(index = 1) {
 		for (let i = 1; i <= 3; i++) {
 			const offerElem = this[`offer${i}`];

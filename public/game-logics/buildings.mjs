@@ -1,4 +1,4 @@
-import { RAW_RESOURCES_PROD_BASIS } from './resources.mjs';
+import { BLUEPRINT } from './resources.mjs';
 
 export class BuildingBuilder {
 	/** @type {'reactor' | 'fabricator' | 'linker' | null} */
@@ -16,46 +16,39 @@ export class BuildingBuilder {
 	}
 }
 
-const productionsBasisByBuilding = {
-	reactor: { energy: 2 },
-	fabricator: {
-		2: { algorithms: 0, datasets: 0, prototypes: 0 },
-		3: { aiModules: 0, trainingJobs: 0, renderJobs: 0, robots: 0 },
-		4: { aiInstances: 0, services: 0, factories: 0, drones: 0 },
-		5: { agiCells: 0 }
-	}
-};
+class BuildingModules {
+	reactor = {
+		efficiency: { level: 0, maxLevel: 5, tooltip: 'Increases production rate by 20%' },
+		overload: { level: 0, maxLevel: 5, tooltip: 'Increases production rate by 50% and resources consumption by 30%' },
+		stability: { level: 0, maxLevel: 5, tooltip: 'Decreases breakdown risk by 50%' }
+	};
+}
 
 export class Reactor {
 	/** @type {0 | .25 | .5 | .75 | 1} */
 	productionRate = 1;
 	hasProducedThisTurn = false;
-	inputs = { chips: 0, engineers: 0 };
-	modules = {
-		efficiency: { level: 0, maxLevel: 5, tooltip: 'Increases production rate by 20%' },
-		overload: { level: 0, maxLevel: 5, tooltip: 'Increases production rate by 50% and resources consumption by 30%' },
-		stability: { level: 0, maxLevel: 5, tooltip: 'Decreases breakdown risk by 50%' }
-	};
-
-	constructor() {
-		this.inputs.chips = Math.ceil(RAW_RESOURCES_PROD_BASIS.chips);
-		this.inputs.engineers = Math.ceil(RAW_RESOURCES_PROD_BASIS.engineers);
+	modulesLevel = {
+		efficiency: 0,
+		overload: 0,
+		stability: 0
 	};
 
 	get energyProd() {
 		const productionRate = this.productionRate;
-		const efficiencyCoef = 1 + (this.modules.efficiency.level * .2); // +20% per level
-		const overloadCoef = 1 + (this.modules.overload.level * .5); // +50% per level
-		const consoCoef = 1 + (this.modules.overload.level * .3); // +30% per level
-		const conso = {
-			chips: (this.inputs.chips || 0) * productionRate * consoCoef,
-			engineers: (this.inputs.engineers || 0) * productionRate * consoCoef
+		const { efficiency, overload } = this.modulesLevel;
+		const efficiencyCoef = 1 + (efficiency * .2); // +20% per level
+		const overloadCoef = 1 + (overload * .5); // +50% per level
+		const consoCoef = 1 + (overload * .3); // +30% per level
+		const bluePrint = BLUEPRINT.energy();
+		for (const r in bluePrint.inputs) // APPLY CONSO COEF
+			bluePrint.inputs[r] = bluePrint.inputs[r] * productionRate * consoCoef;
+
+		return {
+			conso: bluePrint.inputs,
+			energy: bluePrint.output.energy * efficiencyCoef * overloadCoef * productionRate
 		};
-
-		const prodBasis = productionsBasisByBuilding.reactor.energy;
-		return { conso, energy: prodBasis * efficiencyCoef * overloadCoef * productionRate };
 	}
-
 	/** @param {import('./player.mjs').PlayerNode} player */
 	consumeResourcesAndGetProduction(player) {
 		this.hasProducedThisTurn = false;
@@ -73,10 +66,12 @@ export class Reactor {
 
 export class Fabricator {
 
+
 }
 
 export class Linker {
 	maxConnections = 2;
-	modules = {
-	}
+	modulesLevel = {};
+
+	
 }

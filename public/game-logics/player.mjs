@@ -12,10 +12,7 @@ export class PlayerNode {
 
 	production;			// raw (tier 1) resources only
 	rawProductionRate = 1; // 0 | .25 | .5 | .75 | 1
-	turnEnergyChanges = {
-		consumptions: [],
-		productions: []
-	}
+	turnEnergyChanges = { consumptions: [], productions: [] }; // filled only during turn exec
 
 	resourcesByTier; 	// all tiers
 	get rawResources() { return this.resourcesByTier['1']; }
@@ -143,7 +140,8 @@ export class PlayerNode {
 		if (amount < 0) this.turnEnergyChanges.consumptions.push(Math.abs(amount));
 		else this.turnEnergyChanges.productions.push(amount);
 	}
-	get #getAndClearTotalTurnEnergyChange() {
+	get getAndClearTotalTurnEnergyChange() {
+		if (!this.turnEnergyChanges) return { totalConso: 0, totalProd: 0 };
 		const totalConso = this.turnEnergyChanges.consumptions.reduce((a, b) => a + b, 0);
 		const totalProd = this.turnEnergyChanges.productions.reduce((a, b) => a + b, 0);
 		this.turnEnergyChanges = null;
@@ -152,7 +150,7 @@ export class PlayerNode {
 	#produceResources(consumptionBasis = 1) {
 		if (!this.energy) return 0;
 		let totalConso = 0;
-		const multiplier = 1 + (this.upgradeSet.producer.level * 0.4);
+		const multiplier = 1 + (this.upgradeSet.producer.level * .25);
 		for (const r in this.production) {
 			const prod = this.production[r] * multiplier * this.rawProductionRate;
 			this.resourcesByTier[1][r] += prod;
@@ -161,7 +159,7 @@ export class PlayerNode {
 		return totalConso;
 	}
 	#applyEnergyChange() {
-		const { totalConso, totalProd } = this.#getAndClearTotalTurnEnergyChange;
+		const { totalConso, totalProd } = this.getAndClearTotalTurnEnergyChange;
 		this.energy += totalProd - totalConso;
 		if (this.energy > this.maxEnergy) this.energy = this.maxEnergy;
 		if (this.energy < 0) this.energy = 0;

@@ -31,6 +31,7 @@
 	--producer-icon: url(assets/upgrades/producer.png);
 	--energy-drop-icon: url(assets/upgrades/energy.png);
 	--cleaner-icon: url(assets/upgrades/cleaner.png);
+	--autoCleaner-icon: url(assets/upgrades/auto_cleaner.png);
 
 	/* === RESOURCE ICONS & COLORS === */
 	--energy-icon: url(assets/resources/energy.png);
@@ -445,6 +446,9 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .upgrade-offer.cleaner::before {
 	background-image: var(--cleaner-icon);
 }
+.upgrade-offer.autoCleaner::before {
+	background-image: var(--autoCleaner-icon);
+}
 .upgrade-offer:hover::before {
 	filter: invert(1) brightness(1);
 }
@@ -663,11 +667,12 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 /** === PRODUCTION CYCLE - INPUTS & OUTPUTS === */
 .resource-inputs, .resource-outputs {
+	z-index: 1;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	height: 100%;
-	filter: brightness(0.8);
+	filter: brightness(.8);
 }
 .production-cycle .resource {
 	height: 100%;
