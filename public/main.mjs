@@ -50,12 +50,6 @@ const buildings = new BuildingsComponent(gameClient);
 const deadNodes = new DeadNodesComponent(gameClient);
 const nodeCard = new NodeCardComponent(gameClient, visualizer);
 
-// SETUP CALLBACKS
-upgradeOffers.onOfferClick = (upgradeName) => {
-	gameClient.digestMyAction({ type: 'upgrade', upgradeName });
-	upgradeOffers.hideOffers();
-}
-
 // ON TURN EXECUTION
 gameClient.onExecutedTurn.push(async (height = 0) => {
 	const player = gameClient.myPlayer;
@@ -73,7 +67,7 @@ gameClient.onExecutedTurn.push(async (height = 0) => {
 	console.log(`--- Turn ${height} executed ---`);
 
 	// UPGRADE OFFERS
-	if (player.upgradeOffers.length) upgradeOffers.displayOffers(player.upgradeOffers[0]);
+	upgradeOffers.displayOffers(gameClient);
 	if (!gameClient.alive) upgradeOffers.hideOffers();
 
 	// CONNECTION OFFERS

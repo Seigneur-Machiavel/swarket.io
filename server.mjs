@@ -23,7 +23,7 @@ app.listen(PORT, DOMAIN, () => console.log(`Server running at http://${DOMAIN}:$
 app.use('/hive-p2p', express.static(hiveP2PRoot));
 app.get('/', (req, res) => res.sendFile(join(__dirname, 'public/index.html')));
 
-const verbose = 4;
+const verbose = 2;
 const seedUint8Array = new Uint8Array(32);
 for (let i = 0; i < 'swarket-bee0'.length; i++) seedUint8Array[i] = 'swarket-bee0'.charCodeAt(i);
 const cryptoCodex = await HiveP2P.CryptoCodex.createCryptoCodex(true, seedUint8Array);

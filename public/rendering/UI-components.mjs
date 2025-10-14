@@ -96,25 +96,39 @@ export class UpgradeOffersComponent {
 	offer1 = document.getElementById('upgrade-offer-1');
 	offer2 = document.getElementById('upgrade-offer-2');
 	offer3 = document.getElementById('upgrade-offer-3');
-	onOfferClick = (upgradeName) => { console.log(`Upgrade clicked: ${upgradeName}`); };
 
-	displayOffers(offers = []) {
-		if (this.offerSelectedOnLastTurn) return this.offerSelectedOnLastTurn = false; // prevent re-showing if already selected
+	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
+	displayOffers(gameClient) {
+		const offers = gameClient.alive ? gameClient.myPlayer.upgradeOffers[0] : [];
+		const offerSelectedOnLastTurn = this.offerSelectedOnLastTurn ? true : false;
+		this.offerSelectedOnLastTurn = false;
+		if (!offers || offers.length === 0) return this.#hideOffers();
+		if (offerSelectedOnLastTurn) return; // prevent re-showing if already selected
 
 		for (let i = 1; i <= 3; i++) {
+			const offerName = offers[i - 1];
 			const offerElem = this[`offer${i}`];
+			const { tooltip, subClass } = UpgradesTool.getUpgradeTooltipText(offerName);
 			offerElem.classList = `upgrade-offer ${offers[i - 1]}`;
+			if (subClass) offerElem.classList.add(subClass);
 			offerElem.onclick = () => {
-				this.onOfferClick(offers[i - 1]);
+				this.#setSelectedOffer(i);
+				gameClient.digestMyAction({ type: 'upgrade', upgradeName: offerName });
 				this.offerSelectedOnLastTurn = true;
 			}
-			const tooltipText = UpgradesTool.getUpgradeTooltipText(offers[i - 1]);
-			offerElem.querySelector('.tooltip').textContent = tooltipText;
+			offerElem.querySelector('.tooltip').textContent = tooltip;
 		}
 		this.upgradeOffersWrapper.classList.add('visible');
 		// console.log(`%cUpgrade offers displayed: ${offers.join(', ')}`, 'color: green; font-weight: bold;');
 	}
-	hideOffers() { this.upgradeOffersWrapper.classList.remove('visible'); }
+	#hideOffers() { this.upgradeOffersWrapper.classList.remove('visible'); }
+	#setSelectedOffer(index = 1) {
+		for (let i = 1; i <= 3; i++) {
+			const offerElem = this[`offer${i}`];
+			if (i === index) offerElem.classList.add('selected');
+			else offerElem.classList.remove('selected');
+		}
+	}
 }
 
 export class EnergyBarComponent {

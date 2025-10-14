@@ -386,7 +386,6 @@ export class NetworkRenderer {
     // Internal methods
 	/** @param {string} axis @param {'3d'|'2d'|null} restrictToMode */
 	#autoRotate(axis = 'z', restrictToMode = null) {
-		return;
 		if (!this.#autoRotateEnabled || !this.isAnimating) return;
 		try { if (!restrictToMode || this.options.mode === restrictToMode) this.scene.rotation[axis] -= this.autoRotateSpeed;
 		} catch (error) { console.error('Error during auto-rotation:', error); }

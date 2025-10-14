@@ -20,13 +20,13 @@ export class PlayerNode {
 	resourcesByTier; 	// all tiers
 	get rawResources() { return this.resourcesByTier['1']; }
 	upgradeSet;			// current upgrade set
-	upgradeOffers = []; // current upgrade offers
+	upgradeOffers = []; // upgrade offers
 
 	// BUILDINGS ------------------------------------------------------------------\
 	/** @type {Reactor | null} */ 		reactor = null;		// reactor building		|
 	/** @type {Fabricator | null} */ 	fabricator = null; 	// fabricator building	|
 	/** @type {Linker | null} */		linker = null;		// linker building		|
-	get maxConnections() { return this.linker?.level * 2 || 0; } //					|
+	get maxConnections() { return this.linker?.maxConnections || 0; } //			|
 	// ----------------------------------------------------------------------------/
 
 	/** @param {string} id @param {'chip' | 'data' | 'models' | 'engineers' | undefined} operatingResource Randomly selected if undefined */

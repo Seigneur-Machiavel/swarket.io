@@ -38,8 +38,12 @@ export class ReactorComponent {
 	modal = document.getElementById('reactor-modal');
 	closeBtn = this.modal.querySelector('.close-btn');
 	reactorProductionRate = this.modal.querySelector('#reactor-production-rate');
+	// PRODUCTION-CYCLE ELEMENTS
+	productionCycle = this.modal.querySelector('.production-cycle');
 	reactorChipsInput = this.modal.querySelector('#reactor-chips-input');
 	reactorEngineersInput = this.modal.querySelector('#reactor-engineers-input');
+	//productionChain = this.modal.querySelector('.production-chain');
+	//productionChainFitting = this.modal.querySelector('.production-chain-fitting');
 	reactorEnergyOutput = this.modal.querySelector('#reactor-energy-output');
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
@@ -59,6 +63,9 @@ export class ReactorComponent {
 		this.reactorChipsInput.textContent = conso?.chips?.toFixed(1) || '0';
 		this.reactorEngineersInput.textContent = conso?.engineers?.toFixed(1) || '0';
 		this.reactorEnergyOutput.textContent = energy?.toFixed(1) || '0';
+		const hasProducedThisTurn = this.gameClient.myPlayer.reactor?.hasProducedThisTurn;
+		if (hasProducedThisTurn) this.productionCycle.classList.add('enabled');
+		else this.productionCycle.classList.remove('enabled');
 	}
 
 	show() { this.modal.classList.add('visible'); }
