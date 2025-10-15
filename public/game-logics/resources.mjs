@@ -22,35 +22,56 @@ export function newResourcesSet() {
 	return {
 		1: { chips: 0, datas: 0, models: 0, engineers: 0 },
 		2: { algorithms: 0, datasets: 0, prototypes: 0, catalyzers: 0 },
-		3: { aiModules: 0, renderJobs: 0, robots: 0, experts: 0 },
+		3: { aiModules: 0, robots: 0, experts: 0 },
 		4: { aiCores: 0, drones: 0, superconductors: 0 },
-		5: { geniuses: 0, agiCells: 0}
+		5: { geniuses: 0, agiCells: 0 }
 	};
 }
 
+export class ResourcesProductionType {
+	energy = 0;
+	chips = 0;
+	datas = 0;
+	models = 0;
+	engineers = 0;
+	algorithms = 0;
+	datasets = 0;
+	prototypes = 0;
+	catalyzers = 0;
+	aiModules = 0;
+	robots = 0;
+	experts = 0;
+	aiCores = 0;
+	drones = 0;
+	superconductors = 0;
+	geniuses = 0;
+	agiCells = 0;
+}
+
 const RAW_PROD = RAW_RESOURCES_PROD_BASIS; // alias
-export class BLUEPRINT {
-	static energy = () => ({
+/** @type {Record<string, () => { inputs: Record<string, number>, outputs: Record<string, number> }>} */
+export const BLUEPRINT = {
+	energyFromChipsAndEngineers: () => ({
 		inputs: { chips: RAW_PROD.chips, engineers: RAW_PROD.engineers },
-		output: { energy: 2 }
-	});
+		outputs: { energy: 2 }
+	}),
 
 	// Tier 2 -- Basic Products
-	static algorithms = () => ({ inputs: { chips: 15, models: 6 }, outputQty: .9 });
-	static datasets = () => ({ inputs: { datas: 100, models: 18 }, outputQty: 1.2 });
-	static prototypes = () => ({ inputs: { chips: 10, datas: 20, models: 10, engineers: 2 }, outputQty: .75 });
-	static catalyzers = () => ({ inputs: { chips: 30, engineers: 5 }, outputQty: .4 });
+	algorithms: () => ({ inputs: { chips: 15, models: 6 }, outputs: { algorithms: .9 } }),
+	datasets: () => ({ inputs: { datas: 100, models: 18 }, outputs: { datasets: 1.2 } }),
+	prototypes: () => ({ inputs: { chips: 10, datas: 20, models: 10, engineers: 2 }, outputs: { prototypes: .75 } }),
+	catalyzers: () => ({ inputs: { chips: 30, engineers: 5 }, outputs: { catalyzers: .4 } }),
 	// Tier 3 -- Advanced Products
-	static aiModules = () => ({ inputs: { chips: 220, algorithms: 4, datasets: 10 }, outputQty: .85 });
-	static robots = () => ({ inputs: { chips: 500, models: 10, engineers: 4 }, outputQty: .5 });
-	static experts = () => ({ inputs: { datas: 1500, models: 15, engineers: 6 }, outputQty: .3 });
+	aiModules: () => ({ inputs: { chips: 220, algorithms: 4, datasets: 10 }, outputs: { aiModules: .85 } }),
+	robots: () => ({ inputs: { chips: 500, models: 10, engineers: 4 }, outputs: { robots: .5 } }),
+	experts: () => ({ inputs: { datas: 1500, models: 15, engineers: 6 }, outputs: { experts: .3 } }),
 	// Tier 4 -- Complex Products
-	static aiCores = () => ({ inputs: { chips: 500, aiModules: 5, experts: 2 }, outputQty: .8 });
-	static drones = () => ({ inputs: { datas: 5000, robots: 4, experts: 1 }, outputQty: .35 });
-	static superconductors = () => ({ inputs: { models: 1000, aiModules: 2, robots: 2 }, outputQty: .1 });
+	aiCores: () => ({ inputs: { chips: 500, aiModules: 5, experts: 2 }, outputs: { aiCores: .8 } }),
+	drones: () => ({ inputs: { datas: 5000, robots: 4, experts: 1 }, outputs: { drones: .35 } }),
+	superconductors: () => ({ inputs: { models: 1000, aiModules: 2, robots: 2 }, outputs: { superconductors: .1 } }),
 	// Tier 5 -- Ultimate Products
-	static geniuses = () => ({ inputs: { datas: 10000, experts: 4, aiCores: 2 }, outputQty: .05 });
-	static agiCells = () => ({ inputs: { chips: 1000, algorithms: 10, datasets: 10, prototypes: 5, catalyzers: 5, geniuses: 3 }, outputQty: .25 });
+	geniuses: () => ({ inputs: { datas: 10000, experts: 4, aiCores: 2 }, outputs: { geniuses: .05 } }),
+	agiCells: () => ({ inputs: { chips: 1000, algorithms: 10, datasets: 10, prototypes: 5, catalyzers: 5, geniuses: 3 }, outputs: { agiCells: .25 } })
 }
 
 /** LEXICON

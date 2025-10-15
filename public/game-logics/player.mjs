@@ -54,7 +54,7 @@ export class PlayerNode {
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} nodeId @param {{type: string}} intent */
 	execIntent(gameClient, nodeId, intent) {
-		if (intent.type === 'set-param') return this.#handleSetParamIntent(intent.param, intent.value);
+		if (intent.type === 'set-param') return this.#handleSetParamIntent(intent);
 		else if (intent.type === 'transaction') console.log(`[${nodeId}] Transaction:`, intent.amount, intent.resource, '->', intent.to);
 		else if (intent.type === 'upgrade') return this.#handleUpgradeIntent(gameClient, intent.upgradeName);
 		else if (intent.type === 'recycle') return this.#handleRecycleIntent(gameClient, intent.fromDeadNodeId);
@@ -66,9 +66,11 @@ export class PlayerNode {
 		const entropy = Math.floor(this.lifetime / 60) * 0.02; // +2% every 60 turns
 		const basis = .5 * (1 + entropy); 	// base consumption
 		this.#setEnergyChange(-basis);		// maintenance consumption
-		this.#setEnergyChange(this.#produceResources(basis));
-		this.#setEnergyChange(this.reactor?.consumeResourcesAndGetProduction(this));
+		this.#setEnergyChange(this.#produceRawResources(basis));
+		this.#setEnergyChange(this.reactor?.consumeResourcesAndGetProduction(this).energy);
 		this.#applyEnergyChange();
+		//TODO: linker energy consumption
+		//TODO: fabricator production & consumption
 		this.#addUpgradeOffer(turnHash);
 
 		if (!this.energy) this.upgradeOffers = []; // clear offers if dead
@@ -87,16 +89,26 @@ export class PlayerNode {
 
 	// PRIVATE
 	// TURN EXEC => INTENTS
-	#handleSetParamIntent(param, value) {
+	/** @param {{param: string, buildingName: string, lineName: string, value: any}} intent */
+	#handleSetParamIntent(intent) {
+		const { param, buildingName, lineName, value } = intent;
+		/** @type {Reactor | Fabricator | Linker | null} */
+		const building = this[buildingName] || null;
+		if (!buildingName && building === null) return console.warn(`[${this.id}] Cannot set param, no building:`, buildingName);
+		
+		const lineIndex = lineName ? building?.activeProductionLines.indexOf(lineName) : -1;
+		if (lineName && lineIndex === -1) return console.warn(`[${this.id}] Cannot set param, unknown production line:`, lineName);
+		
 		console.log(`[${this.id}] Set param:`, param, value);
 		switch (param) {
 			case 'rawProductionRate':
 				if (![0, .25, .5, .75, 1].includes(value)) return;
 				this.rawProductionRate = value;
 				break;
-			case 'reactorProductionRate':
-				if (!this.reactor || ![0, .25, .5, .75, 1].includes(value)) return;
-				this.reactor.productionRate = value;
+			case 'buildingProductionRate':
+				if (!building || ![0, .25, .5, .75, 1].includes(value)) return;
+				if (lineIndex === -1) return console.warn(`[${this.id}] Cannot set param, unknown production line:`, lineName);
+				building.productionRates[lineIndex] = value;
 				break;
 			default:
 				return console.warn(`[${this.id}] Unknown param to set:`, param);
@@ -147,7 +159,7 @@ export class PlayerNode {
 		this.turnEnergyChanges = null;
 		return { totalConso, totalProd };
 	}
-	#produceResources(consumptionBasis = 1) {
+	#produceRawResources(consumptionBasis = 1) {
 		if (!this.energy) return 0;
 		let totalConso = 0;
 		const multiplier = 1 + (this.upgradeSet.producer * .25);

@@ -654,8 +654,9 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 /** === SHARED STYLES FOR BUILDING MODALS === */
-/** === PRODUCTION CYCLE - (WRAPPER) === */
-.production-cycle {
+/** === PRODUCTION LINE - (WRAPPER) === */
+.production-line {
+	user-select: none;
 	display: flex;
 	position: relative;
 	margin-left: 10px;
@@ -663,13 +664,13 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	color: var(--text-darker);
 	font-size: 20px;
 }
-.production-cycle.two {
+.production-line.two {
 	height: 80px;
 }
-.production-cycle.three {
+.production-line.three {
 	height: 120px;
 }
-/** === PRODUCTION CYCLE - INPUTS & OUTPUTS === */
+/** === PRODUCTION LINE - INPUTS & OUTPUTS === */
 .resource-inputs, .resource-outputs {
 	z-index: 1;
 	display: flex;
@@ -678,14 +679,14 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	height: 100%;
 	filter: brightness(.8);
 }
-.production-cycle .resource {
+.production-line .resource {
 	height: 100%;
 	width: fit-content;
 }
-.production-cycle.two .resource {
+.production-line.two .resource {
 	height: 50%;
 }
-.production-cycle.three .resource {
+.production-line.three .resource {
 	height: 33.3%;
 }
 .resource-outputs {
@@ -715,10 +716,12 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	margin-left: 3px;
 	gap: 4px;
 }
-.production-chain-fitting.two-inputs.one-output .fitting:nth-child(1) {
+.production-chain-fitting.two-inputs.one-output .fitting:nth-child(1),
+.production-chain-fitting.one-inputs.two-output .fitting:nth-child(2) {
 	transform: rotate(33deg);
 }
-.production-chain-fitting.two-inputs.one-output .fitting:nth-child(2) {
+.production-chain-fitting.two-inputs.one-output .fitting:nth-child(2),
+.production-chain-fitting.one-inputs.two-output .fitting:nth-child(1) {
 	transform: rotate(-33deg);
 }
 .chain, .fitting {
@@ -737,16 +740,16 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	backdrop-filter: brightness(1);
 }
 
-.production-cycle.enabled .resource-inputs {
+.production-line.enabled .resource-inputs {
 	animation: inputsGlow var(--turn-duration) infinite;
 }
-.production-cycle.enabled .resource-outputs {
+.production-line.enabled .resource-outputs {
 	animation: inputsGlow var(--turn-duration) .2s infinite reverse;
 }
-.production-cycle.enabled .chain::after {
+.production-line.enabled .chain::after {
 	animation: chainGlowGrow var(--turn-duration) infinite;
 }
-.production-cycle.enabled .fitting::after {
+.production-line.enabled .fitting::after {
 	animation: fittingGlowGrow var(--turn-duration) infinite;
 }
 @keyframes inputsGlow {

@@ -53,39 +53,7 @@
 		<div id ="reactor-modal" class="building-modal modal">
 			<div class="close-btn">x</div>
 			
-			<div class="production-cycle two">
-				<div class="resource-inputs">
-					<div class="resource">
-						<div class="tooltip">Chips consumption</div>
-						<div class="resource-icon chips"></div>
-						<span class="resource-value" id="reactor-chips-input">0</span>
-					</div>
-					<div class="resource">
-						<div class="tooltip">Engineers consumption</div>
-						<div class="resource-icon engineers"></div>
-						<span class="resource-value" id="reactor-engineers-input">0</span>
-					</div>
-				</div>
-				<div class="production-chain two">
-					<div class="chain">========</div>
-					<div class="chain">========</div>
-				</div>
-				<div class="production-chain-fitting two-inputs one-output">
-					<div class="fitting">==</div>
-					<div class="fitting">==</div>
-				</div>
-				<div class="resource-outputs">
-					<div class="resource">
-						<div class="tooltip">Energy production</div>
-						<div class="resource-icon energy"></div>
-						<span class="resource-value" id="reactor-energy-output">0</span>
-					</div>
-				</div>
-				<div class="input-vertical-range">
-					<div class="five-steps-range-bars"></div>
-					<input type="range" id="reactor-production-rate" min="0" max="1" step=".25" value="1">
-				</div>
-			</div>
+			<div class="production-lines-wrapper"></div>
 
 			<div class="separator"></div>
 
@@ -100,7 +68,6 @@
 		<div id ="linker-modal" class="building-modal modal">
 			<div class="close-btn">x</div>
 		</div>
-
 		<div id="connections-list-wrapper">
 			<div class="close-btn" id="connections-list-close-btn">x</div>
 			<div class="connections-list-header">
@@ -120,7 +87,6 @@
 				</div>
 			</div>
 		</div>
-
 		<div class="dev-info">
 			<div>DEV INFO  |</div>
 			<div>°°°°°°°°°°</div>
