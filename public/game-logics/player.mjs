@@ -1,6 +1,6 @@
 import { randomOperatingResource, newRawResourcesSet, newResourcesSet } from './resources.mjs';
 import { UpgradesTool, UpgradeSet, Upgrader } from './upgrades.mjs';
-import { BuildingBuilder, Reactor, Fabricator, Linker } from './buildings.mjs';
+import { BuildingBuilder, Building, Reactor, Fabricator, Linker } from './buildings.mjs';
 
 export class PlayerNode {
 	name = 'PlayerName'; id;
@@ -92,7 +92,7 @@ export class PlayerNode {
 	/** @param {{param: string, buildingName: string, lineName: string, value: any}} intent */
 	#handleSetParamIntent(intent) {
 		const { param, buildingName, lineName, value } = intent;
-		/** @type {Reactor | Fabricator | Linker | null} */
+		/** @type {Building | null} */
 		const building = this[buildingName] || null;
 		if (!buildingName && building === null) return console.warn(`[${this.id}] Cannot set param, no building:`, buildingName);
 		

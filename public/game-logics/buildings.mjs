@@ -16,11 +16,44 @@ export class BuildingBuilder {
 	}
 } 
 
-export class Reactor {
+export class Building {
 	/** @type {Array<0 | .25 | .5 | .75 | 1>} */
 	productionRates = [1];
-	activeProductionLines = ['energyFromChipsAndEngineers'];
 	linesWhoProducedThisTurn = [];
+	/** @type {string[]} */
+	activeProductionLines = [];
+
+	getProductionLineEffect(lineKey) { // TEMPLATE -> WILL BE OVERRIDDEN
+		/** @type {BLUEPRINT} */
+		const bluePrints = {};
+		return bluePrints['toto'];
+	}
+
+	/** @param {import('./player.mjs').PlayerNode} player @returns {ResourcesProductionType} */
+	consumeResourcesAndGetProduction(player) {
+		this.linesWhoProducedThisTurn = [];
+		if (!player.energy) return {};
+		const production = {}; 	// ResourcesProductionType
+		for (const lineKey of this.activeProductionLines) {
+			const { inputs, outputs } = this.getProductionLineEffect(lineKey);
+			let missingResource = false;
+			for (const r in inputs) // CHECK IF PLAYER HAS ENOUGH RESOURCES FOR THE LINE
+				if (!player.rawResources[r] || player.rawResources[r] < inputs[r])
+					{ missingResource = true; break; }
+			if (missingResource) continue;
+
+			// IF SO, APPLY CONSUMATION & FILL PRODUCTION
+			for (const r in inputs) player.rawResources[r] -= inputs[r];
+			for (const r in outputs) production[r] = (production[r] || 0) + outputs[r];
+			this.linesWhoProducedThisTurn.push(lineKey);
+		}
+
+		return production;
+	}
+}
+
+export class Reactor extends Building {
+	activeProductionLines = ['energyFromChipsAndEngineers'];
 	modulesLevel = {
 		efficiency: 0,
 		overload: 0,
@@ -53,32 +86,14 @@ export class Reactor {
 
 		return { inputs, outputs };
 	}
-	/** @param {import('./player.mjs').PlayerNode} player @returns {ResourcesProductionType} */
-	consumeResourcesAndGetProduction(player) {
-		this.linesWhoProducedThisTurn = [];
-		if (!player.energy) return {};
-		const production = {}; 	// ResourcesProductionType
-		for (const lineKey of this.activeProductionLines) {
-			const { inputs, outputs } = this.getProductionLineEffect(lineKey);
-			for (const r in inputs) // CHECK IF PLAYER HAS ENOUGH RESOURCES FOR THE LINE
-				if ((player.rawResources[r] || 0) < inputs[r]) continue;
-
-			// IF SO, APPLY CONSUMATION & FILL PRODUCTION
-			for (const r in inputs) player.rawResources[r] -= inputs[r];
-			for (const r in outputs) production[r] = (production[r] || 0) + outputs[r];
-			this.linesWhoProducedThisTurn.push(lineKey);
-		}
-
-		return production;
-	}
 }
 
-export class Fabricator {
-
+export class Fabricator extends Building {
+	modulesLevel = {};
 
 }
 
-export class Linker {
+export class Linker extends Building {
 	maxConnections = 2;
 	modulesLevel = {};
 
