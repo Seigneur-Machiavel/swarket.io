@@ -32,9 +32,8 @@ console.log(`%cPublic node id: ${bee0.id} | url: ${bee0.publicUrl}`, 'color: cya
 
 const gameClient = new GameClient(bee0, true);
 gameClient.myPlayer.name = 'bootstrap: Bee0';
-gameClient.myPlayer.energy = 100_000_000_000; // infinite energy
+gameClient.myPlayer.inventory.setAmount('energy', 100_000_000_000); // infinite energy
 gameClient.myPlayer.maxEnergy = 100_000_000_000; // infinite energy
-//gameClient.digestMyAction({ type: 'noop_0' }); // bypass first turn => useless now.
 gameClient.onExecutedTurn.push(async(height = 0) => {
 	await new Promise(resolve => setTimeout(resolve, Math.round(gameClient.turnSystem.turnDuration / 10)));
 	gameClient.digestMyAction({ type: `Bee0_${Math.random()}` });

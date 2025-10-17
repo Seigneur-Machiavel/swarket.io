@@ -9,10 +9,10 @@ export class NodeInteractor {
 		const player = players[nodeId];
 		if (nodeId === node.id || !node.peerStore.known[nodeId] || !player) return;
 		if (node.peerStore.standardNeighborsList.includes(nodeId)) return; // already connected
-		const selfCanConnect = node.peerStore.standardNeighborsList.length < players[node.id].maxConnections;
+		const selfCanConnect = node.peerStore.standardNeighborsList.length < players[node.id].getMaxConnections;
 		const peerNeighbors = Object.keys(node.peerStore.known[nodeId].neighbors);
 		const peerNeighborsCount = peerNeighbors.filter(id => !node.cryptoCodex.isPublicNode(id)).length;
-		const targetCanConnect = peerNeighborsCount < player.maxConnections;
+		const targetCanConnect = peerNeighborsCount < player.getMaxConnections;
 		if (selfCanConnect && targetCanConnect) return true;
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} nodeId */

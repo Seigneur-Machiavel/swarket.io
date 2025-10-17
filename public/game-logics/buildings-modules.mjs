@@ -3,14 +3,14 @@
 /** @param {import('./player.mjs').PlayerNode} player */
 export function getModulesDescriptionRelativeToPlayer(player) {
 	if (!player.reactor) return null;
-	/** @type {Record<string, { minReactorLevel: number, currentLevel: number, description: string }>} */
+	/** @type {Record<string, { minBuildingLevel: number, currentLevel: number, description: string }>} */
 	const modulesInfos = {};
 	for (const m in REACTOR_MODULES) {
 		const currentLevel = player.reactor.modulesLevel[m] || 0;
-		const { minReactorLevel } = REACTOR_MODULES[m];
-		if (!modulesInfos[minReactorLevel]) modulesInfos[minReactorLevel] = {};
+		const { minBuildingLevel } = REACTOR_MODULES[m];
+		if (!modulesInfos[minBuildingLevel]) modulesInfos[minBuildingLevel] = {};
 		const { description } = REACTOR_MODULES[m].levelEffect[currentLevel] || 'Max level reached';
-		modulesInfos[minReactorLevel][m] = { currentLevel, description };
+		modulesInfos[minBuildingLevel][m] = { currentLevel, description };
 	}
 	return modulesInfos;
 }
@@ -21,77 +21,105 @@ export function getModuleMaxLevel(reactorLevel, moduleKey) {
 }
 
 /**
- * @typedef {{description: string, outputCoef?: number, consoCoef?: number, breakdownRiskCoef?: number, energyPerRawResource?: number, energyQty?: number}} LevelEffect
+ * @typedef {{description: string, outputCoef?: number, inputCoef?: number, breakdownRiskCoef?: number, energyPerRawResource?: number}} LevelEffect
  */
-/** @type {Record<string, { minReactorLevel: number, levelEffect: Array<LevelEffect> }>} */
 export class REACTOR_MODULES {
+	/** @returns {Array<number>} */
+	static emptyModulesArray() {
+		return Array(REACTOR_MODULES.allModulesKeys.length).fill(0);
+	}
+	static allModulesKeys = [
+		'efficiency',
+		'overload',
+		'synergy',
+		'stability',
+		'catalyst',
+		'burst',
+		'quantum'
+	];
+
+	/** @returns {{minBuildingLevel: number, maxLevel: number} | null} */
+	static getModuleRequiredLevelAndMaxLevel(moduleKey = 'toto') {
+		const m = REACTOR_MODULES[moduleKey];
+		return { minBuildingLevel: m.minBuildingLevel, maxLevel: m.levelEffect.length };
+	}
+	/** @returns {LevelEffect | null} */
+	static getModuleEffect(moduleKey = 'efficiency', level = 0) {
+		return REACTOR_MODULES[moduleKey]?.levelEffect[level] || null;
+	}
+	/** @returns {string} */
+	static getModuleDescription(moduleKey = 'efficiency', level = 0) {
+		let description = REACTOR_MODULES[moduleKey]?.levelEffect[level]?.description;
+		if (!description) description = `${REACTOR_MODULES[moduleKey]?.levelEffect[level - 1]?.description} (Max level reached)`;
+		return description;
+	}
 
 	// REACTOR LEVEL 1
 	static efficiency = {
-		minReactorLevel: 1,
+		minBuildingLevel: 0,
 		levelEffect: [
-			{ outputCoef: 1.2, description: 'Increases production rate by 20%' },
-			{ outputCoef: 1.4, description: 'Increases production rate by 40%' },
-			{ outputCoef: 1.6, description: 'Increases production rate by 60%' },
-			{ outputCoef: 2, description: 'Increases production rate by 100%' },
-			{ outputCoef: 2.5, description: 'Increases production rate by 150%' }
+			{ outputCoef: 1.2, description: 'Production rate: 120%' },
+			{ outputCoef: 1.4, description: 'Production rate: 120% > 140%' },
+			{ outputCoef: 1.6, description: 'Production rate: 140% > 160%' },
+			{ outputCoef: 2, description: 'Production rate: 160% > 200%' },
+			{ outputCoef: 2.5, description: 'Production rate: 200% > 250%' }
 		]
 	}
 	static overload = {
-		minReactorLevel: 1,
+		minBuildingLevel: 0,
 		levelEffect: [
-			{ outputCoef: 1.5, consoCoef: 1.3, description: 'Increases production rate by 50% and resources consumption by 30%' },
-			{ outputCoef: 2, consoCoef: 1.6, description: 'Increases production rate by 100% and resources consumption by 60%' },
-			{ outputCoef: 2.5, consoCoef: 1.9, description: 'Increases production rate by 150% and resources consumption by 90%' },
-			{ outputCoef: 3, consoCoef: 2.2, description: 'Increases production rate by 200% and resources consumption by 120%' },
-			{ outputCoef: 4.5, consoCoef: 2.5, description: 'Increases production rate by 300% and resources consumption by 150%' }
+			{ outputCoef: 1.5, inputCoef: 1.3, description: 'Produces 50% more but consumes 30% more resources' },
+			{ outputCoef: 2, inputCoef: 1.6, description: 'Production: 150% > 200%, Consumption: 30% > 60%' },
+			{ outputCoef: 2.5, inputCoef: 1.9, description: 'Production: 200% > 250%, Consumption: 60% > 90%' },
+			{ outputCoef: 3, inputCoef: 2.2, description: 'Production: 250% > 300%, Consumption: 90% > 120%' },
+			{ outputCoef: 4.5, inputCoef: 2.5, description: 'Production: 300% > 450%, Consumption: 120% > 150%' }
 		]
 	}
 
 	// REACTOR LEVEL 3
 	static synergy = {
-		minReactorLevel: 3,
+		minBuildingLevel: 3,
 		levelEffect: [
 			{ energyPerRawResource: 1, description: 'Produce 1 energy per each raw resource produced' },
 			{ energyPerRawResource: 2, description: 'Produce 2 energy per each raw resource produced' },
 		]
 	}
 	static stability = {
-		minReactorLevel: 3,
+		minBuildingLevel: 3,
 		levelEffect: [
 			{ breakdownRiskCoef: .75, description: 'Decreases breakdown risk by 25%' },
-			{ breakdownRiskCoef: .5, description: 'Decreases breakdown risk by 50%' },
-			{ breakdownRiskCoef: .3, description: 'Decreases breakdown risk by 70%' },
-			{ breakdownRiskCoef: .15, description: 'Decreases breakdown risk by 85%' },
-			{ breakdownRiskCoef: .05, description: 'Decreases breakdown risk by 95%' }
+			{ breakdownRiskCoef: .5, description: 'Breakdown risk: 75% > 50%' },
+			{ breakdownRiskCoef: .3, description: 'Breakdown risk: 50% > 30%' },
+			{ breakdownRiskCoef: .15, description: 'Breakdown risk: 30% > 15%' },
+			{ breakdownRiskCoef: .05, description: 'Breakdown risk: 15% > 5%' }
 		]
 	}
 
 	// REACTOR LEVEL 5
 	static catalyst = {
-		minReactorLevel: 5,
+		minBuildingLevel: 5,
 		levelEffect: [
-			{ outputCoef: 1, description: 'Consume catalyzer => Increases production rate by 100%' },
-			{ outputCoef: 1.5, description: 'Consume catalyzer => Increases production rate by 150%' },
-			{ outputCoef: 2.5, description: 'Consume catalyzer => Increases production rate by 250%' },
-			{ outputCoef: 4, description: 'Consume catalyzer => Increases production rate by 400%' },
-			{ outputCoef: 8, description: 'Consume catalyzer => Increases production rate by 800%' }
+			{ outputCoef: 2, description: 'Consume catalyzer => Production rate: +100%' },
+			{ outputCoef: 2.5, description: 'Consume catalyzer => Production rate: 150%' },
+			{ outputCoef: 3.5, description: 'Consume catalyzer => Production rate: 250%' },
+			{ outputCoef: 5, description: 'Consume catalyzer => Production rate: 400%' },
+			{ outputCoef: 9, description: 'Consume catalyzer => Production rate: 800%' }
 		]
 	}
 	static burst = {
-		minReactorLevel: 5,
+		minBuildingLevel: 5,
 		levelEffect: [
-			{ energyQty: 100, description: 'Consume prototypes => Produce 100 energy' },
-			{ energyQty: 200, description: 'Consume prototypes => Produce 200 energy' },
-			{ energyQty: 300, description: 'Consume prototypes => Produce 300 energy' },
+			{ description: 'Consume prototypes => Produce 100 energy' },
+			{ description: 'Consume prototypes => Produce 200 energy' },
+			{ description: 'Consume prototypes => Produce 300 energy' },
 		]
 	}
 
 	// REACTOR LEVEL 10
 	static quantum = {
-		minReactorLevel: 10,
+		minBuildingLevel: 10,
 		levelEffect: [
-			{ energyQty: 5000, description: 'Consume aiModules => Produce 5000 energy' },
+			{ description: 'Consume aiModules => Produce 5000 energy' },
 		]
 	}
 }

@@ -19,7 +19,7 @@ export class PlayerStatsComponent {
 	update(player, connections) {
 		this.lifetimeElem.textContent = player.lifetime;
 		this.connectionElem.textContent = connections;
-		this.connectionMaxElem.textContent = player.maxConnections;
+		this.connectionMaxElem.textContent = player.getMaxConnections;
 	}
 	showConnectionOfferNotification() {
 		this.connectionOfferNotification.classList.add('visible');
@@ -146,16 +146,19 @@ export class EnergyBarComponent {
 }
 
 export class ResourcesBarComponent {
+	energyCount = document.getElementById('energy-count');
 	chipsCount = document.getElementById('chips-count');
 	datasCount = document.getElementById('datas-count');
 	modelsCount = document.getElementById('models-count');
 	engineersCount = document.getElementById('engineers-count');
 
-	update(resources) {
-		this.chipsCount.textContent = Math.round(resources[1].chips);
-		this.datasCount.textContent = Math.round(resources[1].datas);
-		this.modelsCount.textContent = Math.round(resources[1].models);
-		this.engineersCount.textContent = Math.round(resources[1].engineers);
+	/** @param {import('../game-logics/player.mjs').PlayerNode} player */
+	update(player) {
+		this.energyCount.textContent = player.inventory.getAmount('energy').toFixed(1);
+		this.chipsCount.textContent = player.inventory.getAmount('chips').toFixed(1);
+		this.datasCount.textContent = player.inventory.getAmount('datas').toFixed(1);
+		this.modelsCount.textContent = player.inventory.getAmount('models').toFixed(1);
+		this.engineersCount.textContent = player.inventory.getAmount('engineers').toFixed(1);
 	}
 }
 
@@ -164,7 +167,12 @@ export class BuildingsComponent {
 	icons = {
 		reactor: document.getElementById('reactor-icon'),
 		fabricator: document.getElementById('fabricator-icon'),
-		linker: document.getElementById('linker-icon')
+		linker: document.getElementById('linker-icon'),
+	}
+	upgradePointsElements = {
+		reactor: document.getElementById('reactor-upgrade-points'),
+		fabricator: document.getElementById('fabricator-upgrade-points'),
+		linker: document.getElementById('linker-upgrade-points'),
 	}
 
 	reactor;		// COMPONENT
@@ -184,7 +192,28 @@ export class BuildingsComponent {
 		this.icons.linker.onclick = () => this.#handleIconClick('linker');
 	}
 
-	updateSubComponents() {
+	update() {
+		//this.upgradePointsElements.reactor.textContent = this.gameClient.myPlayer.reactor?.upgradePoints || '0';
+		//this.upgradePointsElements.fabricator.textContent = this.gameClient.myPlayer.fabricator?.upgradePoints || '0';
+		//this.upgradePointsElements.linker.textContent = this.gameClient.myPlayer.linker?.upgradePoints || '0';
+		this.#updateUpgradePoints();
+		this.#updateSubComponents();
+	}
+	#updateUpgradePoints() {
+		const player = this.gameClient.myPlayer;
+		const points = {
+			reactor: player.reactor?.upgradePoints || 0,
+			fabricator: player.fabricator?.upgradePoints || 0,
+			linker: player.linker?.upgradePoints || 0,
+		}
+
+		for (const b in this.upgradePointsElements) {
+			this.upgradePointsElements[b].textContent = points[b];
+			if (points[b] > 0) this.upgradePointsElements[b].classList.add('visible');
+			else this.upgradePointsElements[b].classList.remove('visible');
+		}
+	}
+	#updateSubComponents() {
 		const player = this.gameClient.myPlayer;
 		for (const b in this.icons) {
 			if (!player[b]) { this.icons[b].classList.remove('visible'); continue; }
@@ -241,7 +270,7 @@ export class DeadNodesComponent {
 		const resources = deadNodeElem.querySelectorAll('.resource-value');
 		for (const r of resources) {
 			const resourceName = r.getAttribute('data-resource-name');
-			r.textContent = Math.round(this.gameClient.players[nodeId]?.resourcesByTier[1][resourceName] || 0);
+			r.textContent = this.gameClient.players[nodeId]?.inventory.getAmount(resourceName).toFixed(1);
 		}
 
 		this.deadNodes[nodeId] = deadNodeElem;

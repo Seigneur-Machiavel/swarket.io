@@ -27,6 +27,15 @@
 	--fabricator-icon: url(assets/buildings/fabricator.png);
 	--linker-icon: url(assets/buildings/linker.png);
 
+	/* === MODULE ICONS === */
+	--efficiency-icon: url(assets/buildings/reactor_modules/efficiency.png);
+	--overload-icon: url(assets/buildings/reactor_modules/overload.png);
+	--synergy-icon: url(assets/buildings/reactor_modules/synergy.png);
+	--stability-icon: url(assets/buildings/reactor_modules/stability.png);
+	--catalyst-icon: url(assets/buildings/reactor_modules/catalyst.png);
+	--burst-icon: url(assets/buildings/reactor_modules/burst.png);
+	--quantum-icon: url(assets/buildings/reactor_modules/quantum.png);
+
 	/* === UPGRADE ICONS === */
 	--producer-icon: url(assets/upgrades/producer.png);
 	--energy-drop-icon: url(assets/upgrades/energy.png);
@@ -556,6 +565,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .resource-icon.energy {
 	width: 19px;
 	height: 19px;
+	margin: -1.5px;
 	-webkit-mask: var(--energy-icon) center/contain no-repeat;
 	mask: var(--energy-icon) center/contain no-repeat;
 	background: var(--energy-color);
@@ -614,6 +624,26 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	right: 2%;
 	padding: 4px 8px;
 }
+.buildings-wrapper .building-upgradePoints {
+	z-index: 1;
+	pointer-events: none;
+    position: absolute;
+    top: -5px;
+    right: -4px;
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    line-height: 21px;
+    text-align: center;
+    border-radius: 50%;
+	color: var(--text-main);
+	background: radial-gradient(var(--data-color) 47%, var(--color2) 80%);
+	transform: scale(0);
+	transition: transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.buildings-wrapper .building-upgradePoints.visible {
+	transform: scale(1);
+}
 .buildings-wrapper .building-icon, .buildings-wrapper .building-icon img {
 	pointer-events: none;
 	position: relative;
@@ -645,6 +675,133 @@ input[type="range"]:focus::-webkit-slider-thumb {
     left: auto;
     transform: translateX(0%);
 	font-size: 12px;
+}
+
+.modules-wrapper {
+	margin-bottom: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--border-light);
+}
+.modules-tree-component {
+	display: flex;
+	flex-direction: row;
+	gap: 12px;
+	width: fit-content;
+}
+.tree-step {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+	justify-content: center;
+	gap: 6px;
+	border-radius: 4px;
+}
+.tree-step:not(:last-child) {
+	border-right: 2px solid var(--border-dark);
+    padding-right: 24px;
+}
+.tree-step .tier-unlock {
+	z-index: 1;
+    position: absolute;
+	user-select: none;
+	display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+	color: var(--text-main);
+	background: radial-gradient(var(--bg-med) 100%, var(--border-light) 50%);
+	font-size: 22px;
+    font-weight: bold;
+	opacity: .9;
+	transition: opacity .6s cubic-bezier(0.175, 0.885, 0.32, 1.275), background .6s ease-in-out;
+}
+.tree-step .tier-unlock div {
+	filter:	brightness(.5);
+}
+.tree-step .tier-unlock.unlocked {
+	pointer-events: none;
+	opacity: 0;
+	background: radial-gradient(var(--bg-med) 0%, var(--border-light) 0%);
+}
+.tree-step .module {
+	user-select: none;
+	position: relative;
+	width: 80px;
+    height: 60px;
+	padding: 2px;
+    border-radius: 2px;
+	box-shadow: inset 0 0 0 1px var(--border-dark);
+	filter: brightness(.5);
+	transition: box-shadow .06s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+		filter .12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.tree-step .module.isClickable {
+	cursor: pointer;
+	filter: brightness(.9);
+}
+.tree-step .module:hover {
+	z-index: 2;
+	box-shadow: inset 0 0 0 1px var(--color2);
+}
+.tree-step .module .module-level {
+	pointer-events: none;
+	position: absolute;
+	top: 2px;
+	right: 5px;
+	font-size: 12px;
+	opacity: .5;
+	color: var(--text-dim);
+}
+.tree-step .module:hover .module-level {
+	opacity: .8;
+}
+.tree-step .module::before {
+	content: '';
+	position: absolute;
+	inset: 0; /* shorthand for top/right/bottom/left: 0 */
+	background-size: 32px 32px;
+	background-repeat: no-repeat;
+	background-position: 30% 60%;
+	pointer-events: none;
+	filter: invert(1) brightness(.66);
+	transition: filter .12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.tree-step .module:hover::before {
+	filter: invert(1) brightness(1);
+	transition: filter .2s .06s ease-in-out;
+}
+.tree-step .module.overload::before {
+	background-image: var(--overload-icon);
+}
+.tree-step .module.efficiency::before {
+	background-image: var(--efficiency-icon);
+}
+.tree-step .module.synergy::before {
+	background-image: var(--synergy-icon);
+}
+.tree-step .module.stability::before {
+	background-image: var(--stability-icon);
+}
+.tree-step .module.catalyst::before {
+	background-image: var(--catalyst-icon);
+}
+.tree-step .module.burst::before {
+	background-image: var(--burst-icon);
+}
+.tree-step .module.quantum::before {
+	background-image: var(--quantum-icon);
+}
+.tree-step .module .tooltip {
+	top: 120%;
+    left: 50%;
+}
+.tree-step:first-child .module .tooltip {
+	transform: translateX(-20%);
+}
+.tree-step:last-child .module .tooltip {
+	transform: translateX(-80%);
 }
 
 /** === BUILDING MODALS === */

@@ -29,6 +29,12 @@ export class UpgradeAction {
 	/** @type {string} */	upgradeName;
 }
 
+export class UpgradeModuleAction {
+	type = 'upgrade-module';
+	/** @type {string} */	buildingName;
+	/** @type {string} */	value;
+}
+
 export class SetParamAction {
 	type = 'set-param';
 	/** @type {string} */	param;

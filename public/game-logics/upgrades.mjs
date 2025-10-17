@@ -1,4 +1,4 @@
-import { SeededRandom } from './seededRandom.mjs';
+import { SeededRandom } from './consensus.mjs';
 import { Reactor, Fabricator, Linker } from './buildings.mjs';
 
 /**
@@ -91,7 +91,7 @@ export class Upgrader {
 	}
 	/** @param {import('./player.mjs').PlayerNode} player @param {string} upgradeName */
 	static applyUpgradeEffects(player, upgradeName) {
-		if (!player.energy) return;
+		if (!player.getEnergy) return;
 		switch (upgradeName) {
 			case 'buildReactor':
 				if (!player.reactor) player.reactor = new Reactor();
@@ -102,12 +102,21 @@ export class Upgrader {
 			case 'buildLinker':
 				if (!player.linker) player.linker = new Linker();
 				break;
+			case 'reactor':
+				if (player.reactor) player.reactor.upgradePoints += 1;
+				break;
+			case 'fabricator':
+				if (player.fabricator) player.fabricator.upgradePoints += 1;
+				break;
+			case 'linker':
+				if (player.linker) player.linker.upgradePoints += 1;
+				break;
 			case 'energyDrop':
-				player.energy = player.maxEnergy;
+				player.inventory.setAmount('energy', player.maxEnergy);
 				break;
 			case 'maxEnergy':
 				player.maxEnergy += 50;
-				player.energy += 50;
+				player.inventory.addAmount('energy', 50);
 				break;
 		}
 	}

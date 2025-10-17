@@ -53,16 +53,16 @@ const nodeCard = new NodeCardComponent(gameClient, visualizer);
 // ON TURN EXECUTION
 gameClient.onExecutedTurn.push(async (height = 0) => {
 	const player = gameClient.myPlayer;
-	if (gameClient.alive) node.topologist.setNeighborsTarget(player.maxConnections);
+	if (gameClient.alive) node.topologist.setNeighborsTarget(player.getMaxConnections);
 	else node.topologist.setNeighborsTarget(0); // stop connectings if dead
 
 	playerStats.setPlayerName(player.name);
 	playerStats.setPlayerId(player.id);
 	playerStats.update(player, node.peerStore.standardNeighborsList.length);
 	connectionsList.update();
-	energyBar.update(player.energy, player.maxEnergy);
-	resourcesBar.update(player.resourcesByTier);
-	buildings.updateSubComponents();
+	energyBar.update(player.getEnergy, player.maxEnergy);
+	resourcesBar.update(player);
+	buildings.update();
 	deadNodes.showDeadNodes();
 	console.log(`--- Turn ${height} executed ---`);
 

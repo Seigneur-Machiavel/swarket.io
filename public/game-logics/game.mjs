@@ -5,11 +5,12 @@ import { NodeInteractor } from './node-interactions.mjs';
 /**
  * @typedef {import('hive-p2p').Node} Node
  * @typedef {import('./actions.mjs').UpgradeAction} UpgradeAction
+ * @typedef {import('./actions.mjs').UpgradeModuleAction} UpgradeModuleAction
  * @typedef {import('./actions.mjs').SetParamAction} SetParamAction
  * @typedef {import('./actions.mjs').TransactionAction} TransactionAction
  * @typedef {import('./actions.mjs').RecycleAction} RecycleAction
  * 
- * @typedef {UpgradeAction | SetParamAction | TransactionAction | RecycleAction} Action
+ * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | TransactionAction | RecycleAction} Action
  */
 
 export class GameClient {
@@ -20,7 +21,7 @@ export class GameClient {
 	gameStateAskedFrom = null; // id of node we asked game state from
 
 	/** @type {Record<string, PlayerNode>} */ players = {};
-	get alivePlayersCount() { let count = 0; for (const p in this.players) if (this.players[p].energy) count++; return count; }
+	alivePlayersCount() { let count = 0; for (const p in this.players) if (this.players[p].getEnergy) count++; return count; }
 	deadPlayers = new Set();	// temp storage of dead players to be removed
 	onExecutedTurn = []; 		// callbacks
 	syncAskedBy = []; 			// ids of nodes who asked for sync
@@ -74,6 +75,7 @@ export class GameClient {
 		if (!this.node.publicUrl || direction !== 'in') return; // we are not a public node
 		if (this.players[peerId]) return console.warn(`Player already exists for connected peer: ${peerId}`);
 		const p = new PlayerNode(peerId); // operatingResource randomly assigned
+		p.inventory.setAmount('energy', p.maxEnergy);
 		p.startTurn = Math.max(this.height, 1); // active from next turn
 		p.verb = 0; // reduce logs
 		this.players[peerId] = p;
@@ -223,7 +225,7 @@ export class GameClient {
 		this.#removeDeadPlayers();
 
 		// MANAGE OUR NODE IF WE ARE DEAD
-		if (!this.myPlayer.energy) {
+		if (!this.myPlayer.getEnergy) {
 			this.alive = false; // stop the game client
 			this.connectionOffers = {}; // clear offers if dead
 			this.node.topologist.automation.incomingOffer = false; // disable auto-accept if dead
@@ -255,7 +257,7 @@ export class GameClient {
 	}
 	#execPlayersTurn(newTurnHash = '') {
 		for (const playerId in this.players)
-			if (!this.players[playerId].energy && !this.deadPlayers.has(playerId)) this.deadPlayers.add(playerId);
+			if (!this.players[playerId].getEnergy && !this.deadPlayers.has(playerId)) this.deadPlayers.add(playerId);
 			else this.players[playerId].execTurn(newTurnHash, this.height);
 	}
 	/** @param {number} [minDeathAge] in turns | default 30 */
@@ -266,7 +268,7 @@ export class GameClient {
 			// CHECK IF PLAYER HAS NO RAW RESOURCES or DIED A LONG TIME AGO BEFORE REMOVING.
 			const deathHeight = this.players[playerId].startTurn + this.players[playerId].lifetime;
 			const isDeadALongTimeAgo = this.height - deathHeight > minDeathAge;
-			const hasResources = this.players[playerId].getRecyclingResult().hasResources;
+			const hasResources = this.players[playerId].inventory.getRecyclingResult().hasResources;
 			if (isDeadALongTimeAgo || !hasResources) toRemove.push(playerId);
 		}
 
@@ -277,6 +279,6 @@ export class GameClient {
 		}
 
 		for (const nodeId of this.node.peerStore.neighborsList)
-			if (!this.players[nodeId]?.energy) this.node.kickPeer(nodeId, 'Player is dead');
+			if (!this.players[nodeId]?.getEnergy) this.node.kickPeer(nodeId, 'Player is dead');
 	}
 }

@@ -1,7 +1,7 @@
 const xxHash32 = typeof window !== 'undefined'
 	? (await import('../hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32))
 	: (await import('../../node_modules/hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32));
-import { SeededRandom } from './seededRandom.mjs';
+import { SeededRandom, getIntentsConsensus } from './consensus.mjs';
 import { filterValidActions } from './actions.mjs';
 
 /**
@@ -40,21 +40,7 @@ export class TurnSystem {
 
 	// CONSENSUS
 	getConsensus(height = 0) {
-		if (!height) return { prevHash: this.prevHash, nodeIds: new Set([this.node.id]) };
-		const result = { prevHash: null, nodeIds: new Set(), total: 0 };
-		const prevHashes = {};
-		for (const nodeId in this.playersIntents[height] || {}) {
-			const { prevHash } = this.playersIntents[height][nodeId];
-			if (!prevHashes[prevHash]) prevHashes[prevHash] = new Set();
-			prevHashes[prevHash].add(nodeId);
-			result.total++;
-		}
-		
-		for (const h in prevHashes)
-			if (prevHashes[h].size < result.nodeIds.size) continue;
-			else { result.prevHash = h; result.nodeIds = prevHashes[h]; }
-
-		return result;
+		return getIntentsConsensus(this.playersIntents, this.prevHash, height, this.node.id);
 	}
 	// INTENTS (PLAYERS ACTIONS)
 	getMyCleanIntents(selectedDeadNodeId, height = 0) {

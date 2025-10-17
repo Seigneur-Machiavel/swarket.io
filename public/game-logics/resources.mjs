@@ -12,7 +12,7 @@ export function randomOperatingResource() {
 
 /** @param {'chips' | 'datas' | 'models' | 'engineers' | undefined} operatingResource */
 export function newRawResourcesSet(operatingResource) {
-	const set = { chips: 0, datas: 0, models: 0, engineers: 0 };
+	const set = { energy: 0, chips: 0, datas: 0, models: 0, engineers: 0 };
 	const operating = operatingResource;
 	if (operating && RAW_RESOURCES_PROD_BASIS[operating]) set[operating] = RAW_RESOURCES_PROD_BASIS[operating];
 	return set;
@@ -20,7 +20,7 @@ export function newRawResourcesSet(operatingResource) {
 
 export function newResourcesSet() {
 	return {
-		1: { chips: 0, datas: 0, models: 0, engineers: 0 },
+		1: { energy: 0, chips: 0, datas: 0, models: 0, engineers: 0 },
 		2: { algorithms: 0, datasets: 0, prototypes: 0, catalyzers: 0 },
 		3: { aiModules: 0, robots: 0, experts: 0 },
 		4: { aiCores: 0, drones: 0, superconductors: 0 },
@@ -48,6 +48,7 @@ export class ResourcesProductionType {
 	agiCells = 0;
 }
 
+// BLUEPRINTS
 const RAW_PROD = RAW_RESOURCES_PROD_BASIS; // alias
 /** @type {Record<string, () => { inputs: Record<string, number>, outputs: Record<string, number> }>} */
 export const BLUEPRINT = {
@@ -72,6 +73,60 @@ export const BLUEPRINT = {
 	// Tier 5 -- Ultimate Products
 	geniuses: () => ({ inputs: { datas: 10000, experts: 4, aiCores: 2 }, outputs: { geniuses: .05 } }),
 	agiCells: () => ({ inputs: { chips: 1000, algorithms: 10, datasets: 10, prototypes: 5, catalyzers: 5, geniuses: 3 }, outputs: { agiCells: .25 } })
+}
+
+// INVENTORY
+const RESOURCE_INDEX = {};
+((() => { let index = 0; const rSet = newResourcesSet();
+for (const tier in rSet) for (const res in rSet[tier]) RESOURCE_INDEX[res] = index++; })());
+function newResourcesArray() {
+	const r = [];
+	const rSet = newResourcesSet();
+	for (const tier in rSet)
+		for (const res in rSet[tier]) r.push(0);
+	return r;
+}
+export class Inventory {
+	resources;
+	
+	/** @param {Array<number> | undefined} resources */
+	constructor(resources) { this.resources = resources || newResourcesArray(); }
+	extract() { return this.resources; }
+
+	/** Get a resource amount from the inventory @param {string} resourceName */
+	getAmount(resourceName) {
+		return RESOURCE_INDEX[resourceName] === undefined ? 0 : this.resources[RESOURCE_INDEX[resourceName]];
+	}
+	/** Set a resource amount in the inventory @param {string} resourceName @param {number} amount */
+	setAmount(resourceName, amount) {
+		if (RESOURCE_INDEX[resourceName] === undefined) return;
+		this.resources[RESOURCE_INDEX[resourceName]] = amount;
+	}
+	/** Add a resource amount to the inventory @param {string} resourceName @param {number} amount */
+	addAmount(resourceName, amount) {
+		if (RESOURCE_INDEX[resourceName] === undefined) return;
+		this.resources[RESOURCE_INDEX[resourceName]] += amount;
+	}
+	/** Subtract a resource amount from the inventory @param {string} resourceName @param {number} amount */
+	subtractAmount(resourceName, amount) {
+		if (RESOURCE_INDEX[resourceName] === undefined) return;
+		this.resources[RESOURCE_INDEX[resourceName]] -= amount;
+	}
+
+	// END OF LIFE
+	getRecyclingResult(cleanerLevel = 0) {
+		const efficiency = .25 + (cleanerLevel * .1); // 25% to 75%
+		const resources = newRawResourcesSet();
+		let hasResources = false;
+		for (const r in resources) {
+			resources[r] = this.getAmount(r) * efficiency;
+			if (resources[r] > 0) hasResources = true;
+		}
+		return { hasResources, resources };
+	}
+	empty() {
+		this.resources = newResourcesArray();
+	}
 }
 
 /** LEXICON

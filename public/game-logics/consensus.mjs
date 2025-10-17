@@ -1,6 +1,6 @@
 const xxHash32 = typeof window !== 'undefined'
 	? (await import('../hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32))
-	: (await import('../../node_modules/hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32));
+	: (await import('hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32));
 
 // Generates next LCG state
 function lcg(state) { return (state * 1664525 + 1013904223) % 4294967296; }
@@ -33,4 +33,27 @@ export class SeededRandom {
 		const state = lcg(typeof seed === 'string' ? xxHash32(seed) : seed);
 		return array[state % array.length];
 	}
+}
+
+/** Computes intents consensus
+ * @param {Record<number, Record<string, { prevHash: string, actions: Array<SetParamAction | TransactionAction> }>>} intents
+ * @param {string} p
+ * @param {number} height
+ * @param {string} selfId */
+export function getIntentsConsensus(intents, p = 'prevHash', height = 0, selfId) {
+	if (!height) return { prevHash: p, nodeIds: new Set([selfId]), total: 1 };
+	const result = { prevHash: 'toto', nodeIds: new Set(), total: 0 };
+	const prevHashes = {};
+	for (const nodeId in intents[height] || {}) {
+		const { prevHash } = intents[height][nodeId];
+		if (!prevHashes[prevHash]) prevHashes[prevHash] = new Set();
+		prevHashes[prevHash].add(nodeId);
+		result.total++;
+	}
+	
+	for (const h in prevHashes)
+		if (prevHashes[h].size < result.nodeIds.size) continue;
+		else { result.prevHash = h; result.nodeIds = prevHashes[h]; }
+
+	return result;
 }

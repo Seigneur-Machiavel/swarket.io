@@ -74,7 +74,7 @@ class ElementsBuilder {
 
 		const resourceValue = document.createElement('span');
 		resourceValue.classList = 'resource-value';
-		resourceValue.textContent = qty.toFixed(1);
+		resourceValue.textContent = qty.toFixed(2);
 		resourceElement.appendChild(resourceValue);
 		return resourceElement;
 	}
@@ -202,6 +202,6 @@ export class ProductionLineComponent {
 
 		const valueElement = element.querySelector('.resource-value');
 		if (!valueElement) return;
-		valueElement.textContent = newQty.toFixed(1);
+		valueElement.textContent = newQty.toFixed(2);
 	}
 }

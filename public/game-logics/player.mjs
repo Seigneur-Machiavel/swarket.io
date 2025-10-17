@@ -1,4 +1,4 @@
-import { randomOperatingResource, newRawResourcesSet, newResourcesSet } from './resources.mjs';
+import { randomOperatingResource, newRawResourcesSet, Inventory } from './resources.mjs';
 import { UpgradesTool, UpgradeSet, Upgrader } from './upgrades.mjs';
 import { BuildingBuilder, Building, Reactor, Fabricator, Linker } from './buildings.mjs';
 
@@ -7,15 +7,14 @@ export class PlayerNode {
 	operatingResource; 	// 'chips' | 'datas' | 'models' | 'engineers' => first assigned
 	lifetime = 0;		// in turns
 	startTurn = 0;
-	energy = 100; 		// in turns
-	maxEnergy = 100;	// in turns
+	get getEnergy() { return this.inventory.getAmount('energy'); }
+	maxEnergy = 100;
 
 	production;			// raw (tier 1) resources only
 	rawProductionRate = 1; // 0 | .25 | .5 | .75 | 1
 	turnEnergyChanges = { consumptions: [], productions: [] }; // filled only during turn exec
 
-	resourcesByTier; 	// all tiers
-	get rawResources() { return this.resourcesByTier['1']; }
+	inventory; 			// inventory for resources
 	upgradeSet;			// current upgrade set
 	upgradeOffers = []; // upgrade offers
 
@@ -23,7 +22,8 @@ export class PlayerNode {
 	/** @type {Reactor | null} */ 		reactor = null;		// reactor building		|
 	/** @type {Fabricator | null} */ 	fabricator = null; 	// fabricator building	|
 	/** @type {Linker | null} */		linker = null;		// linker building		|
-	get maxConnections() { return this.linker?.maxConnections || 0; } //			|
+	/** @returns {number} */ //														|
+	get getMaxConnections() { return this.linker?.maxConnections() || 0; } //		|
 	// ----------------------------------------------------------------------------/
 
 	/** @param {string} id @param {'chip' | 'data' | 'models' | 'engineers' | undefined} operatingResource Randomly selected if undefined */
@@ -31,10 +31,11 @@ export class PlayerNode {
 		this.id = id;
 		this.operatingResource = operatingResource || randomOperatingResource();
 		this.production = newRawResourcesSet(this.operatingResource);
-		this.resourcesByTier = newResourcesSet();
+		this.inventory = new Inventory();
 		this.upgradeSet = upgradeSet;
 
 		this.reactor = new Reactor(); // DEBUG
+		this.reactor.upgradePoints = 10; // DEBUG bypass
 		this.upgradeSet.buildReactor = 1; // DEBUG bypass
 		this.fabricator = new Fabricator(); // DEBUG
 		this.upgradeSet.buildFabricator = 1; // DEBUG bypass
@@ -43,8 +44,11 @@ export class PlayerNode {
 	static playerFromData(data) {
 		const p = new PlayerNode(data.id);
 		for (const k in data)
-			if (!data[k] || !['reactor', 'fabricator', 'linker'].includes(k)) p[k] = data[k];
-			else p[k] = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
+			if (k === 'inventory') p.inventory = new Inventory(data[k]);
+			else if (k === 'reactor') p.reactor = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
+			else if (k === 'fabricator') p.fabricator = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
+			else if (k === 'linker') p.linker = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
+			else p[k] = data[k];
 		return p;
 	}
 	extract() {
@@ -57,12 +61,13 @@ export class PlayerNode {
 		if (intent.type === 'set-param') return this.#handleSetParamIntent(intent);
 		else if (intent.type === 'transaction') console.log(`[${nodeId}] Transaction:`, intent.amount, intent.resource, '->', intent.to);
 		else if (intent.type === 'upgrade') return this.#handleUpgradeIntent(gameClient, intent.upgradeName);
+		else if (intent.type === 'upgrade-module') return this.#handleUpgradeModuleIntent(intent);
 		else if (intent.type === 'recycle') return this.#handleRecycleIntent(gameClient, intent.fromDeadNodeId);
 	}
 	execTurn(turnHash = 'toto', height = 0) {
-		if (!this.startTurn || !this.energy) return; // inactive
+		if (!this.startTurn || !this.getEnergy) return; // inactive
 		this.lifetime++;
-		//const consumptionBasis = 1 + (Math.floor(this.lifetime / 60) * 0.02); // +2% every 60 turns
+		//console.log(`[${this.id}] lifetimme:`, this.lifetime);
 		const entropy = Math.floor(this.lifetime / 60) * 0.02; // +2% every 60 turns
 		const basis = .5 * (1 + entropy); 	// base consumption
 		this.#setEnergyChange(-basis);		// maintenance consumption
@@ -73,18 +78,7 @@ export class PlayerNode {
 		//TODO: fabricator production & consumption
 		this.#addUpgradeOffer(turnHash);
 
-		if (!this.energy) this.upgradeOffers = []; // clear offers if dead
-	}
-	getRecyclingResult(cleanerLevel = 0) {
-		const efficiency = .25 + (cleanerLevel * .1); // 25% to 75%
-		const resources = newRawResourcesSet();
-		let hasResources = false;
-		for (const r in this.resourcesByTier['1']) { // only tier 1 resources
-			if (this.resourcesByTier['1'][r] <= 0) continue;
-			hasResources = true;
-			resources[r] = this.resourcesByTier['1'][r] * efficiency;
-		}
-		return { hasResources, resources };
+		if (!this.getEnergy) this.upgradeOffers = []; // clear offers if dead
 	}
 
 	// PRIVATE
@@ -115,10 +109,16 @@ export class PlayerNode {
 		}
 		return true;
 	}
+	/** @param {{buildingName: string, value: string}} intent */
+	#handleUpgradeModuleIntent(intent) {
+		const buildingName = intent.buildingName;
+		const moduleKey = intent.value;
+		this[buildingName]?.upgradeModule(moduleKey);
+	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} upgradeName */
 	#handleUpgradeIntent(gameClient, upgradeName) {
 		const verb = gameClient.verb;
-		if (!this.energy) return;
+		if (!this.getEnergy) return;
 		if (this.upgradeOffers.length === 0) return verb > 1 ? console.warn(`[${this.id}] No upgrade offers available.`) : null;
 		if (this.upgradeOffers[0].indexOf(upgradeName) === -1) return verb > 1 ? console.warn(`[${this.id}] Upgrade not available:`, upgradeName) : null;
 		if (UpgradesTool.isMaxedUpgrade(this.upgradeSet, upgradeName)) return verb > 1 ? console.warn(`[${this.id}] Upgrade already maxed:`, upgradeName) : null;
@@ -132,16 +132,16 @@ export class PlayerNode {
 		const verb = gameClient.verb;
 		const deadPlayer = gameClient.players[fromDeadNodeId];
 		if (!deadPlayer) return verb > 1 ? console.warn(`[${this.id}] Cannot recycle unknown node:`, fromDeadNodeId) : null;
-		if (deadPlayer.energy) return verb > 1 ? console.warn(`[${this.id}] Cannot recycle alive node:`, fromDeadNodeId) : null;
+		if (deadPlayer.getEnergy) return verb > 1 ? console.warn(`[${this.id}] Cannot recycle alive node:`, fromDeadNodeId) : null;
 		if (!deadPlayer.startTurn) return verb > 1 ? console.warn(`[${this.id}] Cannot recycle unknown node:`, fromDeadNodeId) : null;
 
-		const { hasResources, resources } = deadPlayer.getRecyclingResult(this.upgradeSet.cleaner);
+		const { hasResources, resources } = deadPlayer.inventory.getRecyclingResult(this.upgradeSet.cleaner);
 		if (!hasResources) return verb > 2 ? console.warn(`[${this.id}] Cannot recycle empty node:`, fromDeadNodeId) : null;
 
-		for (const r in resources) this.resourcesByTier['1'][r] += resources[r];
+		for (const r in resources) this.inventory.addAmount(r, resources[r]);
 		if (verb > 1) console.log(`[${this.id}] Recycled resources from ${fromDeadNodeId}:`, resources);
 
-		deadPlayer.resourcesByTier = newResourcesSet();
+		deadPlayer.inventory.empty();
 		return true;
 	}
 
@@ -152,7 +152,7 @@ export class PlayerNode {
 		if (amount < 0) this.turnEnergyChanges.consumptions.push(Math.abs(amount));
 		else this.turnEnergyChanges.productions.push(amount);
 	}
-	get #getAndClearTotalTurnEnergyChange() {
+	#getAndClearTotalTurnEnergyChange() {
 		if (!this.turnEnergyChanges) return { totalConso: 0, totalProd: 0 };
 		const totalConso = this.turnEnergyChanges.consumptions.reduce((a, b) => a + b, 0);
 		const totalProd = this.turnEnergyChanges.productions.reduce((a, b) => a + b, 0);
@@ -160,25 +160,25 @@ export class PlayerNode {
 		return { totalConso, totalProd };
 	}
 	#produceRawResources(consumptionBasis = 1) {
-		if (!this.energy) return 0;
+		if (!this.getEnergy) return 0;
 		let totalConso = 0;
 		const multiplier = 1 + (this.upgradeSet.producer * .25);
 		for (const r in this.production) {
 			const prod = this.production[r] * multiplier * this.rawProductionRate;
-			this.resourcesByTier[1][r] += prod;
+			this.inventory.addAmount(r, prod);
 			if (prod) totalConso -= consumptionBasis * this.rawProductionRate;
 		}
 		return totalConso;
 	}
 	#applyEnergyChange() {
-		const { totalConso, totalProd } = this.#getAndClearTotalTurnEnergyChange;
-		this.energy += totalProd - totalConso;
-		if (this.energy > this.maxEnergy) this.energy = this.maxEnergy;
-		if (this.energy < 0) this.energy = 0;
-		if (!this.energy) console.log(`%c[${this.id}] Node has run out of energy!`, 'color: red; font-weight: bold;');
+		const { totalConso, totalProd } = this.#getAndClearTotalTurnEnergyChange();
+		this.inventory.addAmount('energy', totalProd - totalConso);
+		if (this.inventory.getAmount('energy') > this.maxEnergy) this.inventory.setAmount('energy', this.maxEnergy);
+		if (this.inventory.getAmount('energy') < 0) this.inventory.setAmount('energy', 0);
+		if (!this.inventory.getAmount('energy')) console.log(`%c[${this.id}] Node has run out of energy!`, 'color: red; font-weight: bold;');
 	}
 	#addUpgradeOffer(turnHash) {
-		if (!this.energy) return;
+		if (!this.getEnergy) return;
 		if (!Upgrader.shouldUpgrade(this.lifetime)) return;
 
 		const offerSeed = `${this.id}-${turnHash}`;

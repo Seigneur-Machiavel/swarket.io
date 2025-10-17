@@ -1,5 +1,6 @@
 import { ProductionLineIOParam, ProductionLineVerticalRangeParam, ProductionLineComponent } from './production-line-component.mjs';
-import { getModulesDescriptionRelativeToPlayer } from '../game-logics/buildings-modules.mjs';
+import { ModuleTreeComponent } from './modules-tree-component.mjs';
+import { REACTOR_MODULES, getModulesDescriptionRelativeToPlayer } from '../game-logics/buildings-modules.mjs';
 
 /** @type {Record<string, Array<{actionParam: ProductionLineVerticalRangeParam, events: Record<string, (gameClient: import('../game-logics/game.mjs').GameClient, value: any) => void>}>>} */
 const lineActionsParam = {
@@ -26,20 +27,65 @@ export class ReactorComponent {
 
 	/** @type {Record<string, ProductionLineComponent>} */
 	productionsLines = {};
-	/** @type {Record<string, HTMLElement>} */
-	moduleElements;
+	moduleTree = new ModuleTreeComponent(this.modal.querySelector('.modules-wrapper'));
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
 	constructor(gameClient) {
 		this.gameClient = gameClient;
 		this.closeBtn.onclick = () => this.hide();
 
-		/*this.reactorProductionRate.oninput = () => {
-			if (!this.gameClient?.alive) return;
-			const rate = parseFloat(this.reactorProductionRate.value);
-			this.gameClient.digestMyAction({ type: 'set-param', param: 'reactorProductionRate', value: rate });
-		}*/
+		for (let i = 0; i < REACTOR_MODULES.allModulesKeys.length; i++) {
+			const moduleKey = REACTOR_MODULES.allModulesKeys[i];
+			const { minBuildingLevel, maxLevel } = REACTOR_MODULES.getModuleRequiredLevelAndMaxLevel(moduleKey) || {};
+			if (minBuildingLevel === undefined || maxLevel === undefined) return;
+			const moduleElement = this.moduleTree.addModule(moduleKey, minBuildingLevel, maxLevel);
+			moduleElement.mainElement.onclick = () => {
+				const reactor = this.gameClient?.myPlayer.reactor;
+				if (!this.gameClient?.alive || !reactor) return;
+				if (!reactor.upgradePoints) return;
+				const reactorLevel = reactor.level();
+				const moduleLevel = reactor.modulesLevel[i] || 0;
+				if (reactorLevel < minBuildingLevel || moduleLevel >= maxLevel) return;
+				const myAction = { type: 'upgrade-module', buildingName: 'reactor', value: moduleKey };
+				this.gameClient.digestMyAction(myAction);
+				console.log('onclick module', myAction);
+				this.moduleTree.updateModule(moduleKey, moduleLevel + 1); // feedback instantly
+			};
+		}
 	}
+
+	update() { // call only if reactor is present
+		const reactor = this.gameClient?.myPlayer.reactor;
+		if (!this.gameClient?.alive || !reactor) return this.hide();
+
+		const reactorLevel = reactor.level();
+		this.moduleTree.updateReactorLevel(reactorLevel);
+		for (let i = 0; i < REACTOR_MODULES.allModulesKeys.length; i++) {
+			const m = REACTOR_MODULES.allModulesKeys[i];
+			const moduleLevel = reactor.modulesLevel[i] || 0;
+			const description = REACTOR_MODULES.getModuleDescription(m, moduleLevel);
+			const { maxLevel, minBuildingLevel } = REACTOR_MODULES.getModuleRequiredLevelAndMaxLevel(m) || {};
+			const isClickable = reactorLevel >= minBuildingLevel && moduleLevel < maxLevel;
+			this.moduleTree.updateModule(m, moduleLevel, description, isClickable);
+		}
+
+		for (const lineKey of reactor.activeProductionLines) {
+			const { inputs, outputs } = reactor.getProductionLineEffect(lineKey);
+			if (!this.productionsLines[lineKey]) this.#initProductionLine(lineKey, inputs, outputs);
+
+			// UPDATE IO VALUES
+			for (const r in inputs) this.productionsLines[lineKey].updateIOValue('input', r, inputs[r]);
+			for (const r in outputs) this.productionsLines[lineKey].updateIOValue('output', r, outputs[r]);
+
+			const hasProduced = reactor.linesWhoProducedThisTurn.indexOf(lineKey) !== -1;
+			if (hasProduced) this.productionsLines[lineKey].mainElement.classList.add('enabled');
+			else this.productionsLines[lineKey].mainElement.classList.remove('enabled');
+		}
+	}
+
+	show() { this.modal.classList.add('visible'); }
+	hide() { this.modal.classList.remove('visible'); }
+	toggle() { this.modal.classList.toggle('visible'); }
 
 	/** @param {string} lineKey @param {Record<string, number>} inputs @param {Record<string, number>} outputs */
 	#initProductionLine(lineKey, inputs, outputs) {
@@ -62,40 +108,4 @@ export class ReactorComponent {
 		productionLinesWrapper.appendChild(productionLineComponent.mainElement);
 		this.productionsLines[lineKey] = productionLineComponent;
 	}
-	update() { // call only if reactor is present
-		const reactor = this.gameClient?.myPlayer.reactor;
-		if (!this.gameClient?.alive || !reactor) return this.hide();
-
-		for (const lineKey of reactor.activeProductionLines) {
-			const { inputs, outputs } = reactor.getProductionLineEffect(lineKey);
-			if (!this.productionsLines[lineKey]) this.#initProductionLine(lineKey, inputs, outputs);
-
-			// UPDATE IO VALUES
-			for (const r in inputs) this.productionsLines[lineKey].updateIOValue('input', r, inputs[r]);
-			for (const r in outputs) this.productionsLines[lineKey].updateIOValue('output', r, outputs[r]);
-
-			const hasProduced = reactor.linesWhoProducedThisTurn.indexOf(lineKey) !== -1;
-			if (hasProduced) this.productionsLines[lineKey].mainElement.classList.add('enabled');
-			else this.productionsLines[lineKey].mainElement.classList.remove('enabled');
-		}
-
-		if (!this.moduleElements) this.#initModules();
-	}
-	#initModules() {
-		const modulesWrapper = this.modal.querySelector('.modules-wrapper');
-		/*const modulesInfos = getModulesDescriptionRelativeToPlayer(this.gameClient.myPlayer);
-		if (!modulesInfos) return;
-		this.moduleElements = {};
-		for (const [moduleKey, { minReactorLevel, currentLevel, description }] of Object.entries(modulesInfos)) {
-			const moduleElement = document.createElement('div');
-			moduleElement.classList.add('module');
-			const { minReactorLevel}
-			modulesWrapper.appendChild(moduleElement);
-			this.moduleElements[moduleKey] = moduleElement;
-		}*/
-	}
-
-	show() { this.modal.classList.add('visible'); }
-	hide() { this.modal.classList.remove('visible'); }
-	toggle() { this.modal.classList.toggle('visible'); }
 }
