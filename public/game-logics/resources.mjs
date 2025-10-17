@@ -139,16 +139,16 @@ catalyzers	=>	chips + engineers					=> ingredient + reactor booster
 Tier 3 -- Advanced Products
 aiModules	=>	chips + algorithms + datasets		=> ingredient + fabricator booster
 robots		=>	chips + models + engineers			=> ingredient + reactor booster
-experts		=>	datas + models + engineers			=> ingredient + linker booster
+experts		=>	datas + models + engineers			=> ingredient + tradeHub booster
 
 Tier 4 -- Complex Products
 aiCores		=>	chips + aiModules + experts			=> ingredient + fabricator booster
-drones		=>	datas + robots + experts			=> ingredient + linker booster
+drones		=>	datas + robots + experts			=> ingredient + tradeHub booster
 superconductors => models + aiModules + robots => ingredient
 
 Tier 5 -- Ultimate Products
 geniuses	=>	datas + experts + aiCores		=> ingredient
 agiCells
 	inputs  =>	chips + algorithms + datasets + prototypes + catalyzers + geniuses
-	used as => fabricator/reactor/linker booster + persistent storage->starting bonuses
+	used as => fabricator/reactor/tradeHub booster + persistent storage->starting bonuses
 */

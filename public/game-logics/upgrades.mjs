@@ -1,5 +1,5 @@
 import { SeededRandom } from './consensus.mjs';
-import { Reactor, Fabricator, Linker } from './buildings.mjs';
+import { Reactor, Fabricator, TradeHub } from './buildings.mjs';
 
 /**
  * @typedef {Object} Requirement
@@ -22,12 +22,12 @@ const upgradesInfo = {
 	// BUILDINGS CONSTRUCTION
 	buildReactor: { maxLevel: 1, tooltip: 'Build a Reactor to produce energy' },
 	buildFabricator: { maxLevel: 1, tooltip: 'Build a Fabricator to produce high tier resources' },
-	buildLinker: { maxLevel: 1, tooltip: 'Build a Linker to increase connectivity' },
+	buildTradeHub: { maxLevel: 1, tooltip: 'Build a TradeHub to increase connectivity' },
 	
 	// BUILDINGS UPGRADE
 	reactor: { maxLevel: 10, requirement: { upgrades: { buildReactor: 1 } }, tooltip: 'Give module point to reactor', subClass: 'levelUp' },
 	fabricator: { maxLevel: 10, requirement: { upgrades: { buildFabricator: 1 } }, tooltip: 'Give module point to fabricator', subClass: 'levelUp' },
-	linker: { maxLevel: 10, requirement: { upgrades: { buildLinker: 1 } }, tooltip: 'Give module point to linker', subClass: 'levelUp' },
+	tradeHub: { maxLevel: 10, requirement: { upgrades: { buildTradeHub: 1 } }, tooltip: 'Give module point to trade-hub', subClass: 'levelUp' },
 
 }
 export class UpgradeSet {
@@ -42,10 +42,10 @@ export class UpgradeSet {
 	// BUILDINGS
 	buildReactor = 0;
 	buildFabricator = 0;
-	buildLinker = 0;
+	buildTradeHub = 0;
 	reactor = 0;
 	fabricator = 0;
-	linker = 0;
+	tradeHub = 0;
 }
 
 /** The triggers to release upgrades offer */
@@ -57,7 +57,7 @@ export class UpgradesTool {
 		if (!upgradesInfo[upgradeName] || typeof upgradeSet[upgradeName] !== 'number') return true;
 		return upgradeSet[upgradeName] >= upgradesInfo[upgradeName].maxLevel;
 	}
-	static getUpgradeTooltipText(upgradeName = 'linker') {
+	static getUpgradeTooltipText(upgradeName = 'tradeHub') {
 		if (!upgradesInfo[upgradeName]) return { tooltip: 'Unknown upgrade', subClass: undefined };
 		const { tooltip, subClass } = upgradesInfo[upgradeName];
 		return { tooltip, subClass };
@@ -69,9 +69,9 @@ export class Upgrader {
 
 	/** @param {import('./player.mjs').PlayerNode} player @param {string} id @param {number} count default: 3 */
 	static getRandomUpgradeOffer(player, id, count = 3) {
-		// IF NO LINKER: FIRST UPGRADE MUST BE A LINKER ?
-		if (!player.linker && player.upgradeOffers.length === 0)
-			return ['buildLinker', 'buildLinker', 'buildLinker'];
+		// IF NO TRADE-HUB: FIRST UPGRADE MUST BE A TRADE-HUB ?
+		if (!player.tradeHub && player.upgradeOffers.length === 0)
+			return ['buildTradeHub', 'buildTradeHub', 'buildTradeHub'];
 
 		/** @type {string[]} */
 		const offers = [];
@@ -99,8 +99,8 @@ export class Upgrader {
 			case 'buildFabricator':
 				if (!player.fabricator) player.fabricator = new Fabricator();
 				break;
-			case 'buildLinker':
-				if (!player.linker) player.linker = new Linker();
+			case 'buildTradeHub':
+				if (!player.tradeHub) player.tradeHub = new TradeHub();
 				break;
 			case 'reactor':
 				if (player.reactor) player.reactor.upgradePoints += 1;
@@ -108,8 +108,8 @@ export class Upgrader {
 			case 'fabricator':
 				if (player.fabricator) player.fabricator.upgradePoints += 1;
 				break;
-			case 'linker':
-				if (player.linker) player.linker.upgradePoints += 1;
+			case 'tradeHub':
+				if (player.tradeHub) player.tradeHub.upgradePoints += 1;
 				break;
 			case 'energyDrop':
 				player.inventory.setAmount('energy', player.maxEnergy);

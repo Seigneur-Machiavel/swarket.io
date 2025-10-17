@@ -2,16 +2,16 @@ import { BLUEPRINT, ResourcesProductionType } from './resources.mjs';
 import { REACTOR_MODULES } from './buildings-modules.mjs';
 
 export class BuildingBuilder {
-	/** @type {'reactor' | 'fabricator' | 'linker' | null} */
+	/** @type {'reactor' | 'fabricator' | 'tradeHub' | null} */
 	thisSubClasseName = null;
 
-	/** @param {Reactor} data @param {'reactor' | 'fabricator' | 'linker'} subClassName */
+	/** @param {Reactor} data @param {'reactor' | 'fabricator' | 'tradeHub'} subClassName */
 	static rebuildClasseIfItCanBe(data, subClassName) {
 		if (!data || !subClassName) return null;
 		let r;
 		if (subClassName === 'reactor') r = new Reactor();
 		else if (subClassName === 'fabricator') r = new Fabricator();
-		else if (subClassName === 'linker') r = new Linker();
+		else if (subClassName === 'tradeHub') r = new TradeHub();
 		else return null;
 		for (const k in data) r[k] = data[k];
 		return r;
@@ -131,8 +131,8 @@ export class Fabricator extends Building {
 
 }
 
-export class Linker extends Building {
-	type = 'l'; // 'linker'
+export class TradeHub extends Building {
+	type = 't'; // 'trade hub'
 	maxConnections = 2;
 	modulesLevel = [];
 

@@ -1,6 +1,6 @@
 import { randomOperatingResource, newRawResourcesSet, Inventory } from './resources.mjs';
 import { UpgradesTool, UpgradeSet, Upgrader } from './upgrades.mjs';
-import { BuildingBuilder, Building, Reactor, Fabricator, Linker } from './buildings.mjs';
+import { BuildingBuilder, Building, Reactor, Fabricator, TradeHub } from './buildings.mjs';
 
 export class PlayerNode {
 	name = 'PlayerName'; id;
@@ -21,9 +21,9 @@ export class PlayerNode {
 	// BUILDINGS ------------------------------------------------------------------\
 	/** @type {Reactor | null} */ 		reactor = null;		// reactor building		|
 	/** @type {Fabricator | null} */ 	fabricator = null; 	// fabricator building	|
-	/** @type {Linker | null} */		linker = null;		// linker building		|
+	/** @type {TradeHub | null} */		tradeHub = null;	// tradeHub building		|
 	/** @returns {number} */ //														|
-	get getMaxConnections() { return this.linker?.maxConnections() || 0; } //		|
+	get getMaxConnections() { return this.tradeHub?.maxConnections || 0; } //			|
 	// ----------------------------------------------------------------------------/
 
 	/** @param {string} id @param {'chip' | 'data' | 'models' | 'engineers' | undefined} operatingResource Randomly selected if undefined */
@@ -47,7 +47,7 @@ export class PlayerNode {
 			if (k === 'inventory') p.inventory = new Inventory(data[k]);
 			else if (k === 'reactor') p.reactor = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
 			else if (k === 'fabricator') p.fabricator = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
-			else if (k === 'linker') p.linker = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
+			else if (k === 'tradeHub') p.tradeHub = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
 			else p[k] = data[k];
 		return p;
 	}
@@ -74,7 +74,7 @@ export class PlayerNode {
 		this.#setEnergyChange(this.#produceRawResources(basis));
 		this.#setEnergyChange(this.reactor?.consumeResourcesAndGetProduction(this).energy);
 		this.#applyEnergyChange();
-		//TODO: linker energy consumption
+		//TODO: tradeHub energy consumption
 		//TODO: fabricator production & consumption
 		this.#addUpgradeOffer(turnHash);
 

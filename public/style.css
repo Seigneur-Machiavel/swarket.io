@@ -25,7 +25,7 @@
 	/* === BUILDING ICONS === */
 	--reactor-icon: url(assets/buildings/reactor.png);
 	--fabricator-icon: url(assets/buildings/fabricator.png);
-	--linker-icon: url(assets/buildings/linker.png);
+	--trade-hub-icon: url(assets/buildings/trade-hub.png);
 
 	/* === MODULE ICONS === */
 	--efficiency-icon: url(assets/buildings/reactor_modules/efficiency.png);
@@ -472,8 +472,8 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .upgrade-offer.buildFabricator::before, .upgrade-offer.fabricator::before {
 	background-image: var(--fabricator-icon);
 }
-.upgrade-offer.buildLinker::before, .upgrade-offer.linker::before {
-	background-image: var(--linker-icon);
+.upgrade-offer.buildTradeHub::before, .upgrade-offer.trade-hub::before {
+	background-image: var(--trade-hub-icon);
 }
 
 .upgrade-offer.levelUp::after {

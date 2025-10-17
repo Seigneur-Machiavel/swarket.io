@@ -2,7 +2,7 @@ import { UpgradesTool } from '../game-logics/upgrades.mjs';
 import { NodeInteractor } from '../game-logics/node-interactions.mjs';
 import { ReactorComponent } from './reactor-component.mjs';
 import { FabricatorComponent } from './fabricator-component.mjs';
-import { LinkerComponent } from './linker-component.mjs';
+import { TradeHubComponent } from './tradehub-component.mjs';
 
 export class PlayerStatsComponent {
 	playerNameElem = document.getElementById('player-name');
@@ -167,17 +167,17 @@ export class BuildingsComponent {
 	icons = {
 		reactor: document.getElementById('reactor-icon'),
 		fabricator: document.getElementById('fabricator-icon'),
-		linker: document.getElementById('linker-icon'),
+		tradeHub: document.getElementById('trade-hub-icon'),
 	}
 	upgradePointsElements = {
 		reactor: document.getElementById('reactor-upgrade-points'),
 		fabricator: document.getElementById('fabricator-upgrade-points'),
-		linker: document.getElementById('linker-upgrade-points'),
+		tradeHub: document.getElementById('trade-hub-upgrade-points'),
 	}
 
 	reactor;		// COMPONENT
 	fabricator;		// COMPONENT
-	linker;			// COMPONENT
+	tradeHub;			// COMPONENT
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
 	constructor(gameClient) {
@@ -185,17 +185,14 @@ export class BuildingsComponent {
 
 		this.reactor = new ReactorComponent(gameClient);
 		this.fabricator = new FabricatorComponent(gameClient);
-		this.linker = new LinkerComponent(gameClient);
+		this.tradeHub = new TradeHubComponent(gameClient);
 
 		this.icons.reactor.onclick = () => this.#handleIconClick('reactor');
 		this.icons.fabricator.onclick = () => this.#handleIconClick('fabricator');
-		this.icons.linker.onclick = () => this.#handleIconClick('linker');
+		this.icons.tradeHub.onclick = () => this.#handleIconClick('tradeHub');
 	}
 
 	update() {
-		//this.upgradePointsElements.reactor.textContent = this.gameClient.myPlayer.reactor?.upgradePoints || '0';
-		//this.upgradePointsElements.fabricator.textContent = this.gameClient.myPlayer.fabricator?.upgradePoints || '0';
-		//this.upgradePointsElements.linker.textContent = this.gameClient.myPlayer.linker?.upgradePoints || '0';
 		this.#updateUpgradePoints();
 		this.#updateSubComponents();
 	}
@@ -204,7 +201,7 @@ export class BuildingsComponent {
 		const points = {
 			reactor: player.reactor?.upgradePoints || 0,
 			fabricator: player.fabricator?.upgradePoints || 0,
-			linker: player.linker?.upgradePoints || 0,
+			tradeHub: player.tradeHub?.upgradePoints || 0,
 		}
 
 		for (const b in this.upgradePointsElements) {
@@ -222,7 +219,7 @@ export class BuildingsComponent {
 		}
 	}
 
-	/** @param {'reactor' | 'fabricator' | 'linker'} buildingName */
+	/** @param {'reactor' | 'fabricator' | 'tradeHub'} buildingName */
 	#handleIconClick(buildingName) {
 		if (!this[buildingName]) return;
 

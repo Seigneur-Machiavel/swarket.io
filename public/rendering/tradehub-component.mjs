@@ -1,6 +1,6 @@
-export class LinkerComponent {
+export class TradeHubComponent {
 	gameClient;
-	modal = document.getElementById('linker-modal');
+	modal = document.getElementById('trade-hub-modal');
 	closeBtn = this.modal.querySelector('.close-btn');
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
@@ -11,7 +11,7 @@ export class LinkerComponent {
 
 	}
 
-	update() { // call only if linker is present
+	update() { // call only if tradeHub is present
 		
 		
 	}

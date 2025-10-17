@@ -31,7 +31,7 @@
 **4.1 Buildings**
 - [x] reactor 	 => carte d'upgrade
 - [ ] fabricator => carte d'upgrade
-- [ ] linker 	 => carte d'upgrade
+- [ ] tradeHub 	 => carte d'upgrade
 - [ ] Storage => AGI	=> carte d'upgrade
 
 **4.5 Trading P2P**
