@@ -28,47 +28,6 @@
 </head>
 <body>
 	<div class="UI-wrapper">
-		<div class="player-info">
-			<div class="player-name"><span id="player-name">PlayerName</span></div>
-			<div class="player-id hoverable-tooltip">
-				<div class="tooltip">My player/node identifier</div>
-				<span id="player-id">...</span>
-			</div>
-			<div class="player-stats-wrapper">
-				<div class="player-stat hoverable-tooltip">
-					<div class="tooltip">Lifetime</div>
-					<img src="./assets/lifetime.png" alt="Lifetime">
-					<span id="lifetimeCount">0</span>
-				</div>
-
-				<div class="player-stat hoverable-tooltip" id="connectionCountWrapper">
-					<div class="tooltip">Connection Status</div>
-					<img src="./assets/connections.png" alt="Connection Capacity" style="transform: scale(.9);">
-					<span id="connectionCount">0</span>/<span id="connectionMax">0</span>
-					<div id="connection-offer-notification">!</div>
-				</div>
-			</div>
-		</div>
-
-		<div id="connections-list-wrapper">
-			<div class="close-btn" id="connections-list-close-btn">x</div>
-			<div class="connections-list-header">
-				<div class="connection-item-name">Name</div>
-				<div class="connection-item-id">Node ID</div>
-				<div class="connection-item-status">Status</div>
-				<div class="connection-item-action accept">Action</div>
-				<div class="connection-item-view-card">Show</div>
-			</div>
-			<div class="connections-list-body" id="connections-list">
-				<div class="connection-item"> <!-- TEMPLATE -->
-					<div class="connection-item-name">PlayerName</div>
-					<div class="connection-item-id">bd86d7d3a566ad5a</div>
-					<div class="connection-item-status">Pending</div> <!-- or Connected -->
-					<div class="connection-item-action accept">Accept</div>  <!-- or Remove -->
-					<div class="connection-item-view-card">👁</div>
-				</div>
-			</div>
-		</div>
 		<div class="dev-info">
 			<div>DEV INFO  |</div>
 			<div>°°°°°°°°°°</div>
@@ -101,37 +60,36 @@
 				<div class="energy-text" id="energy-text"></div>
 			</div>
 		</div>
-	
-		<div class="resources-bar">
-			<div class="resource">
-				<div class="tooltip">Energy</div>
-				<div class="resource-icon energy"></div>
-				<span class="resource-value" id="energy-count">0</span>
-			</div>
-			<div class="resource">
-				<div class="tooltip">Chips</div>
-				<div class="resource-icon chips"></div>
-				<span class="resource-value" id="chips-count">0</span>
-			</div>
-			<div class="resource">
-				<div class="tooltip">Datas</div>
-				<div class="resource-icon datas"></div>
-				<span class="resource-value" id="datas-count">0</span>
-			</div>
-			<div class="resource">
-				<div class="tooltip">Models</div>
-				<div class="resource-icon models"></div>
-				<span class="resource-value" id="models-count">0</span>
-			</div>
-			<div class="resource">
-				<div class="tooltip">Engineers</div>
-				<div class="resource-icon engineers"></div>
-				<span class="resource-value" id="engineers-count">0</span>
-			</div>
-		</div>
-	
+
+		<!-- Dynamic Inventory Display -->
+		<div class="resources-bar"></div>
+		<!-- Dynamic OtherNode Inventory Display for Spectators -->
+		<div class="resources-bar spectator hidden"></div>
+
 		<div class="inputs-wrapper">
 			<input type="range" id="energyStorageFactor" min="1" max="5" step="0.1" value="2" title="Energy Storage Factor">
+		</div>
+
+		<div class="player-info">
+			<div class="player-name"><span id="player-name">PlayerName</span></div>
+			<div class="player-id hoverable-tooltip">
+				<div class="tooltip">My player/node identifier</div>
+				<span id="player-id">...</span>
+			</div>
+			<div class="player-stats-wrapper">
+				<div class="player-stat hoverable-tooltip">
+					<div class="tooltip">Lifetime</div>
+					<img src="./assets/lifetime.png" alt="Lifetime">
+					<span id="lifetimeCount">0</span>
+				</div>
+
+				<div class="player-stat hoverable-tooltip" id="connectionCountWrapper">
+					<div class="tooltip">Connection Status</div>
+					<img src="./assets/connections.png" alt="Connection Capacity" style="transform: scale(.9);">
+					<span id="connectionCount">0</span>/<span id="connectionMax">0</span>
+					<div id="connection-offer-notification">!</div>
+				</div>
+			</div>
 		</div>
 
 		<div class="console">
@@ -167,13 +125,36 @@
 	
 		<div id="node-tooltip"></div>
 		<div id="node-card">
+			<div class="top-left-corner-decoration"></div>
 			<div class="close-btn" id="node-card-close-btn">x</div>
 			<div><span id="node-card-name">PlayerName</span></div>
 			<div><span id="node-card-id">Node ID</span></div>
 
+			<div id="node-card-offer-viewer">
+				<div class="resource offered">
+					<div class="tooltip">Energy</div>
+					<div class="resource-icon energy"></div>
+					<span class="resource-value" contenteditable="true">0</span>
+					<span class="send-word">(send)</span><span class="take-word">(take)</span>
+				</div>
+				<div class="arrow">-></div>
+				<div class="resource requested">
+					<div class="tooltip">Chips</div>
+					<div class="resource-icon chips" id="requested-resource-icon"></div>
+					<span class="resource-value" contenteditable="true">0</span>
+					<span class="take-word">(take)</span><span class="send-word">(send)</span>
+				</div>
+				<div class="btns-wrapper">
+					<button id="node-card-cancel-offer-btn" disabled>Cancel Offer</button>
+					<button id="node-card-confirm-offer-btn">Send Offer</button>
+				</div>
+			</div>
+			
 			<div class="node-actions">
-				<button id="node-card-connect-btn" disabled>Link offer</button>
 				<button id="node-card-chat-btn">Open chat</button>
+				<button id="node-card-connect-btn" disabled>Offer connection</button>
+				<button id="node-card-trade-offer-btn" disabled>Offer trade</button>
+				<button id="node-card-incoming-offer-btn" disabled>View incoming offer</button>
 			</div>
 		</div>
 	
@@ -206,6 +187,28 @@
 		</div>
 		<div id ="trade-hub-modal" class="building-modal modal">
 			<div class="close-btn">x</div>
+			<div class="modules-wrapper"></div>
+			<div class="production-lines-wrapper"></div>
+		</div>
+
+		<div id="connections-list-wrapper">
+			<div class="close-btn" id="connections-list-close-btn">x</div>
+			<div class="connections-list-header">
+				<div class="connection-item-name">Name</div>
+				<div class="connection-item-id">Node ID</div>
+				<div class="connection-item-status">Status</div>
+				<div class="connection-item-action accept">Action</div>
+				<div class="connection-item-view-card">Show</div>
+			</div>
+			<div class="connections-list-body" id="connections-list">
+				<div class="connection-item"> <!-- TEMPLATE -->
+					<div class="connection-item-name">PlayerName</div>
+					<div class="connection-item-id">bd86d7d3a566ad5a</div>
+					<div class="connection-item-status">Pending</div> <!-- or Connected -->
+					<div class="connection-item-action accept">Accept</div>  <!-- or Remove -->
+					<div class="connection-item-view-card">👁</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </body>

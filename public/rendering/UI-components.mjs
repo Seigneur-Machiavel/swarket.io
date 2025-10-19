@@ -1,4 +1,5 @@
 import { UpgradesTool } from '../game-logics/upgrades.mjs';
+import { newResourcesSet } from '../game-logics/resources.mjs';
 import { NodeInteractor } from '../game-logics/node-interactions.mjs';
 import { ReactorComponent } from './reactor-component.mjs';
 import { FabricatorComponent } from './fabricator-component.mjs';
@@ -72,7 +73,7 @@ export class ConnectionsListComponent {
 		item.querySelector('.connection-item-name').textContent = playerName;
 		item.querySelector('.connection-item-id').textContent = nodeId;
 		item.querySelector('.connection-item-status').textContent = connStatus;
-		item.querySelector('.connection-item-action').textContent = connStatus === 'Pending' ? 'Accept' : 'Remove';
+		item.querySelector('.connection-item-action').textContent = connStatus === 'Pending' ? 'Accept' : 'Kick';
 		item.querySelector('.connection-item-action').classList = `connection-item-action ${connStatus === 'Pending' ? 'accept' : 'remove'}`;
 		item.querySelector('.connection-item-action').onclick = () => {
 			if (connStatus === 'Connected') this.gameClient.node.kickPeer(nodeId);
@@ -146,20 +147,76 @@ export class EnergyBarComponent {
 }
 
 export class ResourcesBarComponent {
-	energyCount = document.getElementById('energy-count');
-	chipsCount = document.getElementById('chips-count');
-	datasCount = document.getElementById('datas-count');
-	modelsCount = document.getElementById('models-count');
-	engineersCount = document.getElementById('engineers-count');
+	resourceBar;
+	expandBtn;
+	/** @type {Record<string, HTMLElement>} */
+	resourceTierWrappers = {};
+	/** @type {HTMLElement[]} */
+	resourceValueElements = [];
+
+	constructor(spectator = false) {
+		const selector = spectator ? '.resources-bar.spectator' : '.resources-bar';
+		this.resourceBar = document.querySelector(selector);
+		this.expandBtn = this.#setupExpandButton();
+		const resourcesSet = newResourcesSet();
+		for (const tier in resourcesSet) {
+			const tierWrapper = document.createElement('div');
+			tierWrapper.classList = `resource-tier-wrapper`;
+			this.resourceTierWrappers[tier] = tierWrapper;
+			this.resourceBar.appendChild(tierWrapper);
+
+			for (const res in resourcesSet[tier])
+				tierWrapper.appendChild(this.#createResourceElement(res));
+		}
+	}
+
+	#setupExpandButton() {
+		const expandBtn = document.createElement('div');
+		expandBtn.classList = 'expand-btn';
+		expandBtn.onclick = () => this.resourceBar.classList.toggle('expanded');
+		this.resourceBar.appendChild(expandBtn);
+		return expandBtn;
+	}
+	#createResourceElement(resourceName) {
+		/*
+		<div class="resource"> // TEMPLATE
+			<div class="tooltip">Energy</div>
+			<div class="resource-icon energy"></div>
+			<span class="resource-value" id="energy-count">0</span>
+		</div>*/
+		const resourceElement = document.createElement('div');
+		resourceElement.classList = `resource`;
+
+		const tooltip = document.createElement('div');
+		tooltip.classList = 'tooltip';
+		tooltip.textContent = resourceName.charAt(0).toUpperCase() + resourceName.slice(1);
+		resourceElement.appendChild(tooltip);
+
+		const icon = document.createElement('div');
+		icon.classList = `resource-icon ${resourceName}`;
+		resourceElement.appendChild(icon);
+
+		const value = document.createElement('span');
+		value.classList = 'resource-value';
+		value.id = `${resourceName}-count`;
+		value.textContent = '0';
+		resourceElement.appendChild(value);
+		this.resourceValueElements.push(value);
+
+		return resourceElement;
+	}
 
 	/** @param {import('../game-logics/player.mjs').PlayerNode} player */
 	update(player) {
-		this.energyCount.textContent = player.inventory.getAmount('energy').toFixed(1);
-		this.chipsCount.textContent = player.inventory.getAmount('chips').toFixed(1);
-		this.datasCount.textContent = player.inventory.getAmount('datas').toFixed(1);
-		this.modelsCount.textContent = player.inventory.getAmount('models').toFixed(1);
-		this.engineersCount.textContent = player.inventory.getAmount('engineers').toFixed(1);
+		if (!player) return this.#hide();
+		this.#show();
+		for (let i = 0; i < this.resourceValueElements.length; i++) {
+			const value = player.inventory.resources[i];
+			this.resourceValueElements[i].textContent = value.toFixed(1);
+		}
 	}
+	#hide() { this.resourceBar.classList.add('hidden'); }
+	#show() { this.resourceBar.classList.remove('hidden'); }
 }
 
 export class BuildingsComponent {
@@ -177,7 +234,7 @@ export class BuildingsComponent {
 
 	reactor;		// COMPONENT
 	fabricator;		// COMPONENT
-	tradeHub;			// COMPONENT
+	tradeHub;		// COMPONENT
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
 	constructor(gameClient) {
@@ -297,6 +354,7 @@ export class NodeCardComponent {
 	nodeNameElem = document.getElementById('node-card-name');
 	nodeIdElem = document.getElementById('node-card-id');
 	connectBtn = document.getElementById('node-card-connect-btn');
+	tradeOfferBtn = document.getElementById('node-card-trade-offer-btn');
 	chatBtn = document.getElementById('node-card-chat-btn');
 
 	gameClient;
@@ -318,12 +376,15 @@ export class NodeCardComponent {
 		this.nodeCardElem.classList.add('visible');
 		this.nodeNameElem.textContent = this.gameClient.players[playerId].name || 'PlayerName';
 		this.nodeIdElem.textContent = playerId;
+		this.nodeCardElem.classList.add('clicked');
+		setTimeout(() => this.nodeCardElem.classList.remove('clicked'), 300);
 	}
 	hide() {
 		this.gameClient.showingCardOfId = null;
 		this.nodeCardElem.classList.remove('visible');
 	}
-	#updateCard(positionTolerance = 2) {
+	#updateCardPositionCounter = 0;
+	#updateCard() {
 		const playerId = this.gameClient.showingCardOfId;
 		if (!playerId) return this.nodeCardElem.classList.remove('visible');
 
@@ -331,21 +392,43 @@ export class NodeCardComponent {
 		this.nodeNameElem.textContent = this.gameClient.players[playerId].name || 'PlayerName';
 		this.nodeIdElem.textContent = playerId;
 
-		const position = this.visualizer.networkRenderer.getNodePositionRelativeToCanvas(playerId);
-		if (!position) return this.hide();
-
-		const canConnect = NodeInteractor.canTryToConnect(this.gameClient, playerId);
-		const gotConnectionOffer = this.gameClient.connectionOffers[playerId];
-		this.connectBtn.disabled = !canConnect;
-		this.connectBtn.textContent = gotConnectionOffer ? 'Confirm link' : 'Link offer';
-		if (!gotConnectionOffer) this.connectBtn.onclick = () => NodeInteractor.tryToConnect(this.gameClient, playerId);
-		else this.connectBtn.onclick = () => NodeInteractor.digestConnectionOffer(this.gameClient, playerId);
-
+		const isConnected = this.gameClient.node.peerStore.neighborsList.includes(playerId);
 		const rightMouseButtonIsDown = this.visualizer.networkRenderer.rightMouseButtonIsDown;
 		if (rightMouseButtonIsDown) this.nodeCardElem.classList.add('noPointerEvents');
 		else this.nodeCardElem.classList.remove('noPointerEvents');
-		if (!positionTolerance >= 0 && Math.abs(position.x - this.lastPosition.x) < positionTolerance && Math.abs(position.y - this.lastPosition.y) < positionTolerance) return;
+
+		this.#updateCardPosition(playerId);
+		this.#updateCardConnectionButton(isConnected, playerId);
+		this.#updateCardTradeOfferButton(isConnected, playerId);
+	}
+	#updateCardPosition(playerId = 'toto', positionTolerance = 12) {
+		const position = this.visualizer.networkRenderer.getNodePositionRelativeToCanvas(playerId);
+		if (!position) return this.hide();
+
+		this.#updateCardPositionCounter--;
+		if (positionTolerance >= 0 && Math.abs((position.x + 4) - this.lastPosition.x) < positionTolerance && Math.abs(position.y - this.lastPosition.y) < positionTolerance) return;
+		if (this.#updateCardPositionCounter <= 0) return this.#updateCardPositionCounter = 60;
 		this.lastPosition = position;
-		this.nodeCardElem.style.transform = `translate(${position.x + 4}px, ${position.y + 4}px)`;
+		const { x, y } = { x: Math.round(position.x), y: Math.round(position.y) };
+		this.nodeCardElem.style.transform = `translate(${x + 12 + 4}px, ${y + 12}px)`;
+	}
+	#updateCardConnectionButton(isConnected, playerId = 'toto') {
+		const canConnect = NodeInteractor.canTryToConnect(this.gameClient, playerId);
+		const hasOffer = this.gameClient.connectionOffers[playerId];
+		this.connectBtn.disabled = !canConnect && !isConnected;
+		if (canConnect) this.connectBtn.textContent = hasOffer ? 'Accept connection' : 'Offer connection';
+		else if (isConnected) this.connectBtn.textContent = 'Disconnect';
+		
+		if (isConnected) this.connectBtn.onclick = () => this.gameClient.node.kickPeer(playerId);
+		else if (!hasOffer) this.connectBtn.onclick = () => NodeInteractor.tryToConnect(this.gameClient, playerId);
+		else this.connectBtn.onclick = () => NodeInteractor.digestConnectionOffer(this.gameClient, playerId);
+	}
+	#updateCardTradeOfferButton(isConnected, playerId = 'toto') {
+		const hashTradeHub = this.gameClient.myPlayer.tradeHub;
+		this.tradeOfferBtn.disabled = !hashTradeHub || !isConnected;
+		
+		const offer = this.gameClient.myPlayer.tradeHub?.getPrivateTradeOffer(playerId);
+		if (offer) this.tradeOfferBtn.textContent = 'Cancel trade offer';
+		else this.tradeOfferBtn.textContent = 'Offer trade';
 	}
 }

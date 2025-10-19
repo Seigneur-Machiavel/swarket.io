@@ -24,7 +24,7 @@ try {
 renderConnectionLogs();
 
 // NODE & GAMECLIENT SETUP
-const bootstraps = ['ws://localhost:3001'];
+const bootstraps = ['ws://localhost:27261'];
 const node = await HiveP2P.createNode({ bootstraps, verbose: 2 });
 node.topologist.automation.incomingOffer = false;	// disable auto-accept incoming offers
 node.topologist.automation.spreadOffers = false; 	// disable auto-spread offers
@@ -36,7 +36,10 @@ const visualizer = new NetworkVisualizer(node, HiveP2P.CryptoCodex);
 window.networkVisualizer = visualizer; // Expose for debugging
 node.onMessageData((fromId, message) => visualizer.displayDirectMessageRoute(fromId, message.route));
 node.onGossipData((fromId, message) => visualizer.displayGossipMessageRoute(fromId, message));
-visualizer.onNodeLeftClick((nodeId = 'toto') => nodeCard.show(nodeId));
+visualizer.onNodeLeftClick((nodeId = 'toto') => {
+	nodeCard.show(nodeId);
+	spectatorResourcesBar.update(gameClient.getSpectatingPlayer);
+});
 visualizer.onNodeRightClick((nodeId = 'toto') => console.log('Right-click on node:', nodeId));
 
 // UI COMPONENTS SETUP
@@ -45,7 +48,8 @@ const connectionsList = new ConnectionsListComponent(gameClient);
 playerStats.connectionCountWrapper.onclick = () => connectionsList.show();
 const upgradeOffers = new UpgradeOffersComponent();
 const energyBar = new EnergyBarComponent();
-const resourcesBar = new ResourcesBarComponent();
+const myResourcesBar = new ResourcesBarComponent();
+const spectatorResourcesBar = new ResourcesBarComponent(true);
 const buildings = new BuildingsComponent(gameClient);
 const deadNodes = new DeadNodesComponent(gameClient);
 const nodeCard = new NodeCardComponent(gameClient, visualizer);
@@ -61,7 +65,8 @@ gameClient.onExecutedTurn.push(async (height = 0) => {
 	playerStats.update(player, node.peerStore.standardNeighborsList.length);
 	connectionsList.update();
 	energyBar.update(player.getEnergy, player.maxEnergy);
-	resourcesBar.update(player);
+	myResourcesBar.update(player);
+	spectatorResourcesBar.update(gameClient.getSpectatingPlayer);
 	buildings.update();
 	deadNodes.showDeadNodes();
 	console.log(`--- Turn ${height} executed ---`);

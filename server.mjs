@@ -14,8 +14,8 @@ const __dirname = path.dirname(__filename);
 const hiveP2PRoot = path.resolve(__dirname, 'node_modules', 'hive-p2p');
 
 const IS_DEBUG = true;
-const DOMAIN = 'localhost'; // '0.0.0.0'
-const PORT = 3000;
+const DOMAIN = '0.0.0.0'; // '0.0.0.0' | 'localhost'
+const PORT = 27260;
 const app = express();
 app.use(express.static(join(__dirname, 'public')));
 if (IS_DEBUG) app.use(express.static(join(__dirname, 'public-debug')));

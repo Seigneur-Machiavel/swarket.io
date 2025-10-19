@@ -131,10 +131,30 @@ export class Fabricator extends Building {
 
 }
 
+
+export class TradeOffer {
+	/** @type {string} */ resourceName = '';
+	/** @type {number} */ amount = 0;
+	/** @type {string} */ requestedResourceName = '';
+	/** @type {number} */ requestedAmount = 0;
+}
 export class TradeHub extends Building {
 	type = 't'; // 'trade hub'
 	maxConnections = 2;
 	modulesLevel = [];
+	publicOffers = {}; // key: resourceName, value: [amount, requestedResourceName, requestedAmount, minStock]
+	privateOffers = {}; // key: targetPlayerId, value: [resourceName, amount, requestedResourceName, requestedAmount]
 
-	
+	/** @returns {TradeOffer | null} */
+	getPublicTradeOffer(resourceName = '') {
+		if (!this.publicOffers[resourceName]) return null;
+		const [amount, requestedResourceName, requestedAmount] = this.publicOffers[resourceName];
+		return { resourceName, amount, requestedResourceName, requestedAmount };
+	}
+	/** @returns {TradeOffer | null} */
+	getPrivateTradeOffer(targetPlayerId = '') {
+		if (!this.privateOffers[targetPlayerId]) return null;
+		const [resourceName, amount, requestedResourceName, requestedAmount] = this.privateOffers[targetPlayerId];
+		return { resourceName, amount, requestedResourceName, requestedAmount };
+	}
 }

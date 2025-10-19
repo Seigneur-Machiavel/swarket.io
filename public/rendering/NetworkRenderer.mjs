@@ -9,7 +9,7 @@ export class NetworkRenderer {
 	fpsCountElement = document.getElementById('fpsCount');
 	maxVisibleConnections = 500; // to avoid performance issues
 	#autoRotateEnabled = true;
-	autoRotateSpeed = .0005; // .001
+	autoRotateSpeed = .001; // .001
 	autoRotateDelay = 3000; // delay before activating auto-rotation after mouse event
 	elements;
 	options;
@@ -329,7 +329,12 @@ export class NetworkRenderer {
 		this.options.mode = this.options.mode === '2d' ? '3d' : '2d';
 		// reset camera angle
 		this.camera.position.set(0, 0, 500);
-		this.camera.lookAt(0, 0, 0);
+		this.cameraDistance = 500;
+
+		// Reset quaternion to identity (looking at origin from +Z)
+		this.cameraQuaternion.identity();
+		this.#updateCameraFromQuaternion();
+
 		this.elements.modeSwitchBtn.textContent = this.options.mode === '2d' ? '2D' : '3D';
 	}
 	clearNetwork() {
@@ -357,7 +362,12 @@ export class NetworkRenderer {
 
 		// reset camera
 		this.camera.position.set(0, 0, this.initCameraZ);
-		this.camera.lookAt(0, 0, 0);
+		this.cameraDistance = this.initCameraZ;
+
+		// Reset quaternion to identity (looking at origin from +Z)
+		this.cameraQuaternion.identity();
+		this.#updateCameraFromQuaternion();
+
 		this.updateBatchMax = this.initUpdateBatchMax; // reset rendering batch size
 	}
 	destroy() {
@@ -384,23 +394,56 @@ export class NetworkRenderer {
 	}
 
     // Internal methods
+	/** Update camera position and orientation from quaternion without lookAt() */
+	#updateCameraFromQuaternion() {
+		// Calculate camera position from quaternion and distance
+		// The camera's "back" direction (opposite of where it looks) determines position
+		const backDirection = new THREE.Vector3(0, 0, 1);
+		backDirection.applyQuaternion(this.cameraQuaternion);
+		this.camera.position.copy(backDirection.multiplyScalar(this.cameraDistance));
+
+		// Set camera orientation directly from quaternion (no lookAt!)
+		this.camera.quaternion.copy(this.cameraQuaternion);
+
+		// Ensure up vector is consistent (world up)
+		this.camera.up.set(0, 1, 0);
+
+		// Update camera matrix so we can read from it during drag rotation
+		this.camera.updateMatrixWorld();
+	}
+
 	/** @param {string} axis @param {'3d'|'2d'|null} restrictToMode */
 	#autoRotate(axis = 'z', restrictToMode = null) {
 		if (!this.#autoRotateEnabled || !this.isAnimating) return;
-		try { if (!restrictToMode || this.options.mode === restrictToMode) this.scene.rotation[axis] -= this.autoRotateSpeed;
-		} catch (error) { console.error('Error during auto-rotation:', error); }
+		if (restrictToMode && this.options.mode !== restrictToMode) return;
+
+		try {
+			// Rotate camera around world Y-axis using quaternion
+			const rotationQuat = new THREE.Quaternion().setFromAxisAngle(
+				new THREE.Vector3(0, 1, 0),
+				this.autoRotateSpeed
+			);
+
+			// Apply rotation to camera quaternion
+			this.cameraQuaternion.multiplyQuaternions(rotationQuat, this.cameraQuaternion);
+
+			// Update camera position and orientation
+			this.#updateCameraFromQuaternion();
+		} catch (error) {
+			console.error('Error during auto-rotation:', error);
+		}
 	}
 	#autoZoom(margin = 1.2) {
-		return;
+		return; // Currently disabled
 		if (!this.isAnimating || this.options.mode !== '3d' || this.isPhysicPaused) return;
 		if (this.avoidAutoZoomUntil > Date.now()) return;
-		
+
 		const maxDist = this.maxDistance * margin;
 		const fov = this.camera.fov * (Math.PI / 180);
 		const height = 2 * maxDist;
 		const distance = height / (2 * Math.tan(fov / 2));
 		const targetDistance = Math.max(distance * 1.2, this.initCameraZ);
-		const currentDistance = this.camera.position.length();
+		const currentDistance = this.cameraDistance;
 		const zoomSpeed = .1;
 		const mode = currentDistance < targetDistance ? true : false; // true = zoom out | false = zoom in
 		const delta = Math.min(20, Math.abs(targetDistance - currentDistance) * zoomSpeed);
@@ -409,8 +452,9 @@ export class NetworkRenderer {
 		if (Math.abs(newDistance - this.lastAutoZoomDistance) < 1) return;
 		this.lastAutoZoomDistance = newDistance;
 
-		this.camera.position.normalize().multiplyScalar(newDistance);
-		this.camera.lookAt(0, 0, 0);
+		// Update distance and recompute camera position (no lookAt!)
+		this.cameraDistance = newDistance;
+		this.#updateCameraFromQuaternion();
 	}
 	rightMouseButtonIsDown = false;
     #setupControls() {
@@ -425,6 +469,15 @@ export class NetworkRenderer {
 		let mouseDownGrabCursorTimeout = null;
         let mouseButton = null;
         let previousMousePosition = { x: 0, y: 0 };
+
+		// Initialize camera quaternion and distance
+		// Camera starts at (0, 0, initCameraZ) looking at origin
+		// Identity quaternion = camera looks in -Z direction = perfect!
+		this.cameraQuaternion = new THREE.Quaternion(); // Identity quaternion
+		this.cameraDistance = this.camera.position.length();
+
+		// Set camera orientation from quaternion
+		this.#updateCameraFromQuaternion();
 
 		const domElement = this.renderer.domElement;
         domElement.addEventListener('mousedown', (e) => {
@@ -458,16 +511,28 @@ export class NetworkRenderer {
 				const mouseDirection = deltaY > 0 ? 'down' : 'up';
 				//console.log(`Mouse moved: ${mouseDirection} (${deltaX}, ${deltaY})`);
 
-                if (mouseButton === 2 && this.options.mode === '3d') { // Right mouse 3D - rotate
+				const [ AP, MB, M ] = [this.avoidPanning, mouseButton, this.options.mode];
+				// 3D -> (Right mouse) or (left mouse + avoid panning) -> rotate
+                if (M === '3d' && (MB === 2 || (AP && MB === 0))) { 
                     const rotationSpeed = 0.005;
-                    const spherical = new THREE.Spherical();
-                    spherical.setFromVector3(this.camera.position);
-                    spherical.theta -= deltaX * rotationSpeed;
-                    spherical.phi += deltaY * rotationSpeed;
-                    spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
-                    this.camera.position.setFromSpherical(spherical);
-                    this.camera.lookAt(0, 0, 0);
-				} else if (mouseDirection && mouseButton === 2 && this.options.mode === '2d') { // Right mouse 2D - Zoom
+
+					// Get camera's right vector for proper trackball rotation
+					const cameraRight = new THREE.Vector3();
+					cameraRight.setFromMatrixColumn(this.camera.matrix, 0); // Get right vector from camera matrix
+
+					// Create rotation quaternions
+					// Horizontal movement: rotate around world Y-axis (up)
+					const quatY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -deltaX * rotationSpeed);
+					// Vertical movement: rotate around camera's local right axis
+					const quatX = new THREE.Quaternion().setFromAxisAngle(cameraRight, -deltaY * rotationSpeed);
+
+					// Apply rotations: first horizontal, then vertical
+					this.cameraQuaternion.multiplyQuaternions(quatY, this.cameraQuaternion);
+					this.cameraQuaternion.multiplyQuaternions(quatX, this.cameraQuaternion);
+
+					// Update camera position and orientation (no lookAt!)
+					this.#updateCameraFromQuaternion();
+				} else if (mouseDirection && MB === 2 && M === '2d') { // Right mouse 2D - Zoom
 					// log increase zoom speed on same direction, until max
 					const oppositeDirection = !lastZoomDirection
 					|| lastZoomDirection === 'out' && mouseDirection === 'down'
@@ -491,7 +556,7 @@ export class NetworkRenderer {
 					const forward = new THREE.Vector3();
 					this.camera.getWorldDirection(forward);
 					this.camera.position.add(forward.multiplyScalar(deltaY * zoomSpeed2D));
-                } else if (!this.avoidPanning && mouseButton === 0) { // Left mouse - pan
+                } else if (!AP && MB === 0) { // Left mouse - pan
                     const panSpeed = 1;
                     const right = new THREE.Vector3();
                     const up = new THREE.Vector3();
@@ -515,9 +580,19 @@ export class NetworkRenderer {
         domElement.addEventListener('wheel', (e) => {
             e.preventDefault();
             const zoomSpeed = .4;
-            const forward = new THREE.Vector3();
-            this.camera.getWorldDirection(forward);
-            this.camera.position.add(forward.multiplyScalar(e.deltaY * -zoomSpeed));
+
+			if (this.options.mode === '3d') {
+				// In 3D mode: update camera distance and maintain orientation
+				const delta = e.deltaY * zoomSpeed;
+				this.cameraDistance = Math.max(100, this.cameraDistance + delta);
+				this.#updateCameraFromQuaternion();
+			} else {
+				// In 2D mode: move camera along view direction
+				const forward = new THREE.Vector3();
+				this.camera.getWorldDirection(forward);
+				this.camera.position.add(forward.multiplyScalar(e.deltaY * -zoomSpeed));
+			}
+
 			this.avoidAutoZoomUntil = Date.now() + 5000;
         });
 

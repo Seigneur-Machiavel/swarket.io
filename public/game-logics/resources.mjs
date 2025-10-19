@@ -64,8 +64,8 @@ export const BLUEPRINT = {
 	catalyzers: () => ({ inputs: { chips: 30, engineers: 5 }, outputs: { catalyzers: .4 } }),
 	// Tier 3 -- Advanced Products
 	aiModules: () => ({ inputs: { chips: 220, algorithms: 4, datasets: 10 }, outputs: { aiModules: .85 } }),
-	robots: () => ({ inputs: { chips: 500, models: 10, engineers: 4 }, outputs: { robots: .5 } }),
-	experts: () => ({ inputs: { datas: 1500, models: 15, engineers: 6 }, outputs: { experts: .3 } }),
+	robots: () => ({ inputs: { chips: 500, prototypes: 10, engineers: 4 }, outputs: { robots: .5 } }),
+	experts: () => ({ inputs: { datas: 1500, datasets: 2, engineers: 5 }, outputs: { experts: .3 } }),
 	// Tier 4 -- Complex Products
 	aiCores: () => ({ inputs: { chips: 500, aiModules: 5, experts: 2 }, outputs: { aiCores: .8 } }),
 	drones: () => ({ inputs: { datas: 5000, robots: 4, experts: 1 }, outputs: { drones: .35 } }),
@@ -138,8 +138,8 @@ catalyzers	=>	chips + engineers					=> ingredient + reactor booster
 
 Tier 3 -- Advanced Products
 aiModules	=>	chips + algorithms + datasets		=> ingredient + fabricator booster
-robots		=>	chips + models + engineers			=> ingredient + reactor booster
-experts		=>	datas + models + engineers			=> ingredient + tradeHub booster
+robots		=>	chips + prototypes + engineers		=> ingredient + reactor booster
+experts		=>	datas + datasets + engineers		=> ingredient + tradeHub booster
 
 Tier 4 -- Complex Products
 aiCores		=>	chips + aiModules + experts			=> ingredient + fabricator booster

@@ -39,6 +39,8 @@ export class PlayerNode {
 		this.upgradeSet.buildReactor = 1; // DEBUG bypass
 		this.fabricator = new Fabricator(); // DEBUG
 		this.upgradeSet.buildFabricator = 1; // DEBUG bypass
+		this.tradeHub = new TradeHub(); // DEBUG
+		this.upgradeSet.buildTradeHub = 1; // DEBUG bypass
 	}
 	
 	static playerFromData(data) {
@@ -68,8 +70,8 @@ export class PlayerNode {
 		if (!this.startTurn || !this.getEnergy) return; // inactive
 		this.lifetime++;
 		//console.log(`[${this.id}] lifetimme:`, this.lifetime);
-		const entropy = Math.floor(this.lifetime / 60) * 0.02; // +2% every 60 turns
-		const basis = .5 * (1 + entropy); 	// base consumption
+		const wear = Math.floor(this.lifetime / 10) * 0.01; // +1% every 10 turns
+		const basis = .5 * (1 + wear); 		// base consumption
 		this.#setEnergyChange(-basis);		// maintenance consumption
 		this.#setEnergyChange(this.#produceRawResources(basis));
 		this.#setEnergyChange(this.reactor?.consumeResourcesAndGetProduction(this).energy);

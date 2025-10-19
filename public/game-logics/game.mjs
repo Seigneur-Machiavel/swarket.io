@@ -62,6 +62,10 @@ export class GameClient {
 	}
 
 	get myPlayer() { return this.players[this.node.id]; }
+	get getSpectatingPlayer() {
+		if (!this.showingCardOfId || !this.players[this.showingCardOfId]) return null;
+		return this.players[this.showingCardOfId];
+	}
 
 	/** @param {Action} action @param {number} [height] default to this/height or this.height + 1 */
 	digestMyAction(action, height) { this.turnSystem.digestMyAction(action, height, this.height); }
