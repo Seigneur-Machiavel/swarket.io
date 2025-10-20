@@ -41,11 +41,31 @@ export class SetParamAction {
 	/** @type {any} */		value;
 }
 
-export class TransactionAction {
-	type = 'transaction';
-	/** @type {string} */	to;
-	/** @type {string} */	resource;
+export class SetTradeOffer {
+	type = 'set-trade-offer';
+	/** @type {string} */	resourceName;
 	/** @type {number} */	amount;
+	/** @type {string} */	requestedResourceName;
+	/** @type {number} */	requestedAmount;
+	/** @type {string | undefined} undefined for public offers */
+	targetPlayerId;
+}
+
+export class CancelTradeOffer {
+	type = 'cancel-trade-offer';
+	/** @type {string | undefined} undefined for private offers */
+	resourceName;
+	/** @type {string | undefined} undefined for public offers */
+	targetPlayerId;
+}
+
+export class TakeTradeOffer {
+	type = 'take-trade-offer';
+	/** @type {string} */ offererId;
+	/** @type {string | undefined} undefined for private offers */
+	resourceName;
+	/** @type {number | undefined} undefined for private offers */
+	amount;
 }
 
 export class RecycleAction {

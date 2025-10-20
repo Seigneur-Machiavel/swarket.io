@@ -11,7 +11,7 @@
 	<script src="./rendering/NetworkRenderer.mjs" type="module"></script>
 	<script src="./rendering/renderer-options.mjs" type="module"></script>
 	<script src="./rendering/renderer-stores.mjs" type="module"></script>
-	<script src="./rendering/UI-components.mjs" type="module"></script>
+	<script src="./components/UI-components.mjs" type="module"></script>
 	<script src="./game-logics/consensus.mjs" type="module"></script>
 	<script src="./game-logics/upgrades.mjs" type="module"></script>
 	<script src="./game-logics/player.mjs" type="module"></script>
@@ -130,19 +130,18 @@
 			<div><span id="node-card-name">PlayerName</span></div>
 			<div><span id="node-card-id">Node ID</span></div>
 
-			<div id="node-card-offer-viewer">
+			<div id="node-card-offer-viewer" class="hidden">
+				<div class="close-btn" id="node-card-offer-viewer-close-btn">x</div>
 				<div class="resource offered">
 					<div class="tooltip">Energy</div>
 					<div class="resource-icon energy"></div>
 					<span class="resource-value" contenteditable="true">0</span>
-					<span class="send-word">(send)</span><span class="take-word">(take)</span>
 				</div>
 				<div class="arrow">-></div>
 				<div class="resource requested">
 					<div class="tooltip">Chips</div>
 					<div class="resource-icon chips" id="requested-resource-icon"></div>
 					<span class="resource-value" contenteditable="true">0</span>
-					<span class="take-word">(take)</span><span class="send-word">(send)</span>
 				</div>
 				<div class="btns-wrapper">
 					<button id="node-card-cancel-offer-btn" disabled>Cancel Offer</button>
@@ -154,7 +153,7 @@
 				<button id="node-card-chat-btn">Open chat</button>
 				<button id="node-card-connect-btn" disabled>Offer connection</button>
 				<button id="node-card-trade-offer-btn" disabled>Offer trade</button>
-				<button id="node-card-incoming-offer-btn" disabled>View incoming offer</button>
+				<button id="node-card-remote-offer-btn" disabled>View remote offer</button>
 			</div>
 		</div>
 	

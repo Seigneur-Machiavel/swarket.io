@@ -7,10 +7,12 @@ import { NodeInteractor } from './node-interactions.mjs';
  * @typedef {import('./actions.mjs').UpgradeAction} UpgradeAction
  * @typedef {import('./actions.mjs').UpgradeModuleAction} UpgradeModuleAction
  * @typedef {import('./actions.mjs').SetParamAction} SetParamAction
- * @typedef {import('./actions.mjs').TransactionAction} TransactionAction
+ * @typedef {import('./actions.mjs').SetTradeOffer} SetTradeOffer
+ * @typedef {import('./actions.mjs').CancelTradeOffer} CancelTradeOffer
+ * @typedef {import('./actions.mjs').TakeTradeOffer} TakeTradeOffer
  * @typedef {import('./actions.mjs').RecycleAction} RecycleAction
- * 
- * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | TransactionAction | RecycleAction} Action
+ *
+ * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetTradeOffer | CancelTradeOffer | TakeTradeOffer | RecycleAction} Action
  */
 
 export class GameClient {

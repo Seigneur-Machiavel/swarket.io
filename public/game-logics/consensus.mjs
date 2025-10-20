@@ -35,8 +35,20 @@ export class SeededRandom {
 	}
 }
 
+/**
+ * @typedef {import('./actions.mjs').UpgradeAction} UpgradeAction
+ * @typedef {import('./actions.mjs').UpgradeModuleAction} UpgradeModuleAction
+ * @typedef {import('./actions.mjs').SetParamAction} SetParamAction
+ * @typedef {import('./actions.mjs').SetTradeOffer} SetTradeOffer
+ * @typedef {import('./actions.mjs').CancelTradeOffer} CancelTradeOffer
+ * @typedef {import('./actions.mjs').TakeTradeOffer} TakeTradeOffer
+ * @typedef {import('./actions.mjs').RecycleAction} RecycleAction
+ *
+ * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetTradeOffer | CancelTradeOffer | TakeTradeOffer | RecycleAction} Action
+ */
+
 /** Computes intents consensus
- * @param {Record<number, Record<string, { prevHash: string, actions: Array<SetParamAction | TransactionAction> }>>} intents
+ * @param {Record<number, Record<string, { prevHash: string, actions: Array<Action> }>>} intents
  * @param {string} p
  * @param {number} height
  * @param {string} selfId */

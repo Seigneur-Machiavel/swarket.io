@@ -1,9 +1,14 @@
+// IN THIS FILE WE GROUPED THE LIGHTS UI COMPONENTS USED IN THE GAME
+// OTHER COMPLEX COMPONENTS ARE IN SEPARATE FILES, BUT IMPORTED > EXPORTED HERE
+
 import { UpgradesTool } from '../game-logics/upgrades.mjs';
-import { newResourcesSet } from '../game-logics/resources.mjs';
 import { NodeInteractor } from '../game-logics/node-interactions.mjs';
-import { ReactorComponent } from './reactor-component.mjs';
-import { FabricatorComponent } from './fabricator-component.mjs';
-import { TradeHubComponent } from './tradehub-component.mjs';
+import { ReactorComponent } from './reactor.mjs';
+import { FabricatorComponent } from './fabricator.mjs';
+import { TradeHubComponent } from './tradehub.mjs';
+import { ResourcesBarComponent } from './resources-bar.mjs';
+import { NodeCardComponent } from './node-card.mjs';
+export { ResourcesBarComponent, NodeCardComponent };
 
 export class PlayerStatsComponent {
 	playerNameElem = document.getElementById('player-name');
@@ -17,8 +22,9 @@ export class PlayerStatsComponent {
 	setPlayerName(playerName) { this.playerNameElem.textContent = playerName; }
 	setPlayerId(id) { this.playerIdElem.textContent = id; }
 	/** @param {import('../game-logics/player.mjs').PlayerNode} player @param {number} connections */
-	update(player, connections) {
-		this.lifetimeElem.textContent = player.lifetime;
+	update(player, connections, lifetimeAsDate = true) {
+		const l = lifetimeAsDate ? new Date(player.lifetime * 1000).toISOString().substr(11, 8) : player.lifetime;
+		this.lifetimeElem.textContent = l;
 		this.connectionElem.textContent = connections;
 		this.connectionMaxElem.textContent = player.getMaxConnections;
 	}
@@ -144,79 +150,6 @@ export class EnergyBarComponent {
 		this.text.textContent = `${percentage.toFixed(1)}%`;
 		this.tooltip.textContent = `${energy.toFixed(1)}/${Math.round(maxEnergy)}`;
 	}
-}
-
-export class ResourcesBarComponent {
-	resourceBar;
-	expandBtn;
-	/** @type {Record<string, HTMLElement>} */
-	resourceTierWrappers = {};
-	/** @type {HTMLElement[]} */
-	resourceValueElements = [];
-
-	constructor(spectator = false) {
-		const selector = spectator ? '.resources-bar.spectator' : '.resources-bar';
-		this.resourceBar = document.querySelector(selector);
-		this.expandBtn = this.#setupExpandButton();
-		const resourcesSet = newResourcesSet();
-		for (const tier in resourcesSet) {
-			const tierWrapper = document.createElement('div');
-			tierWrapper.classList = `resource-tier-wrapper`;
-			this.resourceTierWrappers[tier] = tierWrapper;
-			this.resourceBar.appendChild(tierWrapper);
-
-			for (const res in resourcesSet[tier])
-				tierWrapper.appendChild(this.#createResourceElement(res));
-		}
-	}
-
-	#setupExpandButton() {
-		const expandBtn = document.createElement('div');
-		expandBtn.classList = 'expand-btn';
-		expandBtn.onclick = () => this.resourceBar.classList.toggle('expanded');
-		this.resourceBar.appendChild(expandBtn);
-		return expandBtn;
-	}
-	#createResourceElement(resourceName) {
-		/*
-		<div class="resource"> // TEMPLATE
-			<div class="tooltip">Energy</div>
-			<div class="resource-icon energy"></div>
-			<span class="resource-value" id="energy-count">0</span>
-		</div>*/
-		const resourceElement = document.createElement('div');
-		resourceElement.classList = `resource`;
-
-		const tooltip = document.createElement('div');
-		tooltip.classList = 'tooltip';
-		tooltip.textContent = resourceName.charAt(0).toUpperCase() + resourceName.slice(1);
-		resourceElement.appendChild(tooltip);
-
-		const icon = document.createElement('div');
-		icon.classList = `resource-icon ${resourceName}`;
-		resourceElement.appendChild(icon);
-
-		const value = document.createElement('span');
-		value.classList = 'resource-value';
-		value.id = `${resourceName}-count`;
-		value.textContent = '0';
-		resourceElement.appendChild(value);
-		this.resourceValueElements.push(value);
-
-		return resourceElement;
-	}
-
-	/** @param {import('../game-logics/player.mjs').PlayerNode} player */
-	update(player) {
-		if (!player) return this.#hide();
-		this.#show();
-		for (let i = 0; i < this.resourceValueElements.length; i++) {
-			const value = player.inventory.resources[i];
-			this.resourceValueElements[i].textContent = value.toFixed(1);
-		}
-	}
-	#hide() { this.resourceBar.classList.add('hidden'); }
-	#show() { this.resourceBar.classList.remove('hidden'); }
 }
 
 export class BuildingsComponent {
@@ -345,90 +278,5 @@ export class DeadNodesComponent {
 		this.deadNodes[nodeId].remove();
 		delete this.deadNodes[nodeId];
 		console.log(`Dead node notification removed: ${nodeId}`);
-	}
-}
-
-export class NodeCardComponent {
-	nodeCardCloseBtn = document.getElementById('node-card-close-btn');
-	nodeCardElem = document.getElementById('node-card');
-	nodeNameElem = document.getElementById('node-card-name');
-	nodeIdElem = document.getElementById('node-card-id');
-	connectBtn = document.getElementById('node-card-connect-btn');
-	tradeOfferBtn = document.getElementById('node-card-trade-offer-btn');
-	chatBtn = document.getElementById('node-card-chat-btn');
-
-	gameClient;
-	visualizer;
-	lastPosition = { x: 0, y: 0 };
-
-	/** @param {import('../game-logics/game.mjs').GameClient} gameClient @param {import('../visualizer.mjs').NetworkVisualizer} visualizer */
-	constructor(gameClient, visualizer) {
-		this.gameClient = gameClient;
-		this.visualizer = visualizer;
-		// use requestAnimationFrame for smoother position update
-		const update = () => { this.#updateCard(); requestAnimationFrame(update); };
-		requestAnimationFrame(update);
-		this.nodeCardCloseBtn.onclick = () => this.hide();
-	}
-	show(playerId = 'toto') {
-		if (!this.gameClient.players[playerId]) return;
-		this.gameClient.showingCardOfId = playerId;
-		this.nodeCardElem.classList.add('visible');
-		this.nodeNameElem.textContent = this.gameClient.players[playerId].name || 'PlayerName';
-		this.nodeIdElem.textContent = playerId;
-		this.nodeCardElem.classList.add('clicked');
-		setTimeout(() => this.nodeCardElem.classList.remove('clicked'), 300);
-	}
-	hide() {
-		this.gameClient.showingCardOfId = null;
-		this.nodeCardElem.classList.remove('visible');
-	}
-	#updateCardPositionCounter = 0;
-	#updateCard() {
-		const playerId = this.gameClient.showingCardOfId;
-		if (!playerId) return this.nodeCardElem.classList.remove('visible');
-
-		this.nodeCardElem.classList.add('visible');
-		this.nodeNameElem.textContent = this.gameClient.players[playerId].name || 'PlayerName';
-		this.nodeIdElem.textContent = playerId;
-
-		const isConnected = this.gameClient.node.peerStore.neighborsList.includes(playerId);
-		const rightMouseButtonIsDown = this.visualizer.networkRenderer.rightMouseButtonIsDown;
-		if (rightMouseButtonIsDown) this.nodeCardElem.classList.add('noPointerEvents');
-		else this.nodeCardElem.classList.remove('noPointerEvents');
-
-		this.#updateCardPosition(playerId);
-		this.#updateCardConnectionButton(isConnected, playerId);
-		this.#updateCardTradeOfferButton(isConnected, playerId);
-	}
-	#updateCardPosition(playerId = 'toto', positionTolerance = 12) {
-		const position = this.visualizer.networkRenderer.getNodePositionRelativeToCanvas(playerId);
-		if (!position) return this.hide();
-
-		this.#updateCardPositionCounter--;
-		if (positionTolerance >= 0 && Math.abs((position.x + 4) - this.lastPosition.x) < positionTolerance && Math.abs(position.y - this.lastPosition.y) < positionTolerance) return;
-		if (this.#updateCardPositionCounter <= 0) return this.#updateCardPositionCounter = 60;
-		this.lastPosition = position;
-		const { x, y } = { x: Math.round(position.x), y: Math.round(position.y) };
-		this.nodeCardElem.style.transform = `translate(${x + 12 + 4}px, ${y + 12}px)`;
-	}
-	#updateCardConnectionButton(isConnected, playerId = 'toto') {
-		const canConnect = NodeInteractor.canTryToConnect(this.gameClient, playerId);
-		const hasOffer = this.gameClient.connectionOffers[playerId];
-		this.connectBtn.disabled = !canConnect && !isConnected;
-		if (canConnect) this.connectBtn.textContent = hasOffer ? 'Accept connection' : 'Offer connection';
-		else if (isConnected) this.connectBtn.textContent = 'Disconnect';
-		
-		if (isConnected) this.connectBtn.onclick = () => this.gameClient.node.kickPeer(playerId);
-		else if (!hasOffer) this.connectBtn.onclick = () => NodeInteractor.tryToConnect(this.gameClient, playerId);
-		else this.connectBtn.onclick = () => NodeInteractor.digestConnectionOffer(this.gameClient, playerId);
-	}
-	#updateCardTradeOfferButton(isConnected, playerId = 'toto') {
-		const hashTradeHub = this.gameClient.myPlayer.tradeHub;
-		this.tradeOfferBtn.disabled = !hashTradeHub || !isConnected;
-		
-		const offer = this.gameClient.myPlayer.tradeHub?.getPrivateTradeOffer(playerId);
-		if (offer) this.tradeOfferBtn.textContent = 'Cancel trade offer';
-		else this.tradeOfferBtn.textContent = 'Offer trade';
 	}
 }

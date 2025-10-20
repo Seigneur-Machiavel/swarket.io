@@ -28,6 +28,7 @@ export function newResourcesSet() {
 	};
 }
 
+/** USED FOR TYPE DECLARATION AND RESOURCE_NAME VALIDITY EXPORT */
 export class ResourcesProductionType {
 	energy = 0;
 	chips = 0;
@@ -47,6 +48,7 @@ export class ResourcesProductionType {
 	geniuses = 0;
 	agiCells = 0;
 }
+export const VALID_RESOURCES = new Set(Object.keys(new ResourcesProductionType()));
 
 // BLUEPRINTS
 const RAW_PROD = RAW_RESOURCES_PROD_BASIS; // alias

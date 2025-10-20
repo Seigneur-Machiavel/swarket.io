@@ -10,8 +10,8 @@ export class AutoPlayer {
 	/** Instance of AutoPlayer - can work with or without frontend.
 	 * @param {import('../public/game-logics/game.mjs').GameClient} gameClient
 	 * @param {import('../public/game-logics/node-interactions.mjs').NodeInteractor} NodeInteractor
-	 * @param {import('../public/rendering/UI-components.mjs').DeadNodesComponent} deadNodesComponent
-	 * @param {import('../public/rendering/UI-components.mjs').UpgradeOffersComponent} upgradeOffersComponent */
+	 * @param {import('../public/components/UI-components.mjs').DeadNodesComponent} deadNodesComponent
+	 * @param {import('../public/components/UI-components.mjs').UpgradeOffersComponent} upgradeOffersComponent */
 	constructor(gameClient, NodeInteractor, deadNodesComponent, upgradeOffersComponent) {
 		this.gameClient = gameClient;
 		this.NodeInteractor = NodeInteractor;

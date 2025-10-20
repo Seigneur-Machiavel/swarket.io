@@ -1,8 +1,7 @@
 import { renderConnectionLogs, renderConnectedLogs } from './pre-game/connection-loader.mjs';
 import { PlayerStatsComponent, ConnectionsListComponent, UpgradeOffersComponent, EnergyBarComponent,
-	ResourcesBarComponent, NodeCardComponent, DeadNodesComponent,
-} from './rendering/UI-components.mjs';
-import { BuildingsComponent } from './rendering/UI-components.mjs';
+	ResourcesBarComponent, NodeCardComponent, DeadNodesComponent, BuildingsComponent
+} from './components/UI-components.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
 import { GameClient } from './game-logics/game.mjs';
 import { NodeInteractor } from './game-logics/node-interactions.mjs';
@@ -52,7 +51,7 @@ const myResourcesBar = new ResourcesBarComponent();
 const spectatorResourcesBar = new ResourcesBarComponent(true);
 const buildings = new BuildingsComponent(gameClient);
 const deadNodes = new DeadNodesComponent(gameClient);
-const nodeCard = new NodeCardComponent(gameClient, visualizer);
+const nodeCard = new NodeCardComponent(gameClient, visualizer, myResourcesBar, spectatorResourcesBar);
 
 // ON TURN EXECUTION
 gameClient.onExecutedTurn.push(async (height = 0) => {

@@ -1,4 +1,4 @@
-import { BLUEPRINT, ResourcesProductionType } from './resources.mjs';
+import { VALID_RESOURCES, BLUEPRINT, ResourcesProductionType } from './resources.mjs';
 import { REACTOR_MODULES } from './buildings-modules.mjs';
 
 export class BuildingBuilder {
@@ -131,7 +131,6 @@ export class Fabricator extends Building {
 
 }
 
-
 export class TradeOffer {
 	/** @type {string} */ resourceName = '';
 	/** @type {number} */ amount = 0;
@@ -142,8 +141,10 @@ export class TradeHub extends Building {
 	type = 't'; // 'trade hub'
 	maxConnections = 2;
 	modulesLevel = [];
-	publicOffers = {}; // key: resourceName, value: [amount, requestedResourceName, requestedAmount, minStock]
-	privateOffers = {}; // key: targetPlayerId, value: [resourceName, amount, requestedResourceName, requestedAmount]
+	/** key: resourceName, value: [amount, requestedResourceName, requestedAmount] @type {Record<string, [number, string, number]>} */
+	publicOffers = {};
+	/** key: targetPlayerId, value: [resourceName, amount, requestedResourceName, requestedAmount] @type {Record<string, [string, number, string, number]>} */
+	privateOffers = {};
 
 	/** @returns {TradeOffer | null} */
 	getPublicTradeOffer(resourceName = '') {
@@ -156,5 +157,34 @@ export class TradeHub extends Building {
 		if (!this.privateOffers[targetPlayerId]) return null;
 		const [resourceName, amount, requestedResourceName, requestedAmount] = this.privateOffers[targetPlayerId];
 		return { resourceName, amount, requestedResourceName, requestedAmount };
+	}
+	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
+	setPublicTradeOffer(resourceName, amount, requestedResourceName, requestedAmount) {
+		if (!this.#checkOfferValues(resourceName, amount, requestedResourceName, requestedAmount)) return;
+		this.publicOffers[resourceName] = [amount, requestedResourceName, requestedAmount];
+	}
+	/** @param {string} targetPlayerId @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
+	setPrivateTradeOffer(targetPlayerId, resourceName, amount, requestedResourceName, requestedAmount) {
+		if (typeof targetPlayerId !== 'string') return;
+		if (!this.#checkOfferValues(resourceName, amount, requestedResourceName, requestedAmount)) return;
+		this.privateOffers[targetPlayerId] = [resourceName, amount, requestedResourceName, requestedAmount];
+	}
+	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
+	#checkOfferValues(resourceName, amount, requestedResourceName, requestedAmount) {
+		if (typeof resourceName !== 'string') return false;
+		if (!VALID_RESOURCES.has(resourceName)) return false;
+		if (typeof amount !== 'number' || amount <= 0) return false;
+		if (typeof requestedResourceName !== 'string') return false;
+		if (!VALID_RESOURCES.has(requestedResourceName)) return false;
+		if (typeof requestedAmount !== 'number' || requestedAmount <= 0) return false;
+		return true;
+	}
+	/** @param {string} targetPlayerId */
+	cancelPrivateTradeOffer(targetPlayerId) {
+		delete this.privateOffers[targetPlayerId];
+	}
+	/** @param {string} resourceName */
+	cancelPublicTradeOffer(resourceName) {
+		delete this.publicOffers[resourceName];
 	}
 }

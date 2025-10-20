@@ -6,8 +6,15 @@ import { filterValidActions } from './actions.mjs';
 
 /**
  * @typedef {import('hive-p2p').Node} Node
+ * @typedef {import('./actions.mjs').UpgradeAction} UpgradeAction
+ * @typedef {import('./actions.mjs').UpgradeModuleAction} UpgradeModuleAction
  * @typedef {import('./actions.mjs').SetParamAction} SetParamAction
- * @typedef {import('./actions.mjs').TransactionAction} TransactionAction
+ * @typedef {import('./actions.mjs').SetTradeOffer} SetTradeOffer
+ * @typedef {import('./actions.mjs').CancelTradeOffer} CancelTradeOffer
+ * @typedef {import('./actions.mjs').TakeTradeOffer} TakeTradeOffer
+ * @typedef {import('./actions.mjs').RecycleAction} RecycleAction
+ *
+ * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetTradeOffer | CancelTradeOffer | TakeTradeOffer | RecycleAction} Action
  */
 
 export class TurnSystem {
@@ -19,7 +26,7 @@ export class TurnSystem {
 	T0Reference = null; // reference time to calculate T0 drift
 	turnsSchedules = new Map(); // height => timestamp
 	
-	/** @type {Record<number, Record<string, { prevHash: string, actions: Array<SetParamAction | TransactionAction> }>>} */
+	/** @type {Record<number, Record<string, { prevHash: string, actions: Array<Action> }>>} */
 	playersIntents = {}; // { height: { nodeId: { prevHash: string, [intents...]} }, ... }
 
 	/** @param {Node} node */

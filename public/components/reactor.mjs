@@ -1,5 +1,5 @@
-import { ProductionLineIOParam, ProductionLineVerticalRangeParam, ProductionLineComponent } from './production-line-component.mjs';
-import { ModuleTreeComponent } from './modules-tree-component.mjs';
+import { ProductionLineIOParam, ProductionLineVerticalRangeParam, ProductionLineComponent } from './production-line.mjs';
+import { ModuleTreeComponent } from './modules-tree.mjs';
 import { REACTOR_MODULES, getModulesDescriptionRelativeToPlayer } from '../game-logics/buildings-modules.mjs';
 
 /** @type {Record<string, Array<{actionParam: ProductionLineVerticalRangeParam, events: Record<string, (gameClient: import('../game-logics/game.mjs').GameClient, value: any) => void>}>>} */
