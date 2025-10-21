@@ -94,11 +94,11 @@ export class ModuleTreeComponent {
 		return m;
 	}
 
-	updateReactorLevel(reactorLevel = 0) {
+	updateLevel(level = 0) {
 		for (const tier in this.treeSteps) {
 			const step = this.treeSteps[tier];
-			step.unlockElement.classList.toggle('unlocked', reactorLevel >= Number(tier));
-			step.currentLevelElement.textContent = Math.min(reactorLevel, Number(tier));
+			step.unlockElement.classList.toggle('unlocked', level >= Number(tier));
+			step.currentLevelElement.textContent = Math.min(level, Number(tier));
 		}
 	}
 

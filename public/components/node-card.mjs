@@ -49,16 +49,16 @@ export class NodeCardComponent {
 		this.nodeCardRemoteOfferBtn.onclick = () => this.showRemoteOffer(true); // true = toggle
 		this.nodeCardOfferViewerCloseBtn.onclick = () => this.hideOfferViewer();
 
-		this.showMyOffer(); // initialize offer viewer
 		this.#setupResourceHandlers();
 		this.nodeCardCancelOfferBtn.onclick = () => this.#handleOfferCancellation();
 		this.nodeCardConfirmOfferBtn.onclick = () => this.#handleOfferConfirmation();
 	}
 
-	show(playerId = 'toto') {
+	show(playerId = 'toto', connectedOnly = false) {
 		if (!this.gameClient.players[playerId]) return;
 		const isConnected = this.gameClient.node.peerStore.neighborsList.includes(playerId);
-		if (!isConnected && (this.showingMyOffer || this.showingRemoteOffer)) this.hideOfferViewer();
+		const connectionValid = connectedOnly ? isConnected : true;
+		if (!connectionValid && (this.showingMyOffer || this.showingRemoteOffer)) this.hideOfferViewer();
 
 		this.gameClient.showingCardOfId = playerId;
 		this.nodeCardElem.classList.add('visible');
@@ -70,6 +70,7 @@ export class NodeCardComponent {
 	hide() {
 		this.gameClient.showingCardOfId = null;
 		this.nodeCardElem.classList.remove('visible');
+		this.spectatorResourcesBar.hide();
 	}
 	showMyOffer(closeIfOpen = false) {
 		if (closeIfOpen && this.showingMyOffer) return this.hideOfferViewer();
@@ -119,6 +120,11 @@ export class NodeCardComponent {
 		});
 		this.resourceAValue.oninput = () => toogleButtonsState();
 		this.resourceBValue.oninput = () => toogleButtonsState();
+		this.nodeCardOfferViewer.onkeydown = (e) => {
+			const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', '.'];
+			if ((e.key >= '0' && e.key <= '9') || allowedKeys.includes(e.key)) return;
+			e.preventDefault();
+		};
 	}
 	#getRemoteOffer() {
 		const playerId = this.gameClient.showingCardOfId;
@@ -226,7 +232,7 @@ export class NodeCardComponent {
 
 	/** PLAYER CARD PRIVATE METHODS */
 	#updateCardPositionCounter = 0;
-	#updateCard() {
+	#updateCard(connectedOnly = false) {
 		const playerId = this.gameClient.showingCardOfId;
 		const remotePlayer = playerId ? this.gameClient.players[playerId] : null;
 		if (!playerId || !remotePlayer) return this.nodeCardElem.classList.remove('visible');
@@ -242,8 +248,8 @@ export class NodeCardComponent {
 
 		this.#updateCardPosition(playerId);
 		this.#updateCardConnectionButton(isConnected);
-		this.#updateCardTradeOfferButton(isConnected);
-		this.#updateCardRemoteOfferButton(isConnected);
+		this.#updateCardTradeOfferButton(connectedOnly ? isConnected : true);
+		this.#updateCardRemoteOfferButton(connectedOnly ? isConnected : true);
 
 		if (this.showingRemoteOffer) this.#updateRemoteOfferAttributes();
 		this.#setOfferViewerConfirmButtonAttributes();

@@ -18,12 +18,12 @@ export class PlayerNode {
 	upgradeSet;			// current upgrade set
 	upgradeOffers = []; // upgrade offers
 
+	/** @returns {number} */
+	get getMaxConnections() { return this.tradeHub?.maxConnections || 0; }
 	// BUILDINGS ------------------------------------------------------------------\
 	/** @type {Reactor | null} */ 		reactor = null;		// reactor building		|
 	/** @type {Fabricator | null} */ 	fabricator = null; 	// fabricator building	|
-	/** @type {TradeHub | null} */		tradeHub = null;	// tradeHub building		|
-	/** @returns {number} */ //														|
-	get getMaxConnections() { return this.tradeHub?.maxConnections || 0; } //			|
+	/** @type {TradeHub | null} */		tradeHub = null;	// tradeHub building	|
 	// ----------------------------------------------------------------------------/
 
 	/** @param {string} id @param {'chip' | 'data' | 'models' | 'engineers' | undefined} operatingResource Randomly selected if undefined */
@@ -40,22 +40,35 @@ export class PlayerNode {
 		this.fabricator = new Fabricator(); // DEBUG
 		this.upgradeSet.buildFabricator = 1; // DEBUG bypass
 		this.tradeHub = new TradeHub(); // DEBUG
+		this.tradeHub.upgradePoints = 10; // DEBUG bypass
 		this.upgradeSet.buildTradeHub = 1; // DEBUG bypass
 	}
-	
-	static playerFromData(data) {
-		const p = new PlayerNode(data.id);
-		for (const k in data)
-			if (k === 'inventory') p.inventory = new Inventory(data[k]);
-			else if (k === 'reactor') p.reactor = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
-			else if (k === 'fabricator') p.fabricator = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
-			else if (k === 'tradeHub') p.tradeHub = BuildingBuilder.rebuildClasseIfItCanBe(data[k], k);
-			else p[k] = data[k];
+	/** @param {'object' | 'array'} extractionMode */
+	static playerFromData(data, extractionMode) {
+		if (extractionMode !== 'object' && extractionMode !== 'array') throw new Error('Invalid "from" parameter, must be "object" or "array".');
+		const p = new PlayerNode();
+
+		let i = 0;
+		for (const k in extractionMode === 'object' ? data : p) {
+			const d = extractionMode === 'object' ? data[k] : data[i++];
+			if (k === 'inventory') p.inventory = new Inventory(d);
+			else if (k === 'reactor') p.reactor = BuildingBuilder.rebuildClasseIfItCanBe(d, k, extractionMode);
+			else if (k === 'fabricator') p.fabricator = BuildingBuilder.rebuildClasseIfItCanBe(d, k, extractionMode);
+			else if (k === 'tradeHub') p.tradeHub = BuildingBuilder.rebuildClasseIfItCanBe(d, k, extractionMode);
+			else p[k] = d;
+		}
 		return p;
 	}
-	extract() {
-		const sendable = {};
-		for (const k in this) sendable[k] = this[k]?.extract ? this[k].extract() : this[k];
+	/** @param {'object' | 'array'} extractionMode @returns {object | Array<any>} */
+	extract(extractionMode = 'object') {
+		if (extractionMode === 'object') {
+			const sendable = {}; 	// TO OBJECT - SAFE
+			for (const k in this) sendable[k] = this[k]?.extract ? this[k].extract(extractionMode) : this[k];
+			return sendable;
+		}
+
+		const sendable = []; 		// TO ARRAY  - LIGHT
+		for (const k in this) sendable.push(this[k]?.extract ? this[k].extract() : this[k]);
 		return sendable;
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} nodeId @param {{type: string}} intent */
@@ -132,11 +145,11 @@ export class PlayerNode {
 		Upgrader.applyUpgradeEffects(this, upgradeName);
 		return true;
 	}
-	/** @param {{resourceName: string, amount: number, requestedResourceName: string, requestedAmount: number, targetPlayerId: string | undefined}} intent */
+	/** @param {{resourceName: string, amount: number, requestedResourceName: string, requestedAmount: number, minStock: number, isActive: boolean, targetPlayerId: string | undefined}} intent */
 	#handleSetTradeOfferIntent(intent) {
 		if (!this.tradeHub) return;
-		const { resourceName, amount, requestedResourceName, requestedAmount, targetPlayerId } = intent;
-		if (!targetPlayerId) this.tradeHub.setPublicTradeOffer(resourceName, amount, requestedResourceName, requestedAmount);
+		const { resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive, targetPlayerId } = intent;
+		if (!targetPlayerId) this.tradeHub.setPublicTradeOffer(resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive);
 		else this.tradeHub.setPrivateTradeOffer(targetPlayerId, resourceName, amount, requestedResourceName, requestedAmount);
 	}
 	/** @param {{resourceName: string | undefined, targetPlayerId: string | undefined}} intent */

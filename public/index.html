@@ -41,6 +41,11 @@
 			<div>Lines: <span id="linesCount">0</span></div>
 		</div>
 
+		<!-- Dynamic Inventory Display -->
+		<div class="resources-bar"></div>
+		<!-- Dynamic OtherNode Inventory Display for Spectators -->
+		<div class="resources-bar spectator hidden"></div>
+
 		<div class="upgrade-offers-wrapper" id ="upgrade-offers-wrapper">
 			<div class="upgrade-offer trade-hub" id="upgrade-offer-1">
 				<div class="tooltip">Connection +1</div>
@@ -60,11 +65,6 @@
 				<div class="energy-text" id="energy-text"></div>
 			</div>
 		</div>
-
-		<!-- Dynamic Inventory Display -->
-		<div class="resources-bar"></div>
-		<!-- Dynamic OtherNode Inventory Display for Spectators -->
-		<div class="resources-bar spectator hidden"></div>
 
 		<div class="inputs-wrapper">
 			<input type="range" id="energyStorageFactor" min="1" max="5" step="0.1" value="2" title="Energy Storage Factor">
@@ -130,7 +130,7 @@
 			<div><span id="node-card-name">PlayerName</span></div>
 			<div><span id="node-card-id">Node ID</span></div>
 
-			<div id="node-card-offer-viewer" class="hidden">
+			<div id="node-card-offer-viewer">
 				<div class="close-btn" id="node-card-offer-viewer-close-btn">x</div>
 				<div class="resource offered">
 					<div class="tooltip">Energy</div>
@@ -187,7 +187,37 @@
 		<div id ="trade-hub-modal" class="building-modal modal">
 			<div class="close-btn">x</div>
 			<div class="modules-wrapper"></div>
-			<div class="production-lines-wrapper"></div>
+			<div class="trade-menu-wrapper">
+				<div class="trade-menu-header">
+					<div class="my-trade-offers-title">My Trade Offers</div>
+					<div class="separator"></div>
+					<div class="world-trade-offers-title">World Trade Offers</div>
+				</div>
+				<div class="my-trade-offer-lines-wrapper">
+					<div class="my-trade-offer-line"> <!-- TEMPLATE -->
+						<div class="resource offered">
+							<div class="resource-icon energy"></div>
+							<span class="resource-value" contenteditable="true">0</span>
+						</div>
+						<div class="arrow">-></div>
+						<div class="resource requested">
+							<div class="resource-icon chips"></div>
+							<span class="resource-value" contenteditable="true">0</span>
+						</div>
+						<div class="min-stock hoverable-tooltip">
+							<div class="tooltip">Minimum stock to keep</div>
+							<span class="min-stock-value" contenteditable="true">0</span>
+						</div>
+						<div class="toggle-btn hoverable-tooltip">
+							<div class="tooltip">Currently: Inactive</div>
+						</div>
+					</div>
+				</div>
+				<div class="separator"></div>
+				<div class="world-trade-offer-lines-wrapper">
+
+				</div>
+			</div>
 		</div>
 
 		<div id="connections-list-wrapper">

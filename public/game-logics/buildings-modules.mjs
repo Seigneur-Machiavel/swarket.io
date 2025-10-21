@@ -1,17 +1,18 @@
 
 
 /** @param {import('./player.mjs').PlayerNode} player */
-export function getModulesDescriptionRelativeToPlayer(player) {
+export function getModulesDescriptionRelativeToPlayer(player) { // DEPRECATED
 	if (!player.reactor) return null;
 	/** @type {Record<string, { minBuildingLevel: number, currentLevel: number, description: string }>} */
 	const modulesInfos = {};
-	for (const m in REACTOR_MODULES) {
-		const currentLevel = player.reactor.modulesLevel[m] || 0;
-		const { minBuildingLevel } = REACTOR_MODULES[m];
-		if (!modulesInfos[minBuildingLevel]) modulesInfos[minBuildingLevel] = {};
-		const { description } = REACTOR_MODULES[m].levelEffect[currentLevel] || 'Max level reached';
-		modulesInfos[minBuildingLevel][m] = { currentLevel, description };
-	}
+	for (const b in buildingModules)
+		for (const m in buildingModules[b]) {
+			const currentLevel = player.reactor.modulesLevel[m] || 0;
+			const { minBuildingLevel } = buildingModules[b][m];
+			if (!modulesInfos[b]) modulesInfos[b] = {};
+			const { description } = buildingModules[b][m].levelEffect[currentLevel] || 'Max level reached';
+			modulesInfos[b][m] = { minBuildingLevel, currentLevel, description };
+		}
 	return modulesInfos;
 }
 
@@ -20,9 +21,14 @@ export function getModuleMaxLevel(reactorLevel, moduleKey) {
 	console.log('getModuleMaxLevel', reactorLevel, moduleKey);
 }
 
-/**
- * @typedef {{description: string, outputCoef?: number, inputCoef?: number, breakdownRiskCoef?: number, energyPerRawResource?: number}} LevelEffect
- */
+class ReactorModuleLevelEffect { // TYPEDEF ONLY
+	/** @type {string} */ 				description;
+	/** @type {number | undefined} */ 	outputCoef;
+	/** @type {number | undefined} */ 	inputCoef;
+	/** @type {number | undefined} */ 	breakdownRiskCoef;
+	/** @type {number | undefined} */ 	energyPerRawResource;
+}
+
 export class REACTOR_MODULES {
 	/** @returns {Array<number>} */
 	static emptyModulesArray() {
@@ -43,7 +49,7 @@ export class REACTOR_MODULES {
 		const m = REACTOR_MODULES[moduleKey];
 		return { minBuildingLevel: m.minBuildingLevel, maxLevel: m.levelEffect.length };
 	}
-	/** @returns {LevelEffect | null} */
+	/** @returns {ReactorModuleLevelEffect | null} */
 	static getModuleEffect(moduleKey = 'efficiency', level = 0) {
 		return REACTOR_MODULES[moduleKey]?.levelEffect[level] || null;
 	}
@@ -122,4 +128,71 @@ export class REACTOR_MODULES {
 			{ description: 'Consume aiModules => Produce 5000 energy' },
 		]
 	}
+}
+
+export class FABRICATOR_MODULES {
+	// TO BE DEFINED
+}
+
+class TradeHubModuleLevelEffect { // TYPEDEF ONLY
+	/** @type {string} */ 				description;
+	/** @type {number | undefined} */ 	outputCoef;
+	/** @type {number | undefined} */ 	inputCoef;
+	/** @type {number | undefined} */ 	maxTradeOffer;
+	/** @type {number | undefined} */ 	maxConnections;
+}
+
+export class TRADE_HUB_MODULES {
+	/** @returns {Array<number>} */
+	static emptyModulesArray() {
+		return Array(TRADE_HUB_MODULES.allModulesKeys.length).fill(0);
+	}
+	static allModulesKeys = [
+		'connectivity',
+		'negotiation'
+	];
+
+	/** @returns {{minBuildingLevel: number, maxLevel: number} | null} */
+	static getModuleRequiredLevelAndMaxLevel(moduleKey = 'toto') {
+		const m = TRADE_HUB_MODULES[moduleKey];
+		return { minBuildingLevel: m.minBuildingLevel, maxLevel: m.levelEffect.length };
+	}
+	/** @returns {TradeHubModuleLevelEffect | null} */
+	static getModuleEffect(moduleKey = 'connectivity', level = 0) {
+		return TRADE_HUB_MODULES[moduleKey]?.levelEffect[level] || null;
+	}
+	/** @returns {string} */
+	static getModuleDescription(moduleKey = 'connectivity', level = 0) {
+		let description = TRADE_HUB_MODULES[moduleKey]?.levelEffect[level]?.description;
+		if (!description) description = `${TRADE_HUB_MODULES[moduleKey]?.levelEffect[level - 1]?.description} (Max level reached)`;
+		return description;
+	}
+	
+	// TRADE-HUB LEVEL 1
+	static connectivity = {
+		minBuildingLevel: 0,
+		levelEffect: [
+			{ maxConnections: 3, description: 'Increase trade route capacity from 2 to 3' },
+			{ maxConnections: 4, description: 'Increase trade route capacity from 3 to 4' },
+			{ maxConnections: 5, description: 'Increase trade route capacity from 4 to 5' },
+			{ maxConnections: 6, description: 'Increase trade route capacity from 5 to 6' },
+			{ maxConnections: 7, description: 'Increase trade route capacity from 6 to 7' }
+		]
+	}
+	static negotiation = {
+		minBuildingLevel: 0,
+		levelEffect: [
+			{ maxTradeOffer: 1, description: 'Increase the capacity of trade offers to 1' },
+			{ maxTradeOffer: 2, description: 'Increase the capacity of trade offers to 2' },
+			{ maxTradeOffer: 3, description: 'Increase the capacity of trade offers to 3' },
+			{ maxTradeOffer: 4, description: 'Increase the capacity of trade offers to 4' },
+			{ maxTradeOffer: 5, description: 'Increase the capacity of trade offers to 5' }
+		]
+	}
+}
+
+const buildingModules = { // NOT USED YET -> AND PROBABLY DEPRECATED SOON
+	reactor: REACTOR_MODULES,
+	// fabricator: FABRICATOR_MODULES, // TODO
+	tradeHub: TRADE_HUB_MODULES
 }

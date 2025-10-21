@@ -7,6 +7,7 @@ import { AutoPlayer } from './public-debug/auto-play.mjs';
 import HiveP2P from 'hive-p2p';
 import { NodeInteractor } from './public/game-logics/node-interactions.mjs';
 HiveP2P.CLOCK.mockMode = true;
+HiveP2P.CONFIG.NODE.MANUAL_BAN_MODE = true;
 //HiveP2P.CONFIG.NODE.DEFAULT_VERBOSE = 4;
 
 const __filename = fileURLToPath(import.meta.url);

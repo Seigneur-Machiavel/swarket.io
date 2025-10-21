@@ -49,7 +49,7 @@ const upgradeOffers = new UpgradeOffersComponent();
 const energyBar = new EnergyBarComponent();
 const myResourcesBar = new ResourcesBarComponent();
 const spectatorResourcesBar = new ResourcesBarComponent(true);
-const buildings = new BuildingsComponent(gameClient);
+const buildings = new BuildingsComponent(gameClient, myResourcesBar);
 const deadNodes = new DeadNodesComponent(gameClient);
 const nodeCard = new NodeCardComponent(gameClient, visualizer, myResourcesBar, spectatorResourcesBar);
 
@@ -91,6 +91,7 @@ while(!node.peerStore.neighborsList.length)
 	await new Promise(resolve => setTimeout(resolve, 100));
 
 renderConnectedLogs();
+document.querySelector('.UI-wrapper').classList.add('started');
 
 // AUTO-PLAY SETUP (DEBUG ONLY)
 if (IS_DEBUG) {

@@ -1,31 +1,31 @@
 import { VALID_RESOURCES, BLUEPRINT, ResourcesProductionType } from './resources.mjs';
-import { REACTOR_MODULES } from './buildings-modules.mjs';
+import { REACTOR_MODULES, FABRICATOR_MODULES, TRADE_HUB_MODULES } from './buildings-modules.mjs';
 
 export class BuildingBuilder {
-	/** @type {'reactor' | 'fabricator' | 'tradeHub' | null} */
-	thisSubClasseName = null;
-
-	/** @param {Reactor} data @param {'reactor' | 'fabricator' | 'tradeHub'} subClassName */
-	static rebuildClasseIfItCanBe(data, subClassName) {
+	/** @param {Reactor} data @param {'reactor' | 'fabricator' | 'tradeHub'} subClassName @param {'object' | 'array'} extractionMode */
+	static rebuildClasseIfItCanBe(data, subClassName, extractionMode) {
+		if (extractionMode !== 'object' && extractionMode !== 'array') return console.error('BuildingBuilder.rebuildClasseIfItCanBe: extractionMode must be "object" or "array"');
 		if (!data || !subClassName) return null;
-		let r;
-		if (subClassName === 'reactor') r = new Reactor();
-		else if (subClassName === 'fabricator') r = new Fabricator();
-		else if (subClassName === 'tradeHub') r = new TradeHub();
+
+		let building;
+		if (subClassName === 'reactor') building = new Reactor();
+		else if (subClassName === 'fabricator') building = new Fabricator();
+		else if (subClassName === 'tradeHub') building = new TradeHub();
 		else return null;
-		for (const k in data) r[k] = data[k];
-		return r;
+
+		// AS OBJECT
+		if (extractionMode === 'object') for (const k in data) building[k] = data[k];
+		else { // AS ARRAY
+			let i = 0;
+			for (const k in building) building[k] = data[i++];
+		}
+		
+		return building;
 	}
 }
 
 export class Building {
 	type = 'b'; // generic building
-	/** @type {Array<0 | .25 | .5 | .75 | 1>} */
-	productionRates = [1];
-	linesWhoProducedThisTurn = [];
-	
-	/** @type {string[]} */
-	activeProductionLines = [];
 	
 	/** @type {Array<number>} */
 	modulesLevel = [];
@@ -36,6 +36,8 @@ export class Building {
 	}
 	#getModuleIndex(moduleKey = '') {
 		if (this.type === 'r') return REACTOR_MODULES.allModulesKeys.indexOf(moduleKey);
+		if (this.type === 'f') return FABRICATOR_MODULES.allModulesKeys.indexOf(moduleKey);
+		if (this.type === 't') return TRADE_HUB_MODULES.allModulesKeys.indexOf(moduleKey);
 		return -1;
 	}
 	/** @returns {{minBuildingLevel: number, maxLevel: number} | null} */
@@ -63,7 +65,6 @@ export class Building {
 		const bluePrints = {};
 		return bluePrints['toto'];
 	}
-
 	/** @param {import('./player.mjs').PlayerNode} player @returns {ResourcesProductionType} */
 	consumeResourcesAndGetProduction(player) {
 		this.linesWhoProducedThisTurn = [];
@@ -87,10 +88,26 @@ export class Building {
 
 		return production;
 	}
+	/** @param {'object' | 'array'} extractionMode @returns {object | Array<any>} */
+	extract(extractionMode) { // FOR SENDING OVER THE NETWORK -> Lighter ARRAY
+		if (extractionMode === 'object') {
+			const sendable = {}; 	// TO OBJECT - SAFE
+			for (const k in this) sendable[k] = this[k]?.extract ? this[k].extract() : this[k];
+			return sendable;
+		}
+
+		const sendable = []; 		// TO ARRAY  - LIGHT
+		for (const k in this) sendable.push(this[k]?.extract ? this[k].extract() : this[k]);
+		return sendable;
+	}
 }
 
 export class Reactor extends Building {
 	type = 'r'; // 'reactor'
+
+	/** @type {Array<0 | .25 | .5 | .75 | 1>} */
+	productionRates = [1];
+	linesWhoProducedThisTurn = [];
 	activeProductionLines = ['energyFromChipsAndEngineers'];
 	modulesLevel = REACTOR_MODULES.emptyModulesArray();
 
@@ -127,6 +144,11 @@ export class Reactor extends Building {
 
 export class Fabricator extends Building {
 	type = 'f'; // 'fabricator'
+	/** @type {Array<0 | .25 | .5 | .75 | 1>} */
+	productionRates = [1];
+	linesWhoProducedThisTurn = [];
+	/** @type {string[]} */
+	activeProductionLines = [];
 	modulesLevel = [];
 
 }
@@ -136,12 +158,17 @@ export class TradeOffer {
 	/** @type {number} */ amount = 0;
 	/** @type {string} */ requestedResourceName = '';
 	/** @type {number} */ requestedAmount = 0;
+	/** Public offer only @type {number | undefined} */ 	minStock = 0;
+	/** Public offer only @type {boolean | undefined} */ 	isActive = false;
 }
 export class TradeHub extends Building {
 	type = 't'; // 'trade hub'
 	maxConnections = 2;
-	modulesLevel = [];
-	/** key: resourceName, value: [amount, requestedResourceName, requestedAmount] @type {Record<string, [number, string, number]>} */
+	maxPublicOffers = 1;
+
+	/** @type {Array<0 | 1 | 2 | 3 | 4 | 5>} */
+	modulesLevel = TRADE_HUB_MODULES.emptyModulesArray();
+	/** key: resourceName, value: [amount, requestedResourceName, requestedAmount, minStock, isActive] @type {Record<string, [number, string, number, number, boolean]>} */
 	publicOffers = {};
 	/** key: targetPlayerId, value: [resourceName, amount, requestedResourceName, requestedAmount] @type {Record<string, [string, number, string, number]>} */
 	privateOffers = {};
@@ -149,8 +176,8 @@ export class TradeHub extends Building {
 	/** @returns {TradeOffer | null} */
 	getPublicTradeOffer(resourceName = '') {
 		if (!this.publicOffers[resourceName]) return null;
-		const [amount, requestedResourceName, requestedAmount] = this.publicOffers[resourceName];
-		return { resourceName, amount, requestedResourceName, requestedAmount };
+		const [amount, requestedResourceName, requestedAmount, minStock, isActive] = this.publicOffers[resourceName];
+		return { resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive };
 	}
 	/** @returns {TradeOffer | null} */
 	getPrivateTradeOffer(targetPlayerId = '') {
@@ -158,10 +185,12 @@ export class TradeHub extends Building {
 		const [resourceName, amount, requestedResourceName, requestedAmount] = this.privateOffers[targetPlayerId];
 		return { resourceName, amount, requestedResourceName, requestedAmount };
 	}
-	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
-	setPublicTradeOffer(resourceName, amount, requestedResourceName, requestedAmount) {
+	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
+	setPublicTradeOffer(resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive) {
+		if (typeof isActive !== 'boolean') return;
+		if (typeof minStock !== 'number' || minStock < 0) return;
 		if (!this.#checkOfferValues(resourceName, amount, requestedResourceName, requestedAmount)) return;
-		this.publicOffers[resourceName] = [amount, requestedResourceName, requestedAmount];
+		this.publicOffers[resourceName] = [amount, requestedResourceName, requestedAmount, minStock, isActive];
 	}
 	/** @param {string} targetPlayerId @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
 	setPrivateTradeOffer(targetPlayerId, resourceName, amount, requestedResourceName, requestedAmount) {

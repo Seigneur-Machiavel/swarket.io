@@ -16,6 +16,7 @@ import { NodeInteractor } from './node-interactions.mjs';
  */
 
 export class GameClient {
+	extractionMode = 'array'; // 'object'(safe) | 'array'(fast) for data extraction
 	alive = true; // Flag to indicate the game is running
 	node; verb; height = 0; // number of turns
 	nodeInteractor;
@@ -58,7 +59,6 @@ export class GameClient {
 
 		if (!createPlayerAndStart) return;
 		this.players[node.id] = new PlayerNode(node.id); // operatingResource randomly assigned
-		this.players[node.id].verb = this.verb;
 		this.turnSystem.T0 = this.node.time; // set T0 to now
 		console.log(`%cT0: ${this.turnSystem.T0 / 1000}`, 'color: green');
 	}
@@ -83,34 +83,34 @@ export class GameClient {
 		const p = new PlayerNode(peerId); // operatingResource randomly assigned
 		p.inventory.setAmount('energy', p.maxEnergy);
 		p.startTurn = Math.max(this.height, 1); // active from next turn
-		p.verb = 0; // reduce logs
 		this.players[peerId] = p;
 
 		if (p.production.chips) p.production.engineers = 1; // DEBUG
 		else if (p.production.engineers) p.production.chips = 5; // DEBUG
 
-		this.node.broadcast({ topic: 'new-player', data: p.extract() });
+		const as = this.extractionMode;
+		this.node.broadcast({ topic: 'new-player', data: p.extract(as), extractionMode: as });
 		this.syncAskedBy.push(peerId); // request sync on next turn
 	}
 	/** @param {string} id @param {import('../../node_modules/hive-p2p/core/unicast.mjs').DirectMessage} message */
 	#onDirectMessage(id, message) {
-		const { type, data } = message;
+		const { type, data, extractionMode } = message;
 		if (type === 'get-game-state') this.syncAskedBy.push(id);
 		else if (type === 'game-state-incoming') this.turnSystem.T0Reference = this.node.time - data;
 		else if (type === 'game-state' && this.height === 0) {
 			if (!this.turnSystem.T0Reference) return console.warn(`T0Reference not set, cannot calculate T0 drift`);
 			if (!this.node.cryptoCodex.isPublicNode(id) && this.gameStateAskedFrom !== id) return; // ignore if not from public node or not the one we asked from
-			this.#importGameState(data);
+			this.#importGameState(data, extractionMode);
 		}
 	}
 	/** @param {string} id @param {import('../../node_modules/hive-p2p/core/gossip.mjs').GossipMessage} message */
 	#onGossipMessage(id, message) {
 		if (id === this.node.id) return console.warn(`We received our own gossip message back, ignoring.`);
-		const { senderId, topic, data, timestamp } = message;
+		const { senderId, topic, data, extractionMode, timestamp } = message;
 		//if (this.node.time - timestamp > this.turnSystem.turnDuration / 2) return; // too old message
-		if (topic === 'new-player' && !this.players[data.id]) {
-			this.players[data.id] = PlayerNode.playerFromData(data);
-			console.log(`New player added from gossip: ${data.id}`);
+		if (topic === 'new-player') {
+			const p = PlayerNode.playerFromData(data, extractionMode);
+			if (!this.players[p.id]) this.players[p.id] = p;
 		} else if (topic === 'turn-intents') {
 			// IF INTENT FOR COMING TURN, SHOULD BE SENT AT A MAXIMUM HALFWAY THROUGH THE TURN
 			const isForComingTurn = data.height === this.height;
@@ -124,9 +124,10 @@ export class GameClient {
 	}
 
 	// PRIVATE METHODS
-	#extractPlayersData() {
+	/** @param {'object' | 'array'} as */
+	#extractPlayersData(as = this.extractionMode) {
 		const playersData = [];
-		for (const playerId in this.players) playersData.push(this.players[playerId].extract());
+		for (const playerId in this.players) playersData.push(this.players[playerId].extract(as));
 		return playersData;
 	}
 	#extractGameState() {
@@ -137,7 +138,10 @@ export class GameClient {
 			playersIntents: this.turnSystem.playersIntents,
 		}
 	}
-	#importGameState(data) { // CALL ONLY IF T0Reference IS SET!
+	/** @param {object} data @param {'object' | 'array'} extractionMode */
+	#importGameState(data, extractionMode) { // CALL ONLY IF T0Reference IS SET!
+		if (extractionMode !== 'object' && extractionMode !== 'array') return console.warn(`Invalid extraction mode for game state import: ${extractionMode}`);
+		
 		const { height, playersData, prevHash, playersIntents } = data;
 		this.height = height; 				// next turn
 		this.turnSystem.setT0(height);
@@ -145,8 +149,10 @@ export class GameClient {
 		this.players = {}; 					// reset
 		this.turnSystem.prevHash = prevHash;
 		this.turnSystem.playersIntents = playersIntents;
-		for (const playerData of playersData)
-			this.players[playerData.id] = PlayerNode.playerFromData(playerData);
+		for (const playerData of playersData) {
+			const p = PlayerNode.playerFromData(playerData, extractionMode);
+			this.players[p.id] = p;
+		}
 
 		console.log('Imported players:');
 		for (const playerId in this.players) console.log(this.players[playerId]);
@@ -178,7 +184,7 @@ export class GameClient {
 		
 		const data = this.#extractGameState();
 		for (const fromId of this.syncAskedBy) // heavy data
-			this.node.sendMessage(fromId, { type: 'game-state', data });
+			this.node.sendMessage(fromId, { type: 'game-state', data, extractionMode: this.extractionMode });
 
 		if (this.verb > 1) console.log(`%cSent game state #${this.height} to ${this.syncAskedBy.length} askers: ${this.syncAskedBy.join(', ')}`, 'color: green');
 		this.syncAskedBy = []; // reset

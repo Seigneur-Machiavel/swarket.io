@@ -79,6 +79,16 @@
     padding: 0;
     box-sizing: border-box;
 }
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+}
 body {
     font-family: 'Courier New', monospace;
     background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-med) 100%);
@@ -126,7 +136,7 @@ button:not(:disabled):hover {
 		filter .12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 [contenteditable="true"] {
-	padding: 6px 6px 6px 2px;
+	padding: 6px 2px 6px 2px;
 }
 [contenteditable="true"]:focus {
   outline: none;
@@ -156,6 +166,7 @@ button:not(:disabled):hover {
 	text-align: center;
 	border: 1px solid var(--border-light);
 	color: var(--text-dim);
+	font-weight: initial;
 	padding: 10px;
 	border-radius: 4px;
 	z-index: 1001;
@@ -504,6 +515,8 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	width: 200px;
 	height: 20px;
 	transform: translateX(-50%);
+}
+.UI-wrapper.started .energy-bar-wrapper {
 	animation: fadeIn .6s 1s forwards cubic-bezier(0.75, -0.5, 0.25, 1.5);
 }
 .energy-bar {
@@ -549,8 +562,10 @@ input[type="range"]:focus::-webkit-slider-thumb {
     padding: 10px 8px 12px 8px;
 	height: fit-content;
 	width: 100px;
-	animation: fadeIn 1.2s 1.4s forwards;
 	transition: transform .2s cubic-bezier(.3, .5, .1, 1);
+}
+.UI-wrapper.started .resources-bar {
+	animation: fadeIn 1.2s 1.4s forwards;
 }
 .resources-bar.spectator {
 	left: calc(2% + 100px + 2%);
@@ -732,13 +747,10 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 .resource-value {
     font-weight: bold;
-    color: var(--text-main);
+    color: var(--text-dim);
     min-width: 20px;
 }
-.resources-bar .resource-value {
-	color: var(--text-dim);
-}
-.resources-bar .resource:hover .resource-value {
+.resource:hover .resource-value {
 	color: var(--text-main);
 }
 .resources-bar .expand-btn {
@@ -769,7 +781,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	margin-bottom: 6px;
 	border-bottom: 1px solid var(--border-light);
 }
-.resources-bar.selection-enabled {
+.UI-wrapper.started .resources-bar.selection-enabled {
 	animation: fadeIn 1.2s 1.4s forwards, pulseResourceBarBorderColor 1s infinite;
 }
 @keyframes pulseResourceBarBorderColor {
@@ -789,8 +801,11 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	position: absolute;
 	bottom: 2%;
 	left: 2%;
+}
+.UI-wrapper.started .inputs-wrapper {
 	animation: fadeIn .6s 2s forwards cubic-bezier(0.75, -0.5, 0.25, 1.5);
 }
+
 
 /* === PLAYER INFO PANEL === */
 .player-info {
@@ -803,8 +818,10 @@ input[type="range"]:focus::-webkit-slider-thumb {
     padding: 10px;
     border-radius: 5px;
     font-size: 12px;
-    animation: fadeIn .8s 2.6s forwards;
     transform: translateX(-50%);
+}
+.UI-wrapper.started .player-info {
+	animation: fadeIn .8s 2.6s forwards;
 }
 .player-info .tooltip {
 	text-align: center;
@@ -1060,7 +1077,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 /** === BUILDING MODALS === */
 .building-modal {
 	width: 500px;
-	height: 360px;
+	height: 400px;
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 /** === SHARED STYLES FOR BUILDING MODALS === */
@@ -1251,6 +1268,138 @@ input[type="range"]:focus::-webkit-slider-thumb {
 #reactor-modal {
 
 }
+/** === FABRICATOR MODAL === */
+#fabricator-modal {
+
+}
+/** === TRADE HUB MODAL === */
+#trade-hub-modal {
+	display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.trade-menu-wrapper {
+	overflow-y: hidden;
+	position: relative;
+	display: flex;
+    justify-content: space-between;
+	padding-top: 32px;
+	height: 100%; /* temporary */
+	background: var(--scrollbar-track); /* temporary */
+	border-radius: 6px;
+}
+.trade-menu-header {
+	position: absolute;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	top: 0;
+	height: 32px;
+	width: 100%;
+	padding: 0 12px;
+	color: var(--border-light);
+    font-weight: bold;
+}
+.trade-menu-header .separator {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	height: 100%;
+	transform: translateX(-50%);
+}
+.separator {
+	width: 2px;
+	background: var(--border-dark);
+}
+.my-trade-offer-lines-wrapper, .world-trade-offer-lines-wrapper {
+	overflow: hidden scroll;
+	display: flex;
+	flex-direction: column;
+	width: 48%;
+	margin-bottom: 6px;
+}
+/*=== MY TRADE OFFERS === */
+.my-trade-offer-lines-wrapper {
+	padding-left: 6px;
+	direction: rtl;
+}
+.my-trade-offer-lines-wrapper > * {
+	direction: ltr;
+}
+.my-trade-offer-line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 6px 0 12px;
+	border-bottom: 1px solid var(--border-dark);
+}
+.my-trade-offer-line .resource {
+	gap: 3px;
+}
+.my-trade-offer-line .resource.offered .tooltip {
+	transform: translateX(-20%);
+}
+.my-trade-offer-line .arrow {
+	color: var(--text-dim);
+	font-weight: bold;
+	font-size: 12px;
+}
+.my-trade-offer-line .min-stock {
+	position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+	height: 16px;
+    min-width: 16%;
+    font-size: 12px;
+	font-weight: bold;
+	color: var(--text-dim);
+}
+.my-trade-offer-line .min-stock [contenteditable="true"] {
+	padding: 4px;
+}
+.my-trade-offer-line .min-stock .tooltip {
+	transform: translateX(-80%);
+}
+.my-trade-offer-line .toggle-btn {
+    height: 16px;
+    width: 16px;
+    cursor: pointer;
+    position: relative;
+	border: 1px solid var(--border-dark);
+}
+.my-trade-offer-line .toggle-btn:hover {
+	border-color: var(--text-main);
+}
+.my-trade-offer-line .toggle-btn::before {
+	pointer-events: none;
+    content: '✓';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+	top: -4px;
+    left: 1px;
+}
+.my-trade-offer-line .toggle-btn.active::before {
+	opacity: 1;
+}
+.my-trade-offer-line .toggle-btn .tooltip {
+	left: initial;
+    right: 0;
+    transform: translateX(-15%);
+}
+/*.my-trade-offer-line:nth-last-child(-n+2) .tooltip {*/
+.my-trade-offer-line:nth-child(n+3):nth-last-child(-n+2) .tooltip {
+	top: -150%;
+}
+.my-trade-offer-line .min-stock .tooltip,
+.my-trade-offer-line .toggle-btn .tooltip {
+    padding: 3px 6px;
+}
+/*=== WORLD TRADE OFFERS === */
+.world-trade-offer-lines-wrapper {
+	padding-right: 6px;
+}
 
 /** === DEAD NODES NOTIFICATIONS === */
 #dead-nodes-wrapper {
@@ -1263,6 +1412,8 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	display: flex;
 	align-items: center;
 	flex-direction: row-reverse;
+}
+.UI-wrapper.started #dead-nodes-wrapper {
 	animation: fadeIn .6s .4s forwards cubic-bezier(0.75, -0.5, 0.25, 1.5);
 }
 .dead-node-notification {
@@ -1359,16 +1510,6 @@ input[type="range"]:focus::-webkit-slider-thumb {
     overflow-y: auto;
     font-size: 12px;
     line-height: 1.2;
-}
-.console-body::-webkit-scrollbar {
-    width: 8px;
-}
-.console-body::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
-}
-.console-body::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 4px;
 }
 .log-line {
     margin-bottom: 2px;

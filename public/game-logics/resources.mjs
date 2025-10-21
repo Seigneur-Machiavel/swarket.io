@@ -48,7 +48,8 @@ export class ResourcesProductionType {
 	geniuses = 0;
 	agiCells = 0;
 }
-export const VALID_RESOURCES = new Set(Object.keys(new ResourcesProductionType()));
+export const RESOURCES_NAMES = Object.keys(new ResourcesProductionType());
+export const VALID_RESOURCES = new Set(RESOURCES_NAMES);
 
 // BLUEPRINTS
 const RAW_PROD = RAW_RESOURCES_PROD_BASIS; // alias

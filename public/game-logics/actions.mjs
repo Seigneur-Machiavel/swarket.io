@@ -47,6 +47,11 @@ export class SetTradeOffer {
 	/** @type {number} */	amount;
 	/** @type {string} */	requestedResourceName;
 	/** @type {number} */	requestedAmount;
+	
+	/** @type {number | undefined} undefined for private offers */
+	minStock;
+	/** @type {boolean | undefined} undefined for private offers */
+	isActive;
 	/** @type {string | undefined} undefined for public offers */
 	targetPlayerId;
 }

@@ -10,12 +10,8 @@
 - [x] Visualizer in background -> console reduced in the bottom or top or left or right
 
 **2. Turn system**
-- [x] Timer 5s ACTION
+- [x] Timer 1s ACTION
 - [x] Sync hooks pour phases
-
-**2.5 Système de compétences**
-- [x] Random pick tous les X turns
-- [8/10] Pool de 10 upgrades
 
 **3. Bot (debug) **
 - [x] auto upgrades
@@ -26,25 +22,26 @@
 - [4] 5 tiers de ressources (structure data)
 - [x] Production passive Tier 1
 - [ ] Crafting Tier 2-5 (coûts énergie)
-- [ ] Inventaire UI
+- [x] Inventaire UI
 
 **4.1 Buildings**
 - [x] reactor 	 => carte d'upgrade
 - [ ] fabricator => carte d'upgrade
-- [ ] tradeHub 	 => carte d'upgrade
+- [x] tradeHub 	 => carte d'upgrade
 - [ ] Storage => AGI	=> carte d'upgrade
-
-**4.5 Trading P2P**
-- [ ] Propose trade (unicast)
-- [ ] Accept/reject
-- [ ] Curseur taxation (0-100%)
-- [ ] Commission relay automatique
 
 **5. Networking manuel**
 - [X] Click pour connecter à un peer
 - [ ] Coût connexion (petit = cheap/rapide)
 - [x] Slots limités selon les upgrades
 - [x] Visualisation connections
+
+**6 Trading P2P**
+- [ ] Offers (broadcast)
+- [x] Trade offer (unicast)
+- [x] Accept/reject (intent)
+- [ ] Curseur taxation (0-100%)
+- [ ] Commission relay automatique
 
 **7. Énergie system**
 - [x] State: énergie par joueur
@@ -75,9 +72,6 @@
 
 ## Phase 3: Progression & Upgrades (3-4 jours)
 
-**10. Système de compétences**
-- [ ] Pool de 15-20 compétences
-
 **11. Meta progression**
 - [ ] Track runs jouées
 - [ ] Déblocage nouvelles compétences
@@ -86,7 +80,6 @@
 **12. Upgrades spawn**
 - [ ] Presets: Small/Medium/Large
 - [ ] Allocate → capacités départ
-- [ ] Balance coûts
 
 ---
 

@@ -1,6 +1,6 @@
 import { ProductionLineIOParam, ProductionLineVerticalRangeParam, ProductionLineComponent } from './production-line.mjs';
 import { ModuleTreeComponent } from './modules-tree.mjs';
-import { REACTOR_MODULES, getModulesDescriptionRelativeToPlayer } from '../game-logics/buildings-modules.mjs';
+import { REACTOR_MODULES } from '../game-logics/buildings-modules.mjs';
 
 /** @type {Record<string, Array<{actionParam: ProductionLineVerticalRangeParam, events: Record<string, (gameClient: import('../game-logics/game.mjs').GameClient, value: any) => void>}>>} */
 const lineActionsParam = {
@@ -33,25 +33,7 @@ export class ReactorComponent {
 	constructor(gameClient) {
 		this.gameClient = gameClient;
 		this.closeBtn.onclick = () => this.hide();
-
-		for (let i = 0; i < REACTOR_MODULES.allModulesKeys.length; i++) {
-			const moduleKey = REACTOR_MODULES.allModulesKeys[i];
-			const { minBuildingLevel, maxLevel } = REACTOR_MODULES.getModuleRequiredLevelAndMaxLevel(moduleKey) || {};
-			if (minBuildingLevel === undefined || maxLevel === undefined) return;
-			const moduleElement = this.moduleTree.addModule(moduleKey, minBuildingLevel, maxLevel);
-			moduleElement.mainElement.onclick = () => {
-				const reactor = this.gameClient?.myPlayer.reactor;
-				if (!this.gameClient?.alive || !reactor) return;
-				if (!reactor.upgradePoints) return;
-				const reactorLevel = reactor.level();
-				const moduleLevel = reactor.modulesLevel[i] || 0;
-				if (reactorLevel < minBuildingLevel || moduleLevel >= maxLevel) return;
-				const myAction = { type: 'upgrade-module', buildingName: 'reactor', value: moduleKey };
-				this.gameClient.digestMyAction(myAction);
-				console.log('onclick module', myAction);
-				this.moduleTree.updateModule(moduleKey, moduleLevel + 1); // feedback instantly
-			};
-		}
+		this.#initModulesTree();
 	}
 
 	update() { // call only if reactor is present
@@ -59,7 +41,7 @@ export class ReactorComponent {
 		if (!this.gameClient?.alive || !reactor) return this.hide();
 
 		const reactorLevel = reactor.level();
-		this.moduleTree.updateReactorLevel(reactorLevel);
+		this.moduleTree.updateLevel(reactorLevel);
 		for (let i = 0; i < REACTOR_MODULES.allModulesKeys.length; i++) {
 			const m = REACTOR_MODULES.allModulesKeys[i];
 			const moduleLevel = reactor.modulesLevel[i] || 0;
@@ -87,6 +69,28 @@ export class ReactorComponent {
 	hide() { this.modal.classList.remove('visible'); }
 	toggle() { this.modal.classList.toggle('visible'); }
 
+	#initModulesTree() {
+		for (let i = 0; i < REACTOR_MODULES.allModulesKeys.length; i++) {
+			const moduleKey = REACTOR_MODULES.allModulesKeys[i];
+			const { minBuildingLevel, maxLevel } = REACTOR_MODULES.getModuleRequiredLevelAndMaxLevel(moduleKey) || {};
+			if (minBuildingLevel === undefined || maxLevel === undefined) return;
+			const moduleElement = this.moduleTree.addModule(moduleKey, minBuildingLevel, maxLevel);
+			moduleElement.mainElement.onclick = () => {
+				const reactor = this.gameClient?.myPlayer.reactor;
+				if (!this.gameClient?.alive || !reactor) return;
+				if (!reactor.upgradePoints) return;
+
+				const reactorLevel = reactor.level();
+				const moduleLevel = reactor.modulesLevel[i] || 0;
+				if (reactorLevel < minBuildingLevel || moduleLevel >= maxLevel) return;
+
+				const myAction = { type: 'upgrade-module', buildingName: 'reactor', value: moduleKey };
+				this.gameClient.digestMyAction(myAction);
+				console.log('onclick module', myAction);
+				this.moduleTree.updateModule(moduleKey, moduleLevel + 1); // feedback instantly
+			};
+		}
+	}
 	/** @param {string} lineKey @param {Record<string, number>} inputs @param {Record<string, number>} outputs */
 	#initProductionLine(lineKey, inputs, outputs) {
 		// HTML INJECTION & STORE COMPONENT FOR UPDATES

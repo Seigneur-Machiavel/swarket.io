@@ -1,4 +1,6 @@
+
+
 {
-  "NODE": { "DEFAULT_VERBOSE": 2 },
+  "NODE": { "DEFAULT_VERBOSE": 2, "MANUAL_BAN_MODE": true },
   "DISCOVERY": { "TARGET_NEIGHBORS_COUNT": 0 }
 }

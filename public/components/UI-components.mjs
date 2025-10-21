@@ -154,6 +154,7 @@ export class EnergyBarComponent {
 
 export class BuildingsComponent {
 	gameClient;
+	myResourcesBar;
 	icons = {
 		reactor: document.getElementById('reactor-icon'),
 		fabricator: document.getElementById('fabricator-icon'),
@@ -169,13 +170,14 @@ export class BuildingsComponent {
 	fabricator;		// COMPONENT
 	tradeHub;		// COMPONENT
 
-	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
-	constructor(gameClient) {
+	/** @param {import('../game-logics/game.mjs').GameClient} gameClient @param {ResourcesBarComponent} myResourcesBar */
+	constructor(gameClient, myResourcesBar) {
 		this.gameClient = gameClient;
+		this.myResourcesBar = myResourcesBar;
 
 		this.reactor = new ReactorComponent(gameClient);
 		this.fabricator = new FabricatorComponent(gameClient);
-		this.tradeHub = new TradeHubComponent(gameClient);
+		this.tradeHub = new TradeHubComponent(gameClient, myResourcesBar);
 
 		this.icons.reactor.onclick = () => this.#handleIconClick('reactor');
 		this.icons.fabricator.onclick = () => this.#handleIconClick('fabricator');

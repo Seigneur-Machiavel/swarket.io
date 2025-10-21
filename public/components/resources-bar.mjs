@@ -29,8 +29,8 @@ export class ResourcesBarComponent {
 
 	/** @param {import('../game-logics/player.mjs').PlayerNode} player */
 	update(player) {
-		if (!player) return this.#hide();
-		this.#show();
+		if (!player) return this.hide();
+		this.show();
 		for (let i = 0; i < this.resourceValueElements.length; i++) {
 			const value = player.inventory.resources[i];
 			this.resourceValueElements[i].textContent = value.toFixed(1);
@@ -96,6 +96,6 @@ export class ResourcesBarComponent {
 		if (enabled) this.resourceBar.classList.add('selection-enabled');
 		else this.resourceBar.classList.remove('selection-enabled');
 	}
-	#hide() { this.resourceBar.classList.add('hidden'); }
-	#show() { this.resourceBar.classList.remove('hidden'); }
+	hide() { this.resourceBar.classList.add('hidden'); }
+	show() { this.resourceBar.classList.remove('hidden'); }
 }
