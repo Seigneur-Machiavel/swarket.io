@@ -51,7 +51,7 @@ export class REACTOR_MODULES {
 	}
 	/** @returns {ReactorModuleLevelEffect | null} */
 	static getModuleEffect(moduleKey = 'efficiency', level = 0) {
-		return REACTOR_MODULES[moduleKey]?.levelEffect[level] || null;
+		return REACTOR_MODULES[moduleKey]?.levelEffect[level - 1] || null;
 	}
 	/** @returns {string} */
 	static getModuleDescription(moduleKey = 'efficiency', level = 0) {
@@ -159,7 +159,7 @@ export class TRADE_HUB_MODULES {
 	}
 	/** @returns {TradeHubModuleLevelEffect | null} */
 	static getModuleEffect(moduleKey = 'connectivity', level = 0) {
-		return TRADE_HUB_MODULES[moduleKey]?.levelEffect[level] || null;
+		return TRADE_HUB_MODULES[moduleKey]?.levelEffect[level - 1] || null;
 	}
 	/** @returns {string} */
 	static getModuleDescription(moduleKey = 'connectivity', level = 0) {
@@ -169,7 +169,7 @@ export class TRADE_HUB_MODULES {
 	}
 	
 	// TRADE-HUB LEVEL 1
-	static connectivity = {
+	static connectivity = { // default : 2
 		minBuildingLevel: 0,
 		levelEffect: [
 			{ maxConnections: 3, description: 'Increase trade route capacity from 2 to 3' },

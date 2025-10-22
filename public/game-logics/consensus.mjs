@@ -1,3 +1,4 @@
+/** @type {import('hive-p2p/libs/xxhash32.mjs').xxHash32} */
 const xxHash32 = typeof window !== 'undefined'
 	? (await import('../hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32))
 	: (await import('hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32));

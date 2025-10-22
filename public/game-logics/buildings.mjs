@@ -1,5 +1,13 @@
 import { VALID_RESOURCES, BLUEPRINT, ResourcesProductionType } from './resources.mjs';
 import { REACTOR_MODULES, FABRICATOR_MODULES, TRADE_HUB_MODULES } from './buildings-modules.mjs';
+/** @type {import('hive-p2p/libs/xxhash32.mjs').xxHash32} */
+const xxHash32 = typeof window !== 'undefined'
+	? (await import('../hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32))
+	: (await import('hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32));
+
+const KEYS_TO_NOT_EXTRACT = new Set([
+	'publicOffers',
+]);
 
 export class BuildingBuilder {
 	/** @param {Reactor} data @param {'reactor' | 'fabricator' | 'tradeHub'} subClassName @param {'object' | 'array'} extractionMode */
@@ -17,7 +25,9 @@ export class BuildingBuilder {
 		if (extractionMode === 'object') for (const k in data) building[k] = data[k];
 		else { // AS ARRAY
 			let i = 0;
-			for (const k in building) building[k] = data[i++];
+			for (const k in building)
+				if (KEYS_TO_NOT_EXTRACT.has(k)) { i++; continue; }
+				else building[k] = data[i++];
 		}
 		
 		return building;
@@ -34,7 +44,7 @@ export class Building {
 	level() {
 		return this.modulesLevel.reduce((acc, cur) => acc + cur, 0);
 	}
-	#getModuleIndex(moduleKey = '') {
+	getModuleIndex(moduleKey = '') {
 		if (this.type === 'r') return REACTOR_MODULES.allModulesKeys.indexOf(moduleKey);
 		if (this.type === 'f') return FABRICATOR_MODULES.allModulesKeys.indexOf(moduleKey);
 		if (this.type === 't') return TRADE_HUB_MODULES.allModulesKeys.indexOf(moduleKey);
@@ -43,9 +53,12 @@ export class Building {
 	/** @returns {{minBuildingLevel: number, maxLevel: number} | null} */
 	#getModuleMinMaxLevel(moduleKey = '') {
 		if (this.type === 'r') return REACTOR_MODULES.getModuleRequiredLevelAndMaxLevel(moduleKey) || {};
+		if (this.type === 'f') return FABRICATOR_MODULES.getModuleRequiredLevelAndMaxLevel(moduleKey) || {};
+		if (this.type === 't') return TRADE_HUB_MODULES.getModuleRequiredLevelAndMaxLevel(moduleKey) || {};
+		return null;
 	}
 	upgradeModule(moduleKey = '') {
-		const moduleIndex = this.#getModuleIndex(moduleKey);
+		const moduleIndex = this.getModuleIndex(moduleKey);
 		if (moduleIndex === -1) return;
 
 		const { minBuildingLevel, maxLevel } = this.#getModuleMinMaxLevel(moduleKey) || {};
@@ -92,12 +105,16 @@ export class Building {
 	extract(extractionMode) { // FOR SENDING OVER THE NETWORK -> Lighter ARRAY
 		if (extractionMode === 'object') {
 			const sendable = {}; 	// TO OBJECT - SAFE
-			for (const k in this) sendable[k] = this[k]?.extract ? this[k].extract() : this[k];
+			for (const k in this)
+				if (KEYS_TO_NOT_EXTRACT.has(k)) continue;
+				else sendable[k] = this[k]?.extract ? this[k].extract() : this[k];
 			return sendable;
 		}
 
 		const sendable = []; 		// TO ARRAY  - LIGHT
-		for (const k in this) sendable.push(this[k]?.extract ? this[k].extract() : this[k]);
+		for (const k in this)
+			if (KEYS_TO_NOT_EXTRACT.has(k)) continue;
+			else sendable.push(this[k]?.extract ? this[k].extract() : this[k]);
 		return sendable;
 	}
 }
@@ -123,7 +140,7 @@ export class Reactor extends Building {
 			const moduleLevel = this.modulesLevel[i];
 			if (moduleLevel === 0) continue;
 			const moduleKey = REACTOR_MODULES.allModulesKeys[i];
-			const { inputCoef, outputCoef, breakdownRiskCoef, energyPerRawResource } = REACTOR_MODULES.getModuleEffect(moduleKey, moduleLevel - 1) || {};
+			const { inputCoef, outputCoef, breakdownRiskCoef, energyPerRawResource } = REACTOR_MODULES.getModuleEffect(moduleKey, moduleLevel) || {};
 			mod.inputCoef *= inputCoef !== undefined ? inputCoef : 1;
 			mod.outputCoef *= outputCoef !== undefined ? outputCoef : 1;
 			mod.breakdownRiskCoef *= breakdownRiskCoef !== undefined ? breakdownRiskCoef : 1;
@@ -163,20 +180,32 @@ export class TradeOffer {
 }
 export class TradeHub extends Building {
 	type = 't'; // 'trade hub'
-	maxConnections = 2;
-	maxPublicOffers = 1;
 
 	/** @type {Array<0 | 1 | 2 | 3 | 4 | 5>} */
 	modulesLevel = TRADE_HUB_MODULES.emptyModulesArray();
-	/** key: resourceName, value: [amount, requestedResourceName, requestedAmount, minStock, isActive] @type {Record<string, [number, string, number, number, boolean]>} */
-	publicOffers = {};
+	/** key: id(hash), value: [resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive] @type {Record<string, [number, string, number, number, boolean]>} */
+	publicOffers = {}; // THIS IS NOT EXTRACTED
 	/** key: targetPlayerId, value: [resourceName, amount, requestedResourceName, requestedAmount] @type {Record<string, [string, number, string, number]>} */
 	privateOffers = {};
 
+	get getMaxConnections() { // DEFAULT 2
+		const connectivityModuleIndex = this.getModuleIndex('connectivity');
+		const { maxConnections } = TRADE_HUB_MODULES.getModuleEffect('connectivity', this.modulesLevel[connectivityModuleIndex]) || {};
+		return maxConnections || 2;
+	}
+	get getMaxPublicOffers() { // DEFAULT 0
+		const negotiationModuleIndex = this.getModuleIndex('negotiation');
+		const { maxTradeOffer } = TRADE_HUB_MODULES.getModuleEffect('negotiation', this.modulesLevel[negotiationModuleIndex]) || {};
+		return maxTradeOffer || 0;
+	}
+	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
+	static getOfferHash(resourceName, amount, requestedResourceName, requestedAmount, minStock = 0, isActive = false) {
+		return xxHash32(`${resourceName}-${amount}-${requestedResourceName}-${requestedAmount}-${minStock}-${isActive}`).toString(16);
+	}
 	/** @returns {TradeOffer | null} */
-	getPublicTradeOffer(resourceName = '') {
-		if (!this.publicOffers[resourceName]) return null;
-		const [amount, requestedResourceName, requestedAmount, minStock, isActive] = this.publicOffers[resourceName];
+	getPublicTradeOffer(offerId = '') {
+		if (!this.publicOffers[offerId]) return null;
+		const [resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive] = this.publicOffers[offerId];
 		return { resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive };
 	}
 	/** @returns {TradeOffer | null} */
@@ -190,7 +219,9 @@ export class TradeHub extends Building {
 		if (typeof isActive !== 'boolean') return;
 		if (typeof minStock !== 'number' || minStock < 0) return;
 		if (!this.#checkOfferValues(resourceName, amount, requestedResourceName, requestedAmount)) return;
-		this.publicOffers[resourceName] = [amount, requestedResourceName, requestedAmount, minStock, isActive];
+		const id = TradeHub.getOfferHash(resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive);
+		this.publicOffers[id] = [resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive];
+		return id;
 	}
 	/** @param {string} targetPlayerId @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
 	setPrivateTradeOffer(targetPlayerId, resourceName, amount, requestedResourceName, requestedAmount) {
@@ -212,8 +243,8 @@ export class TradeHub extends Building {
 	cancelPrivateTradeOffer(targetPlayerId) {
 		delete this.privateOffers[targetPlayerId];
 	}
-	/** @param {string} resourceName */
-	cancelPublicTradeOffer(resourceName) {
-		delete this.publicOffers[resourceName];
+	/** @param {string} offerId */
+	cancelPublicTradeOffer(offerId) {
+		delete this.publicOffers[offerId];
 	}
 }

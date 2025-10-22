@@ -19,7 +19,7 @@ export class PlayerNode {
 	upgradeOffers = []; // upgrade offers
 
 	/** @returns {number} */
-	get getMaxConnections() { return this.tradeHub?.maxConnections || 0; }
+	get getMaxConnections() { return this.tradeHub?.getMaxConnections || 0; }
 	// BUILDINGS ------------------------------------------------------------------\
 	/** @type {Reactor | null} */ 		reactor = null;		// reactor building		|
 	/** @type {Fabricator | null} */ 	fabricator = null; 	// fabricator building	|

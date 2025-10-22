@@ -2,29 +2,6 @@ import { ModuleTreeComponent } from './modules-tree.mjs';
 import { TRADE_HUB_MODULES } from '../game-logics/buildings-modules.mjs';
 import { RESOURCES_NAMES } from '../game-logics/resources.mjs';
 
-/*
-<div class="my-trade-offer-lines-wrapper">
-	<div class="my-trade-offer-line"> <!-- TEMPLATE -->
-		<div class="resource offered">
-			<div class="tooltip">Energy</div>
-			<div class="resource-icon energy"></div>
-			<span class="resource-value" contenteditable="true">0</span>
-		</div>
-		<div class="arrow">-></div>
-		<div class="resource requested">
-			<div class="tooltip">Chips</div>
-			<div class="resource-icon chips"></div>
-			<span class="resource-value" contenteditable="true">0</span>
-		</div>
-		<div class="min-stock hoverable-tooltip">
-			<div class="tooltip">Minimum stock to keep</div>
-			<span class="min-stock-value" contenteditable="true">0</span>
-		</div>
-		<div class="toggle-btn"></div>
-	</div>
-</div>
-*/
-
 class ElementsBuilder {
 	static createMyTradeOfferLine(offeredResourceName = 'energy') {
 		const requestedResourceName = offeredResourceName !== 'chips' ? 'chips' : 'energy';
@@ -102,8 +79,9 @@ class ElementsBuilder {
 }
 
 class MyTradeOfferLineComponent {
+	/** @type {string | null} */
+	offerId = null;
 	offeredResourceName = 'energy';
-	hasChanged = false;
 	myResourcesBar;
 
 	mainElement;
@@ -132,10 +110,10 @@ class MyTradeOfferLineComponent {
 		this.minStockValueElem = minStockValueElem;
 		this.toggleBtnElem = toggleBtnElem;
 		this.toggleTooltipElem = toggleTooltipElem;
-		this.#setupResourceHandlers();
+		this.#setupHandlers();
 	}
 
-	#setupResourceHandlers() {
+	#setupHandlers() {
 		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value, pronoun = 'I') => {
 			elementIcon.classList = `resource-icon ${resName}`;
 			elementValue.textContent = (value / 10).toFixed(1);
@@ -158,15 +136,6 @@ class MyTradeOfferLineComponent {
 			const isActive = this.toggleBtnElem.classList.contains('active');
 			this.toggleTooltipElem.textContent = `Currently: ${isActive ? 'Active' : 'Inactive'}`;
 		};
-	}
-	updateResourcesAndValues(offeredResourceName = 'energy', offeredQty = 0, requestedResourceName = 'chips', requestedQty = 0, minStock = 0, isActive = false) {
-		this.offeredResourceName = offeredResourceName;
-		this.offeredResourceIconElem.className = `resource-icon ${offeredResourceName}`;
-		this.offeredResourceValueElem.textContent = offeredQty.toString();
-		this.requestedResourceIconElem.className = `resource-icon ${requestedResourceName}`;
-		this.requestedResourceValueElem.textContent = requestedQty.toString();
-		this.minStockValueElem.textContent = minStock.toString();
-		this.toggleBtnElem.classList.toggle('active', isActive);
 	}
 	getResourcesAndValues() {
 		try {
@@ -226,17 +195,14 @@ export class TradeHubComponent {
 		}
 		
 		// MAKE SURE ALL OFFER LINES ARE PRESENT
-		const missingOfferLines = tradeHub.maxPublicOffers - this.myTradesOfferLines.length;
+		const missingOfferLines = tradeHub.getMaxPublicOffers - this.myTradesOfferLines.length;
 		for (let i = 0; i < missingOfferLines; i++)
 			for (const r of RESOURCES_NAMES) // Create a line on a unused resource
 				if (this.myTradesOfferLines.some(l => l.offeredResourceName === r)) continue;
 				else { this.#initMyTradeOfferLine(r); break;}
 
-		// SEND INTENT FOR UPDATED TRADE OFFERS
-		this.#sendIntentForUpdatedTradeOffers();
-
-		// UPDATE TRADE OFFERS FROM TRADE HUB DATA
-		this.#updateMyOfferLinesFromTradeHubData();
+		// UPDATE MY TRADE OFFERS FROM MY LINES
+		this.#updateTradeHubOffersFromMyLines();
 	}
 
 	show() { this.modal.classList.add('visible'); }
@@ -272,71 +238,19 @@ export class TradeHubComponent {
 		this.myTradesOfferLines.push(lineComponent);
 		this.myTradeOfferLinesWrapper.appendChild(lineComponent.mainElement);
 	}
-	#sendIntentForUpdatedTradeOffers() {
+	#updateTradeHubOffersFromMyLines() {
 		const tradeHub = this.gameClient.myPlayer.tradeHub;
 		for (const lineComponent of this.myTradesOfferLines) {
-			lineComponent.hasChanged = false; // reset change flag
 			const { offeredResourceName, offeredQty, requestedResourceName, requestedQty, minStock, isActive } = lineComponent.getResourcesAndValues();
 			if (typeof offeredQty !== 'number' || typeof requestedQty !== 'number' || typeof minStock !== 'number') continue;
 			if (offeredQty <= 0 || requestedQty <= 0) continue;
 
-			// CHECK IF CHANGED
-			const tradeHubOffer = tradeHub.getPublicTradeOffer(offeredResourceName);
-			let changed = tradeHubOffer ? false : true;
-			if (tradeHubOffer && tradeHubOffer.amount !== offeredQty) changed = true;
-			if (tradeHubOffer && tradeHubOffer.requestedResourceName !== requestedResourceName) changed = true;
-			if (tradeHubOffer && tradeHubOffer.requestedAmount !== requestedQty) changed = true;
-			if (tradeHubOffer && tradeHubOffer.minStock !== minStock) changed = true;
-			if (tradeHubOffer && tradeHubOffer.isActive !== isActive) changed = true;
-			if (!changed) continue;
-
-			const action = {
-				type: 'set-trade-offer',
-				resourceName: offeredResourceName,
-				amount: offeredQty,
-				requestedResourceName: requestedResourceName,
-				requestedAmount: requestedQty,
-				minStock: minStock,
-				isActive: isActive
-			};
-
-			console.log(`Sending/modifying public trade offer: Send ${offeredQty} ${offeredResourceName}, Request ${requestedQty} ${requestedResourceName} (Min stock: ${minStock}) [${isActive ? 'Active' : 'Inactive'}]`);
-			this.gameClient.digestMyAction(action);
-			lineComponent.hasChanged = true; // mark as changed to avoid overwriting on current update
-		}
-	}
-	#updateMyOfferLinesFromTradeHubData() {
-		const tradeHub = this.gameClient.myPlayer.tradeHub;
-		for (const r in tradeHub.publicOffers) {
-			const { resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive } = tradeHub.getPublicTradeOffer(r) || {};
-			let lineComponent = this.myTradesOfferLines.find(l => l.offeredResourceName === r);
-			if (!lineComponent) lineComponent = this.#getFirstEmptyMyTradeOfferLine();
-			if (!lineComponent) lineComponent = this.#getFirstUnlinkedMyTradeOfferLine();
-			if (!lineComponent) {
-				console.warn('TradeHubComponent.update: no available line for resource', r);
-				continue;
-			}
+			const existingId = lineComponent.offerId;
+			if (existingId) tradeHub.cancelPublicTradeOffer(existingId);
 			
-			if (lineComponent.hasChanged) continue; // skip if just changed by user this update
-			lineComponent.updateResourcesAndValues(resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive);
+			const newId = tradeHub.setPublicTradeOffer(offeredResourceName, offeredQty, requestedResourceName, requestedQty, minStock, isActive);
+			lineComponent.offerId = newId;
 		}
-	}
-	#isLineLinkedToTradeHub(lineKey) {
-		const tradeHub = this.gameClient?.myPlayer.tradeHub;
-		if (!tradeHub) return false;
-		return tradeHub.publicOffers[lineKey] !== undefined;
-	}
-	#getFirstEmptyMyTradeOfferLine() {
-		for (const l of this.myTradesOfferLines) {
-			const offeredQty = parseInt(l.offeredResourceValueElem.textContent || '0', 10);
-			const requestedQty = parseInt(l.requestedResourceValueElem.textContent || '0', 10);
-			if (offeredQty === 0 && requestedQty === 0) return l;
-		}
-	}
-	#getFirstUnlinkedMyTradeOfferLine() {
-		for (const lineComponent of this.myTradesOfferLines)
-			if (this.#isLineLinkedToTradeHub(lineComponent.offeredResourceName)) continue;
-			else return lineComponent;
 	}
 
 	/** WORLD TRADE OFFERS */
