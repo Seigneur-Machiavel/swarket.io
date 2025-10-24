@@ -42,6 +42,9 @@ export class PlayerNode {
 		this.tradeHub = new TradeHub(); // DEBUG
 		this.tradeHub.upgradePoints = 10; // DEBUG bypass
 		this.upgradeSet.buildTradeHub = 1; // DEBUG bypass
+		this.tradeHub.upgradeModule('negotiation'); // DEBUG bypass
+		this.tradeHub.upgradeModule('negotiation'); // DEBUG bypass
+		this.tradeHub.upgradeModule('connectivity'); // DEBUG bypass
 	}
 	/** @param {'object' | 'array'} extractionMode */
 	static playerFromData(data, extractionMode) {
@@ -77,9 +80,9 @@ export class PlayerNode {
 		else if (intent.type === 'transaction') console.log(`[${nodeId}] Transaction:`, intent.amount, intent.resource, '->', intent.to);
 		else if (intent.type === 'upgrade') return this.#handleUpgradeIntent(gameClient, intent.upgradeName);
 		else if (intent.type === 'upgrade-module') return this.#handleUpgradeModuleIntent(intent);
-		else if (intent.type === 'set-trade-offer') return this.#handleSetTradeOfferIntent(intent);
-		else if (intent.type === 'cancel-trade-offer') return this.#handleCancelTradeOfferIntent(intent);
-		else if (intent.type === 'take-trade-offer') return this.#handleTakeTradeOfferIntent(gameClient, intent);
+		else if (intent.type === 'set-private-trade-offer') return this.#handleSetPrivateTradeOfferIntent(intent);
+		else if (intent.type === 'cancel-private-trade-offer') return this.#handleCancelPrivateTradeOfferIntent(intent);
+		else if (intent.type === 'take-private-trade-offer') return this.#handleTakePrivateTradeOfferIntent(gameClient, intent);
 		else if (intent.type === 'recycle') return this.#handleRecycleIntent(gameClient, intent.fromDeadNodeId);
 	}
 	execTurn(turnHash = 'toto', height = 0) {
@@ -145,22 +148,37 @@ export class PlayerNode {
 		Upgrader.applyUpgradeEffects(this, upgradeName);
 		return true;
 	}
-	/** @param {{resourceName: string, amount: number, requestedResourceName: string, requestedAmount: number, minStock: number, isActive: boolean, targetPlayerId: string | undefined}} intent */
-	#handleSetTradeOfferIntent(intent) {
+	/** @param {{resourceName: string, amount: number, requestedResourceName: string, requestedAmount: number, targetPlayerId: string}} intent */
+	#handleSetPrivateTradeOfferIntent(intent) {
 		if (!this.tradeHub) return;
-		const { resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive, targetPlayerId } = intent;
-		if (!targetPlayerId) this.tradeHub.setPublicTradeOffer(resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive);
-		else this.tradeHub.setPrivateTradeOffer(targetPlayerId, resourceName, amount, requestedResourceName, requestedAmount);
+		const { resourceName, amount, requestedResourceName, requestedAmount, targetPlayerId } = intent;
+		this.tradeHub.setPrivateTradeOffer(targetPlayerId, resourceName, amount, requestedResourceName, requestedAmount);
 	}
-	/** @param {{resourceName: string | undefined, targetPlayerId: string | undefined}} intent */
-	#handleCancelTradeOfferIntent(intent) {
+	/** @param {{targetPlayerId: string}} intent */
+	#handleCancelPrivateTradeOfferIntent(intent) {
 		if (!this.tradeHub) return;
-		const { resourceName, targetPlayerId } = intent;
-		if (!targetPlayerId) this.tradeHub.cancelPublicTradeOffer(resourceName);
-		else this.tradeHub.cancelPrivateTradeOffer(targetPlayerId);
+		this.tradeHub.cancelPrivateTradeOffer(intent.targetPlayerId);
 	}
-	/** @param {import('./game.mjs').GameClient} gameClient @param {{offererId: string, resourceName: string | undefined, amount: number | undefined}} intent */
-	#handleTakeTradeOfferIntent(gameClient, intent) {
+	/** @param {import('./game.mjs').GameClient} gameClient @param {{offererId: string}} intent */
+	#handleTakePrivateTradeOfferIntent(gameClient, intent) {
+		if (!intent.offererId || typeof intent.offererId !== 'string') return;
+		const offerer = gameClient.players[intent.offererId];
+		if (!this.tradeHub || !offerer || !offerer.tradeHub) return;
+
+		const offer = offerer.tradeHub.getPrivateTradeOffer(this.id);
+		if (!offer) return;
+
+		const { resourceName, amount, requestedResourceName, requestedAmount } = offer || {};
+		const selfStock = this.inventory.getAmount(requestedResourceName);
+		const offererStock = offerer.inventory.getAmount(resourceName);
+		if (offererStock < amount || selfStock < requestedAmount) return; // cannot take private offer if not fully available
+		offerer.inventory.subtractAmount(resourceName, amount);
+		offerer.inventory.addAmount(requestedResourceName, requestedAmount);
+		this.inventory.addAmount(resourceName, amount);
+		this.inventory.subtractAmount(requestedResourceName, requestedAmount);
+		offerer.tradeHub.cancelPrivateTradeOffer(this.id);
+	}
+	#handleTakeTradeOfferIntent(gameClient, intent) { // DEPRECATED
 		if (!intent.offererId || typeof intent.offererId !== 'string') return;
 		const isPrivate = (!intent.resourceName || !intent.amount);
 		if (!isPrivate && (!intent.resourceName || !intent.amount)) return;
@@ -195,7 +213,7 @@ export class PlayerNode {
 		if (isPrivate) { offerer.tradeHub.cancelPrivateTradeOffer(this.id); return; }
 		const newOfferedAmount = amount - a;
 		if (newOfferedAmount <= 0) offerer.tradeHub.cancelPublicTradeOffer(resourceName);
-		else offerer.tradeHub.setPublicTradeOffer(resourceName, newOfferedAmount, requestedResourceName, requestedAmount);
+		else offerer.tradeHub.setMyPublicTradeOffer(resourceName, newOfferedAmount, requestedResourceName, requestedAmount);
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} fromDeadNodeId */
 	#handleRecycleIntent(gameClient, fromDeadNodeId) {

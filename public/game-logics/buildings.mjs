@@ -6,7 +6,10 @@ const xxHash32 = typeof window !== 'undefined'
 	: (await import('hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32));
 
 const KEYS_TO_NOT_EXTRACT = new Set([
+	'offersExpiryCounter',
+	'publicOffersDispatchRequested',
 	'publicOffers',
+	'publicOffersByResource',
 ]);
 
 export class BuildingBuilder {
@@ -26,7 +29,8 @@ export class BuildingBuilder {
 		else { // AS ARRAY
 			let i = 0;
 			for (const k in building)
-				if (KEYS_TO_NOT_EXTRACT.has(k)) { i++; continue; }
+				if (k === 'type' && building.type !== data[i]) throw new Error(`BuildingBuilder.rebuildClasseIfItCanBe: type mismatch (${building.type} != ${data[i]})`);
+				else if (KEYS_TO_NOT_EXTRACT.has(k)) continue;
 				else building[k] = data[i++];
 		}
 		
@@ -113,7 +117,8 @@ export class Building {
 
 		const sendable = []; 		// TO ARRAY  - LIGHT
 		for (const k in this)
-			if (KEYS_TO_NOT_EXTRACT.has(k)) continue;
+			if (KEYS_TO_NOT_EXTRACT.has(k))
+				continue;
 			else sendable.push(this[k]?.extract ? this[k].extract() : this[k]);
 		return sendable;
 	}
@@ -170,23 +175,55 @@ export class Fabricator extends Building {
 
 }
 
-export class TradeOffer {
-	/** @type {string} */ resourceName = '';
-	/** @type {number} */ amount = 0;
-	/** @type {string} */ requestedResourceName = '';
-	/** @type {number} */ requestedAmount = 0;
-	/** Public offer only @type {number | undefined} */ 	minStock = 0;
-	/** Public offer only @type {boolean | undefined} */ 	isActive = false;
+export class PrivateTradeOffer { // TYPE
+	/** @type {string} */ resourceName;
+	/** @type {number} */ amount;
+	/** @type {string} */ requestedResourceName;
+	/** @type {number} */ requestedAmount;
 }
+
+export class MyPublicTradeOffer { // TYPE: MY PLAYER'S OFFER (LOCAL)
+	/** @type {string} */ 	resourceName;
+	/** @type {string} */ 	requestedResourceName;
+	/** @type {number} */ 	requestedAmount;
+	/** @type {number} */ 	minStock;
+	/** @type {boolean} */ 	isActive;
+}
+
+export class PublicTradeOffer { // TYPE: REMOTE PLAYER'S OFFER (LOCAL)
+	/** @type {string} */ 	playerId;
+	/** @type {string} */ 	offerId;
+	/** @type {string} */ 	resourceName;
+	/** @type {string} */ 	requestedResourceName;
+	/** @type {number} */ 	requestedAmount;
+	/** @type {number} */ 	minStock;
+	/** @type {boolean} */ 	isActive;
+}
+
+export class TakerOrder { // TYPE: TRADE REQUEST (INTENT)
+	/** @type {string} */ soldResource;
+	/** @type {number} */ soldAmount;
+	/** @type {string} */ boughtResource;
+	/** @type {number} */ maxPricePerUnit;
+	/** @type {number} */ expiry; // usually the next turn
+}
+
+const offersExpiryDefault = 6; 			// in turns
 export class TradeHub extends Building {
 	type = 't'; // 'trade hub'
-
+	
 	/** @type {Array<0 | 1 | 2 | 3 | 4 | 5>} */
 	modulesLevel = TRADE_HUB_MODULES.emptyModulesArray();
-	/** key: id(hash), value: [resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive] @type {Record<string, [number, string, number, number, boolean]>} */
-	publicOffers = {}; // THIS IS NOT EXTRACTED
 	/** key: targetPlayerId, value: [resourceName, amount, requestedResourceName, requestedAmount] @type {Record<string, [string, number, string, number]>} */
 	privateOffers = {};
+	// NOT EXTRACTED ----------------------------
+	offersExpiryCounter = 0; 		// in turns
+	publicOffersDispatchRequested = false;
+	/** key: id(hash), value: [resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive] @type {Record<string, [number, string, number, number, boolean]>} */
+	publicOffers = {}; 			 // MY PLAYER ONLY
+	/** key: requestedResourceName, key: offerId(hash), value: PublicTradeOffer @type {Record<string, Record<string, PublicTradeOffer>>} */
+	publicOffersByResource = {}; // REMOTE PLAYERS ONLY
+	// END NOT EXTRACTED ------------------------
 
 	get getMaxConnections() { // DEFAULT 2
 		const connectivityModuleIndex = this.getModuleIndex('connectivity');
@@ -198,30 +235,69 @@ export class TradeHub extends Building {
 		const { maxTradeOffer } = TRADE_HUB_MODULES.getModuleEffect('negotiation', this.modulesLevel[negotiationModuleIndex]) || {};
 		return maxTradeOffer || 0;
 	}
+	get getComissionRate() { // DEFAULT 0%
+		const brokerModuleIndex = this.getModuleIndex('broker');
+		const { comissionRate } = TRADE_HUB_MODULES.getModuleEffect('broker', this.modulesLevel[brokerModuleIndex]) || {};
+		return comissionRate || 0;
+	}
+	get getSignalRange() { // DEFAULT 1
+		const brokerModuleIndex = this.getModuleIndex('broker');
+		const { signalRange } = TRADE_HUB_MODULES.getModuleEffect('broker', this.modulesLevel[brokerModuleIndex]) || {};
+		return signalRange || 1;
+	}
 	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
 	static getOfferHash(resourceName, amount, requestedResourceName, requestedAmount, minStock = 0, isActive = false) {
 		return xxHash32(`${resourceName}-${amount}-${requestedResourceName}-${requestedAmount}-${minStock}-${isActive}`).toString(16);
 	}
-	/** @returns {TradeOffer | null} */
+	/** @returns {MyPublicTradeOffer | null} */
 	getPublicTradeOffer(offerId = '') {
 		if (!this.publicOffers[offerId]) return null;
-		const [resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive] = this.publicOffers[offerId];
-		return { resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive };
+		const [resourceName, requestedResourceName, requestedAmount, minStock, isActive] = this.publicOffers[offerId];
+		return { resourceName, requestedResourceName, requestedAmount, minStock, isActive };
 	}
-	/** @returns {TradeOffer | null} */
+	/** @returns {PrivateTradeOffer | null} */
 	getPrivateTradeOffer(targetPlayerId = '') {
 		if (!this.privateOffers[targetPlayerId]) return null;
 		const [resourceName, amount, requestedResourceName, requestedAmount] = this.privateOffers[targetPlayerId];
 		return { resourceName, amount, requestedResourceName, requestedAmount };
 	}
-	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
-	setPublicTradeOffer(resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive) {
+	/** @param {string} resourceName @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
+	#checkPublicOfferValueAndGetHash(resourceName, requestedResourceName, requestedAmount, minStock, isActive) {
 		if (typeof isActive !== 'boolean') return;
 		if (typeof minStock !== 'number' || minStock < 0) return;
-		if (!this.#checkOfferValues(resourceName, amount, requestedResourceName, requestedAmount)) return;
-		const id = TradeHub.getOfferHash(resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive);
-		this.publicOffers[id] = [resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive];
-		return id;
+		if (!this.#checkOfferValues(resourceName, 1, requestedResourceName, requestedAmount)) return;
+		return TradeHub.getOfferHash(resourceName, 1, requestedResourceName, requestedAmount, minStock, isActive);
+	}
+	/** @param {string} resourceName @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
+	setMyPublicTradeOffer(resourceName, requestedResourceName, requestedAmount, minStock, isActive) {
+		const id = this.#checkPublicOfferValueAndGetHash(resourceName, requestedResourceName, requestedAmount, minStock, isActive);
+		if (!id || this.publicOffers[id]) return; // offer already exists
+
+		// REMOVE OFFER OF THE SAME RESOURCES IF ANY
+		for (const offerId in this.publicOffers)
+			if (this.publicOffers[offerId][0] !== resourceName) continue;
+			else if (this.publicOffers[offerId][1] !== requestedResourceName) continue;
+			else delete this.publicOffers[offerId];
+		
+		this.publicOffers[id] = [resourceName, requestedResourceName, requestedAmount, minStock, isActive];
+		this.publicOffersDispatchRequested = true;
+		this.offersExpiryCounter = offersExpiryDefault;
+	}
+	/** @param {string} playerId @param {Record<string, MyPublicTradeOffer>} offersData */
+	handleIncomingPublicOffers(playerId, offersData) {
+		this.publicOffersByResource = {}; // RESET ALL OFFERS
+		for (const offerId in offersData) {
+			const offer = offersData[offerId];
+			if (!offer) continue;
+
+			const [resourceName, requestedResourceName, requestedAmount, minStock, isActive] = offer;
+			const hash = this.#checkPublicOfferValueAndGetHash(resourceName, requestedResourceName, requestedAmount, minStock, isActive);
+			if (offerId !== hash) return; // invalid offer
+
+			if (!this.publicOffersByResource[requestedResourceName]) this.publicOffersByResource[requestedResourceName] = {};
+			this.publicOffersByResource[requestedResourceName][offerId] = { playerId, offerId, resourceName, requestedResourceName, requestedAmount, minStock, isActive };
+		}
+		this.offersExpiryCounter = offersExpiryDefault + 1;
 	}
 	/** @param {string} targetPlayerId @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
 	setPrivateTradeOffer(targetPlayerId, resourceName, amount, requestedResourceName, requestedAmount) {
@@ -245,6 +321,29 @@ export class TradeHub extends Building {
 	}
 	/** @param {string} offerId */
 	cancelPublicTradeOffer(offerId) {
+		const r = this.publicOffers[offerId]?.[0];
+		if (r && this.publicOffersByResource[r]) delete this.publicOffersByResource[r][offerId];
 		delete this.publicOffers[offerId];
+		this.publicOffersDispatchRequested = true;
+	}
+	cancelAllPublicTradeOffers() {
+		this.publicOffers = {};
+		this.publicOffersByResource = {};
+		this.publicOffersDispatchRequested = true;
+	}
+
+	turnUpdate(isMyNode = false) {
+		// IF IS_MY_NODE: DISPATCH BEFORE EXPIRY
+		this.offersExpiryCounter--;
+		if (isMyNode && this.offersExpiryCounter <= 1)
+			if (Object.keys(this.publicOffers).length > 0)
+				this.publicOffersDispatchRequested = true;
+
+		// IF NOT MY NODE: EXPIRE OFFERS AFTER COUNTER
+		if (!isMyNode && this.offersExpiryCounter <= 0)
+			this.cancelAllPublicTradeOffers();
+
+		if (this.offersExpiryCounter <= 0)
+			this.offersExpiryCounter = offersExpiryDefault;
 	}
 }

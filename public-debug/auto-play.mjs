@@ -35,7 +35,6 @@ export class AutoPlayer {
 
 	// AUTO PLAY WITH FRONTEND
 	#onExecAutoPlay(height) {
-		return; // disable auto-play for now DEBUG
 		const firstDeadNodeId = Array.from(this.gameClient.deadPlayers)[0];
 		const upgradeName = this.gameClient.myPlayer.upgradeOffers[0]?.[0];
 		const { node, turnSystem, myPlayer, alive, selectedDeadNodeId } = this.gameClient;
@@ -75,5 +74,11 @@ export class AutoPlayer {
 		}
 
 		this.#acceptPendingConnectionOffer();
+		// random from 1 to 10
+		const price = Math.floor(Math.random() * 10) + 1;
+		//const price = 5; // fixed price
+		this.gameClient.myPlayer.tradeHub.setMyPublicTradeOffer('energy', 'chips', price, 50, true); // DEBUG auto-swap
+		this.gameClient.myPlayer.tradeHub.setMyPublicTradeOffer('energy', 'datas', price, 50, true); // DEBUG auto-swap
+		this.gameClient.myPlayer.tradeHub.setMyPublicTradeOffer('energy', 'models', price, 50, true); // DEBUG auto-swap
 	}
 }

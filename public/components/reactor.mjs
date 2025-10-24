@@ -37,6 +37,7 @@ export class ReactorComponent {
 	}
 
 	update() { // call only if reactor is present
+		if (!this.#isVisible()) return;
 		const reactor = this.gameClient?.myPlayer.reactor;
 		if (!this.gameClient?.alive || !reactor) return this.hide();
 
@@ -68,6 +69,7 @@ export class ReactorComponent {
 	show() { this.modal.classList.add('visible'); }
 	hide() { this.modal.classList.remove('visible'); }
 	toggle() { this.modal.classList.toggle('visible'); }
+	#isVisible() { return this.modal.classList.contains('visible'); }
 
 	#initModulesTree() {
 		for (let i = 0; i < REACTOR_MODULES.allModulesKeys.length; i++) {

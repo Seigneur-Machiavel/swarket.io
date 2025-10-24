@@ -40,12 +40,12 @@ export class SeededRandom {
  * @typedef {import('./actions.mjs').UpgradeAction} UpgradeAction
  * @typedef {import('./actions.mjs').UpgradeModuleAction} UpgradeModuleAction
  * @typedef {import('./actions.mjs').SetParamAction} SetParamAction
- * @typedef {import('./actions.mjs').SetTradeOffer} SetTradeOffer
- * @typedef {import('./actions.mjs').CancelTradeOffer} CancelTradeOffer
- * @typedef {import('./actions.mjs').TakeTradeOffer} TakeTradeOffer
+ * @typedef {import('./actions.mjs').SetPrivateTradeOffer} SetPrivateTradeOffer
+ * @typedef {import('./actions.mjs').CancelPrivateTradeOffer} CancelPrivateTradeOffer
+ * @typedef {import('./actions.mjs').TakePrivateTradeOffer} TakePrivateTradeOffer
  * @typedef {import('./actions.mjs').RecycleAction} RecycleAction
  *
- * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetTradeOffer | CancelTradeOffer | TakeTradeOffer | RecycleAction} Action
+ * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetPrivateTradeOffer | CancelPrivateTradeOffer | TakePrivateTradeOffer | RecycleAction} Action
  */
 
 /** Computes intents consensus

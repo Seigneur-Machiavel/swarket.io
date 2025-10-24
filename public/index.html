@@ -189,9 +189,15 @@
 			<div class="modules-wrapper"></div>
 			<div class="trade-menu-wrapper">
 				<div class="trade-menu-header">
-					<div class="my-trade-offers-title">My Trade Offers</div>
+					<div class="my-trade-offers-title hoverable-tooltip">
+						<div class="tooltip">Buyers can buy as long as you keep active & min. stock</div>
+						My Trade Offers
+					</div>
 					<div class="separator"></div>
-					<div class="world-trade-offers-title">World Trade Offers</div>
+					<div class="world-trade-offers-title hoverable-tooltip">
+						<div class="tooltip">More connected > more offers aggregated here</div>
+						Swap
+					</div>
 				</div>
 				<div class="my-trade-offer-lines-wrapper">
 					<div class="my-trade-offer-line"> <!-- TEMPLATE -->
@@ -214,8 +220,19 @@
 					</div>
 				</div>
 				<div class="separator"></div>
-				<div class="world-trade-offer-lines-wrapper">
-
+				<div class="swap-wrapper">
+					<div class="resource sold hoverable-tooltip">
+						<div class="tooltip">Chips</div>
+						<div class="resource-icon chips"></div>
+						<span class="resource-value" contenteditable="true">0</span>
+					</div>
+					<div class="arrow" id="reverse-resources-btn">↑↓</div>
+					<div class="resource bought hoverable-tooltip">
+						<div class="tooltip">Energy</div>
+						<div class="resource-icon energy"></div>
+						<span class="resource-value" contenteditable="true">0</span>
+					</div>
+					<button class="swap-confirm-btn" disabled>Confirm Swap</button>
 				</div>
 			</div>
 		</div>

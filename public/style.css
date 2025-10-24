@@ -1289,6 +1289,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	border-radius: 6px;
 }
 .trade-menu-header {
+	user-select: none;
 	position: absolute;
 	display: flex;
 	justify-content: space-between;
@@ -1311,7 +1312,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	width: 2px;
 	background: var(--border-dark);
 }
-.my-trade-offer-lines-wrapper, .world-trade-offer-lines-wrapper {
+.my-trade-offer-lines-wrapper {
 	overflow: hidden scroll;
 	display: flex;
 	flex-direction: column;
@@ -1335,7 +1336,21 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 .my-trade-offer-line .resource {
 	gap: 3px;
+	cursor: initial;
 }
+/* ADAPTED FOR OFFERED RESOURCE LOCKED AT: 1 */
+.my-trade-offer-line .resource-icon {
+	cursor: pointer;
+}
+.my-trade-offer-line .resource.offered {
+	min-width: none;
+	margin-right: -20px;
+}
+.my-trade-offer-line .resource.offered .resource-value {
+	margin-left: 4px;
+	color: var(--text-dim) !important;
+}
+/* END OF ADAPTED CODE */
 .my-trade-offer-line .resource.offered .tooltip {
 	transform: translateX(-20%);
 }
@@ -1396,9 +1411,63 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .my-trade-offer-line .toggle-btn .tooltip {
     padding: 3px 6px;
 }
-/*=== WORLD TRADE OFFERS === */
-.world-trade-offer-lines-wrapper {
-	padding-right: 6px;
+/*=== SWAP === */
+.swap-wrapper {
+	display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    width: 48%;
+    margin-bottom: 12px;
+}
+.swap-wrapper .resource {
+	justify-content: space-between;
+	flex-direction: row-reverse;
+	width: 150px;
+    height: 50px;
+	padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border-dark);
+	transform: translateY(-24px);
+}
+.swap-wrapper .resource:first-child {
+	transform: none;
+}
+.swap-wrapper .resource .resource-value {
+	position: relative;
+	transform: translateY(4px);
+	padding-left: 4px;
+}
+.swap-wrapper .resource .resource-value:before {
+	position: absolute;
+    font-size: 10px;
+    top: -10px;
+    left: -4px;
+    opacity: .6;
+    color: var(--text-darker);
+}
+.swap-wrapper .resource.sold .resource-value:before {
+	content: 'Sell:';
+}
+.swap-wrapper .resource.bought .resource-value:before {
+	content: 'Buy:';
+}
+.swap-wrapper .arrow {
+	user-select: none;
+	cursor: pointer;
+    z-index: 1;
+    background: var(--scrollbar-track);
+    padding: 4px 6px;
+    margin: -4px -6px;
+    line-height: 16px;
+    border: 2px solid var(--border-dark);
+    border-radius: 10px;
+    color: var(--text-dim);
+	transform: translateY(-12px);
+}
+.swap-wrapper .arrow:hover {
+	border-color: var(--text-main);
+	color: var(--text-main);
 }
 
 /** === DEAD NODES NOTIFICATIONS === */

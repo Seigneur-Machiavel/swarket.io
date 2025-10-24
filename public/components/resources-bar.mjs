@@ -1,14 +1,15 @@
 import { newResourcesSet } from '../game-logics/resources.mjs';
 
 export class ResourcesBarComponent {
-	selectionEnabled = false; // flag to enable/disable resource click selection
+	selectionEnabled = false; 		// flag to enable/disable resource click selection
 	resourceBar;
 	expandBtn;
 	/** @type {Record<string, HTMLElement>} */
 	resourceTierWrappers = {};
 	/** @type {HTMLElement[]} */
 	resourceValueElements = [];
-	onResourceClickOneShot = null; // callbacks that will be removed after one call
+	onResourceClickOneShot = null; 	// callbacks that will be removed after one call
+	selectionTimeout = null; 		// timeout to reset selection mode
 
 	constructor(spectator = false) {
 		const selector = spectator ? '.resources-bar.spectator' : '.resources-bar';
@@ -33,16 +34,19 @@ export class ResourcesBarComponent {
 		this.show();
 		for (let i = 0; i < this.resourceValueElements.length; i++) {
 			const value = player.inventory.resources[i];
-			this.resourceValueElements[i].textContent = value.toFixed(1);
+			this.resourceValueElements[i].textContent = value.toFixed(3).replace(/\.?0+$/, '');
 		}
 	}
-	handleNextResourceClick(callback) {
+	handleNextResourceClick(callback, timeout = 5000) {
 		this.#setSelectionEnabled(true);
 		this.onResourceClickOneShot = callback;
+		this.selectionTimeout = setTimeout(() => this.resetHandleNextResourceClick(), timeout);
 	}
 	resetHandleNextResourceClick() {
 		this.#setSelectionEnabled(false);
 		this.onResourceClickOneShot = null;
+		if (this.selectionTimeout) clearTimeout(this.selectionTimeout);
+		this.selectionTimeout = null;
 	}
 	#handleResourceBarClick(e) {
 		const resourceElem = e.target.closest('.resource');

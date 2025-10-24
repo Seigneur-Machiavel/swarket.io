@@ -31,4 +31,15 @@ export class NodeInteractor {
 		if (peerStore.addConnectingPeer(nodeId, offer.signal, offer.offerHash) !== true) return;
 		peerStore.assignSignal(nodeId, offer.signal, offer.offerHash, gameClient.node.time);
 	}
+	/** @param {import('./game.mjs').GameClient} gameClient */
+	static dispatchPublicTradeOffers(gameClient) {
+		const player = gameClient.myPlayer;
+		if (!player.tradeHub) return;
+
+		const publicOffers = player.tradeHub.publicOffers;
+		const data = { topic: 'public-trade-offers', data: { publicOffers } };
+		gameClient.node.broadcast(data, undefined, player.tradeHub.getSignalRange);
+		player.tradeHub.publicOffersDispatchRequested = false;
+		if (gameClient.verb > 1) console.log(`%cDispatched ${Object.keys(publicOffers).length} public trade offers`, 'color: orange', publicOffers);
+	}
 }

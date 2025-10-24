@@ -68,6 +68,7 @@ gameClient.onExecutedTurn.push(async (height = 0) => {
 	spectatorResourcesBar.update(gameClient.getSpectatingPlayer);
 	buildings.update();
 	deadNodes.showDeadNodes();
+	nodeCard.update();
 	console.log(`--- Turn ${height} executed ---`);
 
 	// UPGRADE OFFERS

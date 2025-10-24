@@ -60,7 +60,7 @@ export class REACTOR_MODULES {
 		return description;
 	}
 
-	// REACTOR LEVEL 1
+	// REACTOR LEVEL 0
 	static efficiency = {
 		minBuildingLevel: 0,
 		levelEffect: [
@@ -140,6 +140,8 @@ class TradeHubModuleLevelEffect { // TYPEDEF ONLY
 	/** @type {number | undefined} */ 	inputCoef;
 	/** @type {number | undefined} */ 	maxTradeOffer;
 	/** @type {number | undefined} */ 	maxConnections;
+	/** @type {number | undefined} */ 	comissionRate;
+	/** @type {number | undefined} */ 	signalRange;
 }
 
 export class TRADE_HUB_MODULES {
@@ -149,7 +151,9 @@ export class TRADE_HUB_MODULES {
 	}
 	static allModulesKeys = [
 		'connectivity',
-		'negotiation'
+		'negotiation',
+		'broker',
+		'beacon'
 	];
 
 	/** @returns {{minBuildingLevel: number, maxLevel: number} | null} */
@@ -168,25 +172,48 @@ export class TRADE_HUB_MODULES {
 		return description;
 	}
 	
-	// TRADE-HUB LEVEL 1
+	// TRADE-HUB LEVEL 0
 	static connectivity = { // default : 2
 		minBuildingLevel: 0,
 		levelEffect: [
-			{ maxConnections: 3, description: 'Increase trade route capacity from 2 to 3' },
-			{ maxConnections: 4, description: 'Increase trade route capacity from 3 to 4' },
-			{ maxConnections: 5, description: 'Increase trade route capacity from 4 to 5' },
-			{ maxConnections: 6, description: 'Increase trade route capacity from 5 to 6' },
-			{ maxConnections: 7, description: 'Increase trade route capacity from 6 to 7' }
+			{ maxConnections: 3, description: 'Increase connection capacity from 2 to 3' },
+			{ maxConnections: 4, description: 'Increase connection capacity from 3 to 4' },
+			{ maxConnections: 5, description: 'Increase connection capacity from 4 to 5' },
+			{ maxConnections: 6, description: 'Increase connection capacity from 5 to 6' },
+			{ maxConnections: 7, description: 'Increase connection capacity from 6 to 7' }
 		]
 	}
-	static negotiation = {
+	static negotiation = { // default : 0
 		minBuildingLevel: 0,
 		levelEffect: [
-			{ maxTradeOffer: 1, description: 'Increase the capacity of trade offers to 1' },
-			{ maxTradeOffer: 2, description: 'Increase the capacity of trade offers to 2' },
-			{ maxTradeOffer: 3, description: 'Increase the capacity of trade offers to 3' },
-			{ maxTradeOffer: 4, description: 'Increase the capacity of trade offers to 4' },
-			{ maxTradeOffer: 5, description: 'Increase the capacity of trade offers to 5' }
+			{ maxTradeOffer: 1, description: 'Increase trade offers capacity to 1' },
+			{ maxTradeOffer: 2, description: 'Increase trade offers capacity from 1 to 2' },
+			{ maxTradeOffer: 3, description: 'Increase trade offers capacity from 2 to 3' },
+			{ maxTradeOffer: 5, description: 'Increase trade offers capacity from 3 to 5' },
+			{ maxTradeOffer: 7, description: 'Increase trade offers capacity from 5 to 7' },
+			{ maxTradeOffer: 10, description: 'Increase trade offers capacity from 7 to 10' }
+		]
+	}
+
+	// TRADE-HUB LEVEL 3
+	static broker = { // default : 0
+		minBuildingLevel: 3,
+		levelEffect: [
+			{ comissionRate: .02, description: 'Take comission of 2% on any neighbors trades' },
+			{ comissionRate: .04, description: 'Increase comission rate from 2% to 4%' },
+			{ comissionRate: .06, description: 'Increase comission rate from 4% to 6%' },
+			{ comissionRate: .08, description: 'Increase comission rate from 6% to 8%' },
+			{ comissionRate: .1, description: 'Increase comission rate from 8% to 10%' }
+		]
+	}
+	static beacon = { // default : 0
+		minBuildingLevel: 3,
+		levelEffect: [
+			{ signalRange: 2, description: 'Increase signal range from 1 to 2' },
+			{ signalRange: 3, description: 'Increase signal range from 2 to 3' },
+			{ signalRange: 4, description: 'Increase signal range from 3 to 4' },
+			{ signalRange: 5, description: 'Increase signal range from 4 to 5' },
+			{ signalRange: 6, description: 'Increase signal range from 5 to 6' }
 		]
 	}
 }

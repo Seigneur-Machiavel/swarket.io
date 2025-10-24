@@ -1,5 +1,8 @@
 # 📋 Hive-Trade - Task List (j'aime pas trop, à construire au fur et à mesure)
 
+Nom :
+hivetrade.io, mycelium.io, confluence.io, ataraxie.io..
+
 ## Phase 1: Core Infrastructure (5-7 jours)
 
 **1. Setup projet**

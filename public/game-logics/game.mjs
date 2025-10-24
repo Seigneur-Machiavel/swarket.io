@@ -1,25 +1,25 @@
 import { PlayerNode } from './player.mjs';
 import { TurnSystem } from './turn-system.mjs';
 import { NodeInteractor } from './node-interactions.mjs';
+import { SwapModule } from './swap.mjs';
 
 /**
  * @typedef {import('hive-p2p').Node} Node
  * @typedef {import('./actions.mjs').UpgradeAction} UpgradeAction
  * @typedef {import('./actions.mjs').UpgradeModuleAction} UpgradeModuleAction
  * @typedef {import('./actions.mjs').SetParamAction} SetParamAction
- * @typedef {import('./actions.mjs').SetTradeOffer} SetTradeOffer
- * @typedef {import('./actions.mjs').CancelTradeOffer} CancelTradeOffer
- * @typedef {import('./actions.mjs').TakeTradeOffer} TakeTradeOffer
+ * @typedef {import('./actions.mjs').SetPrivateTradeOffer} SetPrivateTradeOffer
+ * @typedef {import('./actions.mjs').CancelPrivateTradeOffer} CancelPrivateTradeOffer
+ * @typedef {import('./actions.mjs').TakePrivateTradeOffer} TakePrivateTradeOffer
  * @typedef {import('./actions.mjs').RecycleAction} RecycleAction
  *
- * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetTradeOffer | CancelTradeOffer | TakeTradeOffer | RecycleAction} Action
+ * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetPrivateTradeOffer | CancelPrivateTradeOffer | TakePrivateTradeOffer | RecycleAction} Action
  */
 
 export class GameClient {
 	extractionMode = 'array'; // 'object'(safe) | 'array'(fast) for data extraction
 	alive = true; // Flag to indicate the game is running
 	node; verb; height = 0; // number of turns
-	nodeInteractor;
 	turnSystem;
 	gameStateAskedFrom = null; // id of node we asked game state from
 
@@ -30,6 +30,7 @@ export class GameClient {
 	syncAskedBy = []; 			// ids of nodes who asked for sync
 	selectedDeadNodeId = null; 	// selected node to recycle from UI
 	showingCardOfId = null;		// id of node currently shown in node card UI
+	swapModule = new SwapModule(this);
 
 	/** @type {Record<string, { offer: {signal: string, offerHash: string}, expiration: number }>} */
 	connectionOffers = {}; // pending connection offers { nodeId: { offer: object, expiration: number } }
@@ -46,12 +47,11 @@ export class GameClient {
 	constructor(node, createPlayerAndStart = false) {
 		this.#turnExecutionLoop(); // start turn loop => do nothing until scheduled time
 		this.node = node; this.verb = node.verbose;
-		this.nodeInteractor = new NodeInteractor(node, this.players);
 		this.turnSystem = new TurnSystem(this.node);
 
 		node.onPeerConnect((peerId, direction) => this.#onPeerConnect(peerId, direction));
 		node.onMessageData((id, message) => this.#onDirectMessage(id, message));
-		node.onGossipData((id, message) => this.#onGossipMessage(id, message));
+		node.onGossipData((senderId, data, HOPS, message) => this.#onGossipMessage(senderId, data, HOPS, message));
 		node.onSignalOffer((fromId, offer) => {
 			console.log(`Connection offer received from ${fromId}`, offer);
 			this.connectionOffers[fromId] = { offer, expiration: node.time + 30000 };
@@ -89,37 +89,44 @@ export class GameClient {
 		else if (p.production.engineers) p.production.chips = 5; // DEBUG
 
 		const as = this.extractionMode;
-		this.node.broadcast({ topic: 'new-player', data: p.extract(as), extractionMode: as });
+		this.node.broadcast({ topic: 'new-player', data: { playerData: p.extract(as), extractionMode: as } });
 		this.syncAskedBy.push(peerId); // request sync on next turn
 	}
-	/** @param {string} id @param {import('../../node_modules/hive-p2p/core/unicast.mjs').DirectMessage} message */
-	#onDirectMessage(id, message) {
-		const { type, data, extractionMode } = message;
-		if (type === 'get-game-state') this.syncAskedBy.push(id);
+	/** @param {string} senderId @param {import('../../node_modules/hive-p2p/core/unicast.mjs').DirectMessage} message */
+	#onDirectMessage(senderId, message) {
+		const { type, data } = message;
+		if (type === 'get-game-state') this.syncAskedBy.push(senderId);
 		else if (type === 'game-state-incoming') this.turnSystem.T0Reference = this.node.time - data;
 		else if (type === 'game-state' && this.height === 0) {
 			if (!this.turnSystem.T0Reference) return console.warn(`T0Reference not set, cannot calculate T0 drift`);
-			if (!this.node.cryptoCodex.isPublicNode(id) && this.gameStateAskedFrom !== id) return; // ignore if not from public node or not the one we asked from
-			this.#importGameState(data, extractionMode);
+			if (!this.node.cryptoCodex.isPublicNode(senderId) && this.gameStateAskedFrom !== senderId) return; // ignore if not from public node or not the one we asked from
+			this.#importGameState(data);
 		}
 	}
-	/** @param {string} id @param {import('../../node_modules/hive-p2p/core/gossip.mjs').GossipMessage} message */
-	#onGossipMessage(id, message) {
-		if (id === this.node.id) return console.warn(`We received our own gossip message back, ignoring.`);
-		const { senderId, topic, data, extractionMode, timestamp } = message;
+	/** @param {string} senderId @param {any} d @param {number} HOPS @param {import('../../node_modules/hive-p2p/core/gossip.mjs').GossipMessage} message */
+	#onGossipMessage(senderId, d, HOPS, message) {
+		if (senderId === this.node.id) return console.warn(`We received our own gossip message back, ignoring.`);
+		const { topic, data } = d;
+		const { timestamp } = message;
 		//if (this.node.time - timestamp > this.turnSystem.turnDuration / 2) return; // too old message
 		if (topic === 'new-player') {
-			const p = PlayerNode.playerFromData(data, extractionMode);
+			const p = PlayerNode.playerFromData(data.playerData, data.extractionMode);
 			if (!this.players[p.id]) this.players[p.id] = p;
 		} else if (topic === 'turn-intents') {
 			// IF INTENT FOR COMING TURN, SHOULD BE SENT AT A MAXIMUM HALFWAY THROUGH THE TURN
 			const isForComingTurn = data.height === this.height;
 			if (isForComingTurn && this.node.time > this.turnSystem.maxSentTime) {
-				if (this.verb > 1) console.warn(`Intent for turn #${data.height} from ${id} received too late (at ${this.node.time}, max was ${this.turnSystem.maxSentTime}), ignoring.`);
-				return this.node.arbiter.adjustTrust(id, -10_000, 'Peer sent intents too late');
+				if (this.verb > 1) console.warn(`Intent for turn #${data.height} from ${senderId} received too late (at ${this.node.time}, max was ${this.turnSystem.maxSentTime}), ignoring.`);
+				return this.node.arbiter.adjustTrust(senderId, -60_000, 'Peer sent intents too late');
 			}
 
-			this.digestPlayerIntents(data.intents, data.height, data.prevHash, id);
+			this.digestPlayerIntents(data.intents, data.height, data.prevHash, senderId);
+		} else if (topic === 'public-trade-offers') {
+			const player = this.players[senderId];
+			if (!player) return console.warn(`Player not found for public trade offers: ${senderId}`);
+			if (player.tradeHub.getSignalRange < HOPS) return this.node.arbiter.adjustTrust(senderId, -600_000, 'Peer sent public trade offers with insufficient signal range');
+			player.tradeHub.handleIncomingPublicOffers(senderId, data.publicOffers);
+			if (this.verb > 1) console.log(`Public trade offers received from ${senderId}:`, data);
 		}
 	}
 
@@ -128,21 +135,22 @@ export class GameClient {
 	#extractPlayersData(as = this.extractionMode) {
 		const playersData = [];
 		for (const playerId in this.players) playersData.push(this.players[playerId].extract(as));
-		return playersData;
+		return { playersData, extractionMode: as };
 	}
 	#extractGameState() {
+		const { extractionMode, playersData } = this.#extractPlayersData();
 		return {
 			height: this.height,
 			prevHash: this.turnSystem.prevHash,
-			playersData: this.#extractPlayersData(),
+			extractionMode,
+			playersData,
 			playersIntents: this.turnSystem.playersIntents,
 		}
 	}
-	/** @param {object} data @param {'object' | 'array'} extractionMode */
-	#importGameState(data, extractionMode) { // CALL ONLY IF T0Reference IS SET!
+	/** @param {object} data */
+	#importGameState(data) { // CALL ONLY IF T0Reference IS SET!
+		const { height, playersData, prevHash, playersIntents, extractionMode } = data;
 		if (extractionMode !== 'object' && extractionMode !== 'array') return console.warn(`Invalid extraction mode for game state import: ${extractionMode}`);
-		
-		const { height, playersData, prevHash, playersIntents } = data;
 		this.height = height; 				// next turn
 		this.turnSystem.setT0(height);
 		this.turnSystem.T0Reference = null; // reset
@@ -184,7 +192,7 @@ export class GameClient {
 		
 		const data = this.#extractGameState();
 		for (const fromId of this.syncAskedBy) // heavy data
-			this.node.sendMessage(fromId, { type: 'game-state', data, extractionMode: this.extractionMode });
+			this.node.sendMessage(fromId, { type: 'game-state', data });
 
 		if (this.verb > 1) console.log(`%cSent game state #${this.height} to ${this.syncAskedBy.length} askers: ${this.syncAskedBy.join(', ')}`, 'color: green');
 		this.syncAskedBy = []; // reset
@@ -221,6 +229,12 @@ export class GameClient {
 			this.turnSystem.prevHash = newTurnHash;
 			myIntentsSent = false; // reset
 
+			// MANAGHE PUBLIC TRADE OFFERS => EXPIRY & SELF DISPATCH
+			for (const playerId in this.players)
+				this.players[playerId].tradeHub?.turnUpdate(playerId === this.node.id);
+			if (this.myPlayer.tradeHub?.publicOffersDispatchRequested)
+				NodeInteractor.dispatchPublicTradeOffers(this);
+
 			for (const cb of this.onExecutedTurn) cb(this.height);
 			if (this.height > 2) this.#sendSyncToAskers(startTime - time);
 		}
@@ -231,7 +245,7 @@ export class GameClient {
 		this.#execTurnIntents(turnIntents);
 		
 		// EXECUTE PLAYER TURNS (RESOURCE PRODUCTION, ENERGY DEDUCTION, UPGRADE OFFERS...)
-		const newTurnHash = this.turnSystem.getTurnHash(this.height, this.#extractPlayersData());
+		const newTurnHash = this.turnSystem.getTurnHash(this.height, this.#extractPlayersData().playersData);
 		this.deadPlayers = new Set(); 		// reset
 		this.#execPlayersTurn(newTurnHash); // will fill deadPlayers set
 		this.#removeDeadPlayers();

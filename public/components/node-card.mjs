@@ -22,6 +22,7 @@ export class NodeCardComponent {
 	resourceBTooltip = this.resourceB.querySelector('.tooltip');
 	nodeCardCancelOfferBtn = document.getElementById('node-card-cancel-offer-btn');
 	nodeCardConfirmOfferBtn = document.getElementById('node-card-confirm-offer-btn');
+	myOfferChanged = false; // flag to indicate if we confirmed an offer change
 	showingMyOffer = false;
 	showingRemoteOffer = false;
 
@@ -54,11 +55,9 @@ export class NodeCardComponent {
 		this.nodeCardConfirmOfferBtn.onclick = () => this.#handleOfferConfirmation();
 	}
 
-	show(playerId = 'toto', connectedOnly = false) {
+	show(playerId = 'toto') {
 		if (!this.gameClient.players[playerId]) return;
-		const isConnected = this.gameClient.node.peerStore.neighborsList.includes(playerId);
-		const connectionValid = connectedOnly ? isConnected : true;
-		if (!connectionValid && (this.showingMyOffer || this.showingRemoteOffer)) this.hideOfferViewer();
+		this.hideOfferViewer();
 
 		this.gameClient.showingCardOfId = playerId;
 		this.nodeCardElem.classList.add('visible');
@@ -77,9 +76,9 @@ export class NodeCardComponent {
 
 		this.nodeCardCancelOfferBtn.disabled = true;
 		this.resourceAIcon.classList = 'resource-icon energy';
-		this.resourceAValue.textContent = (0).toFixed(1);
+		this.resourceAValue.textContent = "0";
 		this.resourceBIcon.classList = 'resource-icon chips';
-		this.resourceBValue.textContent = (0).toFixed(1);
+		this.resourceBValue.textContent = "0";
 
 		const { resourceName, requestedResourceName } = this.#updateMyOfferAttributes() || {};
 		this.#showOfferViewer('outgoing', resourceName, requestedResourceName);
@@ -95,6 +94,11 @@ export class NodeCardComponent {
 		this.showingMyOffer = false;
 		this.showingRemoteOffer = false;
 	}
+	update() { // CALLED AT THE END OF EACH TURN
+		if (this.myOfferChanged) { this.myOfferChanged = false; return; } // skip one update after change
+		if (this.showingRemoteOffer) this.#updateRemoteOfferAttributes();
+		this.#setOfferViewerConfirmButtonAttributes();
+	}
 
 	/** OFFER VIEWER PRIVATE METHODS */
 	#setupResourceHandlers() {
@@ -103,13 +107,15 @@ export class NodeCardComponent {
 			this.nodeCardConfirmOfferBtn.disabled = !(resourceAValue > 0 && resourceBValue > 0);
 			const existingOffer = this.gameClient.myPlayer.tradeHub?.getPrivateTradeOffer(this.gameClient.showingCardOfId) || null;
 			this.nodeCardCancelOfferBtn.disabled = existingOffer ? false : true;
-		}
+		};
+		/** @param {HTMLElement} elementIcon @param {HTMLElement} elementValue @param {HTMLElement} elementTooltip @param {string} resName @param {number} value @param {string} pronoun */
 		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value, pronoun = 'I') => {
 			elementIcon.classList = `resource-icon ${resName}`;
-			elementValue.textContent = (value / 10).toFixed(1);
+			const defaultVal = resName === 'energy' ? value / 2 : value;
+			elementValue.textContent = defaultVal.toFixed(3).replace(/\.?0+$/, '');
 			elementTooltip.textContent = `${pronoun} send: ${resName.charAt(0).toUpperCase() + resName.slice(1)}`;
 			toogleButtonsState();
-		}
+		};
 		this.resourceAIcon.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
 			handleResourceNameAndValue(this.resourceAIcon, this.resourceAValue, this.resourceATooltip, resName, value, 'I');
 			console.log('Offered resource A changed to', resName, value);
@@ -149,9 +155,9 @@ export class NodeCardComponent {
 	#setOfferViewerIconsAndValues(offer) {
 		const { resourceName, amount, requestedResourceName, requestedAmount } = offer;
 		this.resourceAIcon.classList = `resource-icon ${resourceName}`;
-		this.resourceAValue.textContent = (amount).toFixed(1);
+		this.resourceAValue.textContent = (amount).toFixed(3).replace(/\.?0+$/, '');
 		this.resourceBIcon.classList = `resource-icon ${requestedResourceName}`;
-		this.resourceBValue.textContent = (requestedAmount).toFixed(1);
+		this.resourceBValue.textContent = (requestedAmount).toFixed(3).replace(/\.?0+$/, '');
 		return { resourceName, amount, requestedResourceName, requestedAmount };
 	}
 	#setOfferViewerConfirmButtonAttributes() {
@@ -160,10 +166,12 @@ export class NodeCardComponent {
 		const bValue = parseFloat(this.resourceBValue.textContent) || 0;
 		const bothValueFilled = (aValue > 0 && bValue > 0) ? true : false;
 		const oneValueChanged = aValue !== myExistingOffer?.amount || bValue !== myExistingOffer?.requestedAmount;
+		this.nodeCardCancelOfferBtn.disabled = myExistingOffer ? false : true;
 		this.nodeCardConfirmOfferBtn.textContent = myExistingOffer ? 'Modify Offer' : 'Send Offer';
 		this.nodeCardConfirmOfferBtn.disabled = bothValueFilled && oneValueChanged ? false : true; // prepared for outgoing
 		if (this.showingMyOffer || !this.showingRemoteOffer) return;
 		
+		// OVERRIDE WITH REMOTE OFFER IF NEEDED
 		this.nodeCardConfirmOfferBtn.textContent = 'Accept Offer';
 		this.nodeCardConfirmOfferBtn.disabled = true;
 		
@@ -203,8 +211,9 @@ export class NodeCardComponent {
 		const playerId = this.gameClient.showingCardOfId;
 		if (!playerId) return;
 
-		const action = { type: 'cancel-trade-offer', targetPlayerId: playerId };
+		const action = { type: 'cancel-private-trade-offer', targetPlayerId: playerId };
 		this.gameClient.digestMyAction(action);
+		this.#lockCancelConfirmButtonsForFeedback();
 	}
 	#handleOfferConfirmation() {
 		if (!this.showingMyOffer && !this.showingRemoteOffer) return;
@@ -215,7 +224,7 @@ export class NodeCardComponent {
 		if (this.showingMyOffer) { // SEND OR MODIFY OFFER
 			console.log(`Sending/modifying trade offer to ${playerId}: Send ${resourceAValue} ${resourceAName}, Request ${resourceBValue} ${resourceBName}`);
 			const action = {
-				type: 'set-trade-offer',
+				type: 'set-private-trade-offer',
 				resourceName: resourceAName,
 				amount: resourceAValue,
 				requestedResourceName: resourceBName,
@@ -223,16 +232,22 @@ export class NodeCardComponent {
 				targetPlayerId: playerId,
 			};
 			this.gameClient.digestMyAction(action);
+			this.#lockCancelConfirmButtonsForFeedback();
 		} else if (this.showingRemoteOffer) { // ACCEPT OFFER
 			console.log(`Accepting trade offer from ${playerId}`);
-			const action = { type: 'take-trade-offer', offererId: playerId };
+			const action = { type: 'take-private-trade-offer', offererId: playerId };
 			this.gameClient.digestMyAction(action);
 		}
+	}
+	#lockCancelConfirmButtonsForFeedback() {
+		this.myOfferChanged = true;
+		this.nodeCardCancelOfferBtn.disabled = true;
+		this.nodeCardConfirmOfferBtn.disabled = true;
 	}
 
 	/** PLAYER CARD PRIVATE METHODS */
 	#updateCardPositionCounter = 0;
-	#updateCard(connectedOnly = false) {
+	#updateCard(connectedOnly = false) { // CALLED EACH FRAME
 		const playerId = this.gameClient.showingCardOfId;
 		const remotePlayer = playerId ? this.gameClient.players[playerId] : null;
 		if (!playerId || !remotePlayer) return this.nodeCardElem.classList.remove('visible');
@@ -250,9 +265,6 @@ export class NodeCardComponent {
 		this.#updateCardConnectionButton(isConnected);
 		this.#updateCardTradeOfferButton(connectedOnly ? isConnected : true);
 		this.#updateCardRemoteOfferButton(connectedOnly ? isConnected : true);
-
-		if (this.showingRemoteOffer) this.#updateRemoteOfferAttributes();
-		this.#setOfferViewerConfirmButtonAttributes();
 	}
 	#updateCardPosition(playerId = 'toto', positionTolerance = 12) {
 		const position = this.visualizer.networkRenderer.getNodePositionRelativeToCanvas(playerId);

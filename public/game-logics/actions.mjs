@@ -41,36 +41,23 @@ export class SetParamAction {
 	/** @type {any} */		value;
 }
 
-export class SetTradeOffer {
-	type = 'set-trade-offer';
+export class SetPrivateTradeOffer { // PRIVATE OFFER ONLY
+	type = 'set-private-trade-offer';
 	/** @type {string} */	resourceName;
 	/** @type {number} */	amount;
 	/** @type {string} */	requestedResourceName;
 	/** @type {number} */	requestedAmount;
-	
-	/** @type {number | undefined} undefined for private offers */
-	minStock;
-	/** @type {boolean | undefined} undefined for private offers */
-	isActive;
-	/** @type {string | undefined} undefined for public offers */
-	targetPlayerId;
+	/** @type {string} */ 	targetPlayerId;
 }
 
-export class CancelTradeOffer {
-	type = 'cancel-trade-offer';
-	/** @type {string | undefined} undefined for private offers */
-	resourceName;
-	/** @type {string | undefined} undefined for public offers */
-	targetPlayerId;
+export class CancelPrivateTradeOffer {
+	type = 'cancel-private-trade-offer';
+	/** @type {string} */ 	targetPlayerId;
 }
 
-export class TakeTradeOffer {
-	type = 'take-trade-offer';
-	/** @type {string} */ offererId;
-	/** @type {string | undefined} undefined for private offers */
-	resourceName;
-	/** @type {number | undefined} undefined for private offers */
-	amount;
+export class TakePrivateTradeOffer {
+	type = 'take-private-trade-offer';
+	/** @type {string} */	 offererId;
 }
 
 export class RecycleAction {

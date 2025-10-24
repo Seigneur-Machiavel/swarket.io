@@ -147,8 +147,8 @@ export class EnergyBarComponent {
 		const percentage = (energy / maxEnergy) * 100;
 		this.fill.style.width = `${percentage}%`;
 		this.fill.style.filter = `brightness(${30 + percentage * .8}%)`;
-		this.text.textContent = `${percentage.toFixed(1)}%`;
-		this.tooltip.textContent = `${energy.toFixed(1)}/${Math.round(maxEnergy)}`;
+		this.text.textContent = `${percentage.toFixed(2).replace(/\.?0+$/, '')}%`;
+		this.tooltip.textContent = `${energy.toFixed(2).replace(/\.?0+$/, '')}/${Math.round(maxEnergy)}`;
 	}
 }
 
@@ -259,7 +259,7 @@ export class DeadNodesComponent {
 		const resources = deadNodeElem.querySelectorAll('.resource-value');
 		for (const r of resources) {
 			const resourceName = r.getAttribute('data-resource-name');
-			r.textContent = this.gameClient.players[nodeId]?.inventory.getAmount(resourceName).toFixed(1);
+			r.textContent = this.gameClient.players[nodeId]?.inventory.getAmount(resourceName).toFixed(3).replace(/\.?0+$/, '');
 		}
 
 		this.deadNodes[nodeId] = deadNodeElem;
