@@ -26,13 +26,14 @@ export class GameClient {
 	gameStateAskedFrom = null; // id of node we asked game state from
 
 	/** @type {Record<string, PlayerNode>} */ players = {};
-	alivePlayersCount() { let count = 0; for (const p in this.players) if (this.players[p].getEnergy) count++; return count; }
+	playersCount = 0;
+	alivePlayersCount() { return this.playersCount - this.deadPlayers.size; }
 	deadPlayers = new Set();	// temp storage of dead players to be removed
 	onExecutedTurn = []; 		// callbacks
 	syncAskedBy = []; 			// ids of nodes who asked for sync
 	selectedDeadNodeId = null; 	// selected node to recycle from UI
 	showingCardOfId = null;		// id of node currently shown in node card UI
-	swapModule = new SwapModule(this);
+	swapModule;
 
 	/** @type {Record<string, { offer: {signal: string, offerHash: string}, expiration: number }>} */
 	connectionOffers = {}; // pending connection offers { nodeId: { offer: object, expiration: number } }
@@ -50,6 +51,7 @@ export class GameClient {
 		this.#turnExecutionLoop(); // start turn loop => do nothing until scheduled time
 		this.node = node; this.verb = node.verbose;
 		this.turnSystem = new TurnSystem(this.node);
+		this.swapModule = new SwapModule(this);
 
 		node.onPeerConnect((peerId, direction) => this.#onPeerConnect(peerId, direction));
 		node.onMessageData((id, message) => this.#onDirectMessage(id, message));
@@ -120,6 +122,7 @@ export class GameClient {
 	/** @param {string} senderId @param {any} d @param {number} HOPS @param {import('../../node_modules/hive-p2p/core/gossip.mjs').GossipMessage} message */
 	#onGossipMessage(senderId, d, HOPS, message) {
 		if (senderId === this.node.id) return console.warn(`We received our own gossip message back, ignoring.`);
+
 		const { topic, data } = d;
 		const { timestamp } = message;
 		//if (this.node.time - timestamp > this.turnSystem.turnDuration / 2) return; // too old message
@@ -135,7 +138,7 @@ export class GameClient {
 			this.digestPlayerIntents(intents, height, prevHash, senderId);
 		} else if (topic === 'pto') { // 'public-trade-offers'
 			const player = this.players[senderId];
-			if (!player) return console.warn(`Player not found for public trade offers: ${senderId}`);
+			if (!player) return console.warn(`No player associated to gossip sender ${senderId}, ignoring 'public-trade-offers' message.`);
 			if (player.tradeHub.getSignalRange < HOPS) return this.node.arbiter.adjustTrust(senderId, -600_000, 'Peer sent public trade offers with insufficient signal range');
 			if (data[1] <= this.height) return; // expired offers
 			player.tradeHub.handleIncomingPublicOffers(senderId, data[0], data[1] - this.height);
@@ -173,6 +176,7 @@ export class GameClient {
 		for (const playerData of playersData) {
 			const p = PlayerNode.playerFromData(playerData, extractionMode);
 			this.players[p.id] = p;
+			this.playersCount++;
 		}
 
 		console.log('Imported players:');
@@ -248,7 +252,7 @@ export class GameClient {
 			// MANAGHE PUBLIC TRADE OFFERS => EXPIRY & SELF DISPATCH
 			for (const playerId in this.players)
 				this.players[playerId].tradeHub?.turnUpdate(this, playerId === this.node.id);
-			if (this.myPlayer.tradeHub?.publicOffersDispatchRequested)
+			if (this.alive && this.myPlayer.tradeHub?.publicOffersDispatchRequested)
 				NodeInteractor.dispatchPublicTradeOffers(this);
 
 			for (const cb of this.onExecutedTurn) cb(this.height);
@@ -257,9 +261,11 @@ export class GameClient {
 	}
 	#execTurn() {
 		// EXECUTE INTENTS (PLAYERS ACTIONS) => Set startTurn for new active players
-		const organizedIds = this.turnSystem.getOrganizedPlayerIds(this.height);
-		const turnIntents = this.turnSystem.playersIntents[this.height];
+		const organizedIds = this.turnSystem.getOrganizedAlivePlayerIds(this);
+		const turnIntents = this.turnSystem.playersIntents[this.height] || {};
+		this.turnSystem.freeIntentsMemoryUpToHeight(this.height);
 		this.#execTurnIntents(organizedIds, turnIntents);
+		this.swapModule.attributeTurnThefts(organizedIds, this.turnSystem.prevHash);
 		this.swapModule.execTurnSwaps(this, organizedIds);
 		
 		// HASH THE TURN AFTER INTENTS EXECUTION > LAST TIME TO AVOID ANTICIPATION
@@ -326,6 +332,7 @@ export class GameClient {
 		for (const playerId of toRemove) {
 			delete this.players[playerId];
 			this.deadPlayers.delete(playerId);
+			this.playersCount--;
 			if (this.verb > 1) console.log(`Player ${playerId} removed from game (dead).`);
 		}
 

@@ -10,7 +10,6 @@ export class SeededRandom {
 
 	/** Shuffles array in-place with deterministic seed @param {string | number} seed */
 	static shuffle(array = [], seed = 0) {
-		array.sort();
 		let state = typeof seed === 'string' ? xxHash32(seed) : seed;
 		for (let i = array.length - 1; i > 0; i--) {
 			state = lcg(state);
@@ -20,19 +19,17 @@ export class SeededRandom {
 		return array;
 	}
 
-	/** Picks N random items from array (no mutation) @param {string | number} seed */
-	static pick(array = [], count = 2, seed = 0) {
-		if (count >= array.length) return [...array];
-
-		const shuffled = SeededRandom.shuffle([...array], seed);
-		return shuffled.slice(0, count);
-	}
-
 	/** Picks one random item from array @param {string | number} seed */
 	static pickOne(array = [], seed = 0) {
 		if (array.length === 0) return;
 		const state = lcg(typeof seed === 'string' ? xxHash32(seed) : seed);
-		return array[state % array.length];
+		return array[Math.floor((state / 4294967296) * array.length)];
+	}
+
+	/** Generates a random float between 0 and 1 @param {string | number} seed */
+	static randomFloat(seed = 0) {
+		const state = lcg(typeof seed === 'string' ? xxHash32(seed) : seed);
+		return state / 4294967296; // Full 32-bit range → [0, 1)
 	}
 }
 

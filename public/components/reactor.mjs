@@ -60,9 +60,13 @@ export class ReactorComponent {
 			for (const r in inputs) this.productionsLines[lineKey].updateIOValue('input', r, inputs[r]);
 			for (const r in outputs) this.productionsLines[lineKey].updateIOValue('output', r, outputs[r]);
 
+			this.productionsLines[lineKey].mainElement.classList.remove('produced');
+			const hasBroken = reactor.linesWhoBrokeThisTurn.indexOf(lineKey) !== -1;
+			if (hasBroken) setTimeout(() => this.productionsLines[lineKey].mainElement.classList.add('broken'), 300);
+			else this.productionsLines[lineKey].mainElement.classList.remove('broken');
+
 			const hasProduced = reactor.linesWhoProducedThisTurn.indexOf(lineKey) !== -1;
-			if (hasProduced) this.productionsLines[lineKey].mainElement.classList.add('enabled');
-			else this.productionsLines[lineKey].mainElement.classList.remove('enabled');
+			if (hasProduced || hasBroken) setTimeout(() => this.productionsLines[lineKey].mainElement.classList.add('produced'), 10);
 		}
 	}
 

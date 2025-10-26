@@ -304,7 +304,7 @@ class SwapComponent {
 		if (takerOrder || this.swapBtnClicked) {
 			const [filled, sold] = [takerOrder?.filledAmount || 0, takerOrder?.soldAmount || 1];
 			const fillingPerc = filled / sold * 100;
-			this.swapBtnText.textContent = fillingPerc === 100 ? 'Filled! 100%' : `Filling... ~${fillingPerc.toFixed(1).replace(/\.?0+$/, '')}%`;
+			this.swapBtnText.textContent = fillingPerc === 100 ? 'Filled! 100%' : `Filling... ${fillingPerc.toFixed(2).replace(/\.?0+$/, '')}%`;
 			this.swapBtn.classList.add('filling');
 			this.swapBtnLoader.style.transform = `translateX(${fillingPerc}%)`;
 		} else {
@@ -330,6 +330,7 @@ class SwapComponent {
 			expiry: this.gameClient.height + 1 + expiry
 		};
 		this.gameClient.digestMyAction(action);
+		this.swapBtnText.textContent = 'Broadcasting...';
 		this.swapBtn.disabled = true; // feedback & prevent multiple clicks
 		this.swapBtnClicked = true;
 

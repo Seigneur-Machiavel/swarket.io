@@ -23,7 +23,7 @@ import { filterValidActions } from './actions.mjs';
 export class TurnSystem {
 	node; verb;
 	prevHash = 'hive-p2p-is-the-best-p2p'; // hash of last executed turn
-	turnDuration = 2000; // ms
+	turnDuration = 1000; // ms
 
 	T0 = null; 	// time of first turn
 	T0Reference = null; // reference time to calculate T0 drift
@@ -89,11 +89,16 @@ export class TurnSystem {
 		if (id === this.node.id) console.warn(`We received our own intents back from gossip, ignoring.`);
 		else if (this.verb > 2) console.log(`Intents received for turn #${height} from ${id}:`, this.playersIntents[height][id]);
 	}
-	getOrganizedPlayerIds(height = 0) {
-		const nodeIds = Object.keys(this.playersIntents[height] || {});
+	/** @param {import('./game.mjs').GameClient} gameClient @returns {string[]} */
+	getOrganizedAlivePlayerIds(gameClient) {
+		const nodeIds = [];
+		for (const pid in gameClient.players)
+			if (!gameClient.deadPlayers.has(pid)) nodeIds.push(pid);
+		return SeededRandom.shuffle(nodeIds.sort(), this.prevHash);
+	}
+	freeIntentsMemoryUpToHeight(height = 0) {
 		delete this.playersIntents[height - 2]; // free memory
 		delete this.playersIntents[height - 1]; // free memory
-		return SeededRandom.shuffle(nodeIds, this.prevHash);
 	}
 	getTurnHash(height, playersData = []) {
 		/** @type {string} */

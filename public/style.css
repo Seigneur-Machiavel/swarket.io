@@ -27,7 +27,7 @@
 	--fabricator-icon: url(assets/buildings/fabricator.png);
 	--trade-hub-icon: url(assets/buildings/trade-hub.png);
 
-	/* === MODULE ICONS === */
+	/* === REACTOR MODULE ICONS === */
 	--efficiency-icon: url(assets/buildings/reactor_modules/efficiency.png);
 	--overload-icon: url(assets/buildings/reactor_modules/overload.png);
 	--synergy-icon: url(assets/buildings/reactor_modules/synergy.png);
@@ -35,6 +35,16 @@
 	--catalyst-icon: url(assets/buildings/reactor_modules/catalyst.png);
 	--burst-icon: url(assets/buildings/reactor_modules/burst.png);
 	--quantum-icon: url(assets/buildings/reactor_modules/quantum.png);
+
+	/* === TRADEHUB MODULE ICONS === */
+	--connectivity-icon: url(assets/buildings/tradehub_modules/connectivity.png);
+	--trader-icon: url(assets/buildings/tradehub_modules/trader.png);
+	--thief-icon: url(assets/buildings/tradehub_modules/thief.png);
+	--beacon-icon: url(assets/buildings/tradehub_modules/beacon.png);
+	--planification-icon: url(assets/buildings/tradehub_modules/planification.png);
+	--protection-icon: url(assets/buildings/tradehub_modules/protection.png);
+	--hacker-icon: url(assets/buildings/tradehub_modules/hacker.png);
+	--optimizer-icon: url(assets/buildings/tradehub_modules/optimizer.png);
 
 	/* === UPGRADE ICONS === */
 	--producer-icon: url(assets/upgrades/producer.png);
@@ -1066,6 +1076,32 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .tree-step .module.quantum::before {
 	background-image: var(--quantum-icon);
 }
+.tree-step .module.connectivity::before {
+	background-image: var(--connectivity-icon);
+}
+.tree-step .module.trader::before {
+	background-image: var(--trader-icon);
+}
+.tree-step .module.thief::before {
+	background-image: var(--thief-icon);
+}
+.tree-step .module.beacon::before {
+	background-image: var(--beacon-icon);
+}
+.tree-step .module.planification::before {
+	background-image: var(--planification-icon);
+}
+.tree-step .module.protection::before {
+	background-image: var(--protection-icon);
+}
+.tree-step .module.hacker::before {
+	background-image: var(--hacker-icon);
+}
+.tree-step .module.optimizer::before {
+	background-image: var(--optimizer-icon);
+	transform: scale(1.1);
+    background-position-x: 36%;
+}
 .tree-step .module .tooltip {
 	top: 120%;
     left: 50%;
@@ -1128,6 +1164,10 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	height: 100%;
 }
 /** === PRODUCTION CYCLE - FITTINGS & CHAINS === */
+.production-chain, .production-chain-fitting {
+	color: var(--text-darker);
+	transition: color .2s cubic-bezier(0.175, 0.885, 0.32, 1.5);
+}
 .production-chain {
 	position: relative;
 	display: flex;
@@ -1170,17 +1210,30 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	backdrop-filter: brightness(1);
 }
 
-.production-line.enabled .resource-inputs {
+.production-line.produced .resource-inputs {
 	animation: inputsGlow var(--turn-duration) infinite;
 }
-.production-line.enabled .resource-outputs {
+.production-line:not(.broken).produced .resource-outputs {
 	animation: inputsGlow var(--turn-duration) .2s infinite reverse;
 }
-.production-line.enabled .chain::after {
+.production-line.produced .chain::after {
 	animation: chainGlowGrow var(--turn-duration) infinite;
 }
-.production-line.enabled .fitting::after {
+.production-line.produced .fitting::after {
 	animation: fittingGlowGrow var(--turn-duration) infinite;
+}
+.production-line.broken .resource-inputs {
+	animation: inputsGlow var(--turn-duration) forwards;
+}
+.production-line.broken .chain::after {
+	animation: chainGlowGrow var(--turn-duration) .4 forwards;
+}
+.production-line.broken .fitting::after {
+	animation: fittingGlowGrow var(--turn-duration) .4 forwards;
+}
+.production-line.broken .production-chain, .production-line.broken .production-chain-fitting {
+	color: #f45c5c;
+	transition: color .4s .1s cubic-bezier(0.175, 0.685, 0.22, 1.5);
 }
 @keyframes inputsGlow {
 	0% { filter: brightness(.8); }

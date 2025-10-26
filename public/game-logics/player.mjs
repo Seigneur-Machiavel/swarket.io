@@ -42,8 +42,8 @@ export class PlayerNode {
 		this.tradeHub = new TradeHub(); // DEBUG
 		this.tradeHub.upgradePoints = 10; // DEBUG bypass
 		this.upgradeSet.buildTradeHub = 1; // DEBUG bypass
-		this.tradeHub.upgradeModule('negotiation'); // DEBUG bypass
-		this.tradeHub.upgradeModule('negotiation'); // DEBUG bypass
+		this.tradeHub.upgradeModule('trader'); // DEBUG bypass
+		this.tradeHub.upgradeModule('trader'); // DEBUG bypass
 		this.tradeHub.upgradeModule('connectivity'); // DEBUG bypass
 	}
 	/** @param {'object' | 'array'} extractionMode */
@@ -96,7 +96,7 @@ export class PlayerNode {
 		const basis = .5 * (1 + wear); 		// base consumption
 		this.#setEnergyChange(-basis);		// maintenance consumption
 		this.#setEnergyChange(this.#produceRawResources(basis));
-		this.#setEnergyChange(this.reactor?.consumeResourcesAndGetProduction(this).energy);
+		this.#setEnergyChange(this.reactor?.consumeResourcesAndGetProduction(this, turnHash).energy);
 		this.#applyEnergyChange();
 		//TODO: tradeHub energy consumption
 		//TODO: fabricator production & consumption
@@ -215,7 +215,7 @@ export class PlayerNode {
 		const { verb, node, players } = gameClient;
 		if (!node.cryptoCodex.isPublicNode(playerId)) return; // only accept new players from public nodes
 		const p = PlayerNode.playerFromData(intent.playerData, intent.extractionMode);
-		if (!players[p.id]) players[p.id] = p;
+		if (!players[p.id]) { players[p.id] = p; gameClient.playersCount++; }
 		if (node.publicUrl) gameClient.syncAskedBy.push(p.id); // send game state at the end of the turn
 		if (verb > 2) console.log(`%cImported new player from intent:`, 'color: orange', p.id);
 		return true;
@@ -238,12 +238,21 @@ export class PlayerNode {
 	#produceRawResources(consumptionBasis = 1) {
 		if (!this.getEnergy) return 0;
 		let totalConso = 0;
+		let totalProd = 0;
+		// CALCULATE PRODUCTION WITH UPGRADE MULTIPLIER
 		const multiplier = 1 + (this.upgradeSet.producer * .25);
 		for (const r in this.production) {
+			if (!this.production[r] || !this.rawProductionRate) continue;
 			const prod = this.production[r] * multiplier * this.rawProductionRate;
 			this.inventory.addAmount(r, prod);
-			if (prod) totalConso -= consumptionBasis * this.rawProductionRate;
+			totalConso -= consumptionBasis * this.rawProductionRate;
+			totalProd += prod;
 		}
+
+		// ENERGY FROM RAW RESOURCES (if reactor has the synergy module)
+		const getEnergyPerRawResource = this.reactor?.getEnergyPerRawResource || 0;
+		if (totalProd && getEnergyPerRawResource) this.inventory.addAmount('energy', totalProd * getEnergyPerRawResource);
+
 		return totalConso;
 	}
 	#applyEnergyChange() {

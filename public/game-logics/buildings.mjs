@@ -1,3 +1,4 @@
+import { SeededRandom } from './consensus.mjs';
 import { VALID_RESOURCES, BLUEPRINT, ResourcesProductionType } from './resources.mjs';
 import { REACTOR_MODULES, FABRICATOR_MODULES, TRADE_HUB_MODULES } from './buildings-modules.mjs';
 /** @type {import('hive-p2p/libs/xxhash32.mjs').xxHash32} */
@@ -6,14 +7,21 @@ const xxHash32 = typeof window !== 'undefined'
 	: (await import('hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32));
 
 const KEYS_TO_NOT_EXTRACT = new Set([
-	'lastTakerOrderFullyFilled',
-	'offersExpiryDefault',
-	'offersExpiryCounter',
-	'maxAuthorizedFillsPerTurn',
-	'publicOffersDispatchRequested',
-	'publicOffers',
-	'publicOffersByResource',
-	'localFillIntents'
+	// ALL BUILDINGS
+	'linesWhoProducedThisTurn',		// FOR UI PURPOSES
+	'linesWhoBrokeThisTurn',		// FOR UI PURPOSES
+	'breakdownRiskBasis', 			// FOR GAME LOGIC PURPOSES
+
+	// TRADE HUB
+	'turnThiefs', 					// FOR GAME LOGIC PURPOSES
+	'lastTakerOrderFullyFilled', 	// FOR UI PURPOSES
+	'offersExpiryDefault', 			// FOR GAME LOGIC PURPOSES
+	'offersExpiryCounter', 			// FOR GAME LOGIC PURPOSES
+	'maxAuthorizedFillsPerTurn', 	// FOR GAME LOGIC PURPOSES
+	'publicOffersDispatchRequested',// FOR GAME LOGIC PURPOSES
+	'publicOffers', 				// MY PLAYER ONLY
+	'publicOffersByResource', 		// REMOTE PLAYERS ONLY
+	'localFillIntents' 				// FOR GAME LOGIC PURPOSES
 ]);
 
 export class BuildingBuilder {
@@ -49,9 +57,16 @@ export class Building {
 	modulesLevel = [];
 	upgradePoints = 0;
 
+	// NOT EXTRACTED ----------------------------
+	linesWhoProducedThisTurn = [];
+	linesWhoBrokeThisTurn = [];
+	breakdownRiskBasis = .25; 		// FOR GAME LOGIC PURPOSES: 25% base risk per turn
+	// END NOT EXTRACTED ------------------------
+
 	level() {
 		return this.modulesLevel.reduce((acc, cur) => acc + cur, 0);
 	}
+	/** @returns {number} */
 	getModuleIndex(moduleKey = '') {
 		if (this.type === 'r') return REACTOR_MODULES.allModulesKeys.indexOf(moduleKey);
 		if (this.type === 'f') return FABRICATOR_MODULES.allModulesKeys.indexOf(moduleKey);
@@ -81,15 +96,13 @@ export class Building {
 		this.modulesLevel[moduleIndex] = currentLevel + 1;
 		this.upgradePoints--;
 	}
-	getProductionLineEffect(lineKey = 'toto') { // TEMPLATE -> WILL BE OVERRIDDEN
-		/** @type {BLUEPRINT} */
-		const bluePrints = {};
-		return bluePrints['toto'];
-	}
-	/** @param {import('./player.mjs').PlayerNode} player @returns {ResourcesProductionType} */
-	consumeResourcesAndGetProduction(player) {
+	/** @param {import('./player.mjs').PlayerNode} player @param {string} randomSeed @returns {ResourcesProductionType} */
+	consumeResourcesAndGetProduction(player, randomSeed) {
+		const linesWhoBrokeLastTurn = this.linesWhoBrokeThisTurn;
 		this.linesWhoProducedThisTurn = [];
+		this.linesWhoBrokeThisTurn = [];
 		if (!player.getEnergy) return {};
+		
 		const production = {}; 	// ResourcesProductionType
 		for (const lineKey of this.activeProductionLines) {
 			const { inputs, outputs } = this.getProductionLineEffect(lineKey);
@@ -100,8 +113,22 @@ export class Building {
 				break;
 			}
 			if (missingResource) continue;
+			
+			// CALCULATE IF BREAKDOWN OCCURS
+			let breakdownChance = this.breakdownRiskBasis; 		// basis 25%
+			breakdownChance *= this.getBreakdownRiskCoef || 1;	// from 1 to .05
+			const hash = xxHash32(`${randomSeed}-${lineKey}-${player.id}`);
+			const rnd = SeededRandom.randomFloat(hash);
+			//console.info(`rdn: ${rnd} vs breakdownChance: ${breakdownChance} for line ${lineKey}`);
+			if (rnd < breakdownChance) {
+				this.linesWhoBrokeThisTurn.push(lineKey);
+				// IF LINE BROKE LAST TURN, DO NOT CONSUME RESOURCES, ELSE CONSUME THEM
+				if (!linesWhoBrokeLastTurn.includes(lineKey))
+					for (const r in inputs) player.inventory.subtractAmount(r, inputs[r]);
+				continue; // line broke, skip production
+			}
 
-			// IF SO, APPLY CONSUMATION & FILL PRODUCTION
+			// CONSUME RESOURCES && FILL PRODUCTION
 			for (const r in inputs) player.inventory.subtractAmount(r, inputs[r]);
 			for (const r in outputs) production[r] = (production[r] || 0) + outputs[r];
 			this.linesWhoProducedThisTurn.push(lineKey);
@@ -133,10 +160,19 @@ export class Reactor extends Building {
 
 	/** @type {Array<0 | .25 | .5 | .75 | 1>} */
 	productionRates = [1];
-	linesWhoProducedThisTurn = [];
 	activeProductionLines = ['energyFromChipsAndEngineers'];
 	modulesLevel = REACTOR_MODULES.emptyModulesArray();
 
+	get getEnergyPerRawResource() { // default : 0
+		const efficiencyModuleIndex = this.getModuleIndex('efficiency');
+		const { energyPerRawResource } = REACTOR_MODULES.getModuleEffect('efficiency', this.modulesLevel[efficiencyModuleIndex]) || {};
+		return energyPerRawResource || 0;
+	}
+	get getBreakdownRiskCoef() { // default : 1
+		const efficiencyModuleIndex = this.getModuleIndex('efficiency');
+		const { breakdownRiskCoef } = REACTOR_MODULES.getModuleEffect('efficiency', this.modulesLevel[efficiencyModuleIndex]) || {};
+		return breakdownRiskCoef || 1;
+	}
 	getProductionLineEffect(lineName = 'energyFromChipsAndEngineers') { // TODO: MAKE A LOOP WITH ALL PRODUCTION LINES
 		const lineIndex = this.activeProductionLines.indexOf(lineName);
 		if (lineIndex === -1) return { inputs: {}, outputs: {} };
@@ -144,16 +180,14 @@ export class Reactor extends Building {
 		const productionRate = this.productionRates[lineIndex] || 0;
 		if (productionRate === 0) return { inputs: {}, outputs: {} };
 
-		const mod = { inputCoef: 1, outputCoef: 1, breakdownRiskCoef: 1, energyPerRawResource: 0 };
+		const mod = { inputCoef: 1, outputCoef: 1 };
 		for (let i = 0; i < this.modulesLevel.length; i++) {
 			const moduleLevel = this.modulesLevel[i];
 			if (moduleLevel === 0) continue;
 			const moduleKey = REACTOR_MODULES.allModulesKeys[i];
-			const { inputCoef, outputCoef, breakdownRiskCoef, energyPerRawResource } = REACTOR_MODULES.getModuleEffect(moduleKey, moduleLevel) || {};
+			const { inputCoef, outputCoef } = REACTOR_MODULES.getModuleEffect(moduleKey, moduleLevel) || {};
 			mod.inputCoef *= inputCoef !== undefined ? inputCoef : 1;
 			mod.outputCoef *= outputCoef !== undefined ? outputCoef : 1;
-			mod.breakdownRiskCoef *= breakdownRiskCoef !== undefined ? breakdownRiskCoef : 1;
-			//mod.energyPerRawResource += energyPerRawResource || 0; => TODO
 		}
 
 		const bluePrint = BLUEPRINT[lineName]();
@@ -226,6 +260,7 @@ export class TradeHub extends Building {
 	authorizedFills = {}; 			// (from intent) erased after each turn
 	
 	// NOT EXTRACTED ----------------------------
+	turnThiefs = []; 				// FOR GAME LOGIC PURPOSES
 	lastTakerOrderFullyFilled = false; // FOR UI PURPOSES
 	offersExpiryDefault = 7; 		// in turns
 	offersExpiryCounter = 0; 		// in turns
@@ -245,19 +280,43 @@ export class TradeHub extends Building {
 		return maxConnections || 2;
 	}
 	get getMaxPublicOffers() { // DEFAULT 0
-		const negotiationModuleIndex = this.getModuleIndex('negotiation');
-		const { maxTradeOffer } = TRADE_HUB_MODULES.getModuleEffect('negotiation', this.modulesLevel[negotiationModuleIndex]) || {};
+		const traderModuleIndex = this.getModuleIndex('trader');
+		const { maxTradeOffer } = TRADE_HUB_MODULES.getModuleEffect('trader', this.modulesLevel[traderModuleIndex]) || {};
 		return maxTradeOffer || 0;
 	}
-	get getComissionRate() { // DEFAULT 0%
+	get getComissionRate() { // DEFAULT 0% // DEPRECATED
 		const brokerModuleIndex = this.getModuleIndex('broker');
 		const { comissionRate } = TRADE_HUB_MODULES.getModuleEffect('broker', this.modulesLevel[brokerModuleIndex]) || {};
 		return comissionRate || 0;
+	}
+	get getMaxThefts() { // DEFAULT 0
+		const thiefModuleIndex = this.getModuleIndex('thief');
+		const { maxThefts } = TRADE_HUB_MODULES.getModuleEffect('thief', this.modulesLevel[thiefModuleIndex]) || {};
+		return maxThefts || 0;
 	}
 	get getSignalRange() { // DEFAULT 1
 		const brokerModuleIndex = this.getModuleIndex('broker');
 		const { signalRange } = TRADE_HUB_MODULES.getModuleEffect('broker', this.modulesLevel[brokerModuleIndex]) || {};
 		return signalRange || 1;
+	}
+	get getTheftSuccessRate() { // DEFAULT 10%
+		const planificationModuleIndex = this.getModuleIndex('planification');
+		const { theftSuccessRate } = TRADE_HUB_MODULES.getModuleEffect('planification', this.modulesLevel[planificationModuleIndex]) || {};
+		return theftSuccessRate || .1;
+	}
+	get getTheftLossRate() { // DEFAULT 1 (100%)
+		const protectionModuleIndex = this.getModuleIndex('protection');
+		const { theftLossRate } = TRADE_HUB_MODULES.getModuleEffect('protection', this.modulesLevel[protectionModuleIndex]) || {};
+		return theftLossRate || 1;
+	}
+	get hasHacker() { // DEFAULT false
+		const hacker = this.getModuleIndex('hacker');
+		return this.modulesLevel[hacker] > 0;
+	}
+	get getTaxRate() { // DEFAULT 30%
+		const optimizerModuleIndex = this.getModuleIndex('optimizer');
+		const { taxRate } = TRADE_HUB_MODULES.getModuleEffect('optimizer', this.modulesLevel[optimizerModuleIndex]) || {};
+		return taxRate || .3;
 	}
 	/** @returns {TakerOrder | null} */
 	get getTakerOrder() {
@@ -330,6 +389,8 @@ export class TradeHub extends Building {
 		
 		this.publicOffers[id] = [resourceName, requestedResourceName, requestedAmount, minStock, isActive];
 		this.publicOffersDispatchRequested = true;
+
+		return id;
 	}
 	/** @param {string} playerId @param {Record<string, MyPublicTradeOffer>} offersData @param {number} expiry */
 	handleIncomingPublicOffers(playerId, offersData, expiry) {

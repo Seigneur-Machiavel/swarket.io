@@ -1,12 +1,14 @@
-
+import { SeededRandom } from './consensus.mjs';
 
 export class SwapModule {
+	verb;
 	cssStyle = 'color: lightgreen; font-weight: bold;';
 	gameClient;
 
 	/** @param {import('./game.mjs').GameClient} gameClient */
 	constructor(gameClient) {
 		this.gameClient = gameClient;
+		this.verb = gameClient.verb;
 	}
 	/** Only one of the amount should be > 0
 	 * @param {string} soldResource @param {string} boughtResource @param {{ bought: number, sold: number }} amount */
@@ -67,14 +69,42 @@ export class SwapModule {
 		}
 
 		// DEBUG LOGS
-		console.log(`%cSwapModule.updatePrices called`, this.cssStyle);
-		console.log({ soldResource, boughtResource, amount, playersWithOffersCount, totalOppositeAmount, remainingAmount });
+		if (this.verb > 2) console.log(`%cSwapModule.updatePrices called`, this.cssStyle);
+		if (this.verb > 2) console.log({ soldResource, boughtResource, amount, playersWithOffersCount, totalOppositeAmount, remainingAmount });
 		return { totalOppositeAmount, playersToInform };
 	}
+	/** @param {string[]} organizedIds (alive only) @param {string} randomSeed */
+	attributeTurnThefts(organizedIds, randomSeed, maxTheftsPerPlayer = 5) {
+		let totalThefts = 0;
+		const { players, deadPlayers } = this.gameClient;
+
+		// AT FIRST WE CLEANUP PREVIOUS TURN THEFTS
+		for (const pid in players) players[pid].tradeHub.turnThiefs = [];
+
+		// THEN WE ATTRIBUTE NEW TURN THEFTS BASED ON THEFT CAPACITY
+		for (const pid of organizedIds) {
+			const thief = players[pid];
+			if (!thief) continue;
+			for (let i = 0; i < thief.tradeHub?.getMaxThefts || 0; i++) {
+				const targetId = SeededRandom.pickOne(organizedIds, `${randomSeed}-${pid}-thief-${i}`);
+				const target = players[targetId];
+				if (!target || target === pid || deadPlayers.has(target)) continue;
+				if (target.tradeHub.turnThiefs.length >= maxTheftsPerPlayer) continue; // target already has max thefts
+				target.tradeHub.turnThiefs.push(target);
+				totalThefts++;
+			}
+		}
+
+		if (this.verb > 1) console.log(`%cTotal turn thefts attributed: ${totalThefts}`, this.cssStyle);
+	}
+
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string[]} organizedIds */
 	execTurnSwaps(gameClient, organizedIds) {
+		const lth = gameClient.turnSystem.prevHash;
+		let rndIndex = 0;
 		const players = gameClient.players;
 		for (const playerId of organizedIds) {
+			rndIndex++;
 			const maker = gameClient.players[playerId];
 			const tradeHub = maker?.tradeHub;
 			if (!maker || !tradeHub) continue;
@@ -106,15 +136,46 @@ export class SwapModule {
 				// EXECUTE THE TRADE
 				maker.inventory.subtractAmount(sentResource, makerPayment);
 				taker.inventory.subtractAmount(tookResource, takerPayment);
-				maker.inventory.addAmount(tookResource, takerPayment);
-				taker.inventory.addAmount(sentResource, makerPayment);
+
+				const makerFinalIncome = this.#applyThiefsAndTaxes(gameClient, maker, tookResource, takerPayment, `${lth}-${rndIndex}-maker-${maker.id}`);
+				const takerFinalIncome = this.#applyThiefsAndTaxes(gameClient, taker, sentResource, makerPayment, `${lth}-${rndIndex}-taker-${taker.id}`);
+				maker.inventory.addAmount(tookResource, makerFinalIncome);
+				taker.inventory.addAmount(sentResource, takerFinalIncome);
 
 				// DEDUCE FILLED AMOUNT TO TAKER ORDER -> DELETE ORDER IF FULLY FILLED
 				taker.tradeHub.countFillOfTakerOrder(takerPayment);
-				console.log(`%cSwap executed between Maker ${maker.id} and Taker ${taker.id} | ${makerPayment} ${sentResource} for ${takerPayment} ${tookResource}`, this.cssStyle);
+				if (this.verb > 1) console.log(`%cSwap executed between Maker ${maker.id} and Taker ${taker.id} | ${makerPayment} ${sentResource} for ${takerPayment} ${tookResource}`, this.cssStyle);
+				if (this.verb > 1) console.log(`After thefts and taxes: Maker received ${makerFinalIncome.toFixed(3)} ${tookResource}, Taker received ${takerFinalIncome.toFixed(3)} ${sentResource}`);
 			}
 
 			maker.tradeHub.authorizedFills = {}; // reset after processing all fills
 		}
+	}
+	/** @param {import('./game.mjs').GameClient} gameClient @param {import('./player.mjs').PlayerNode} player @param {string} resource @param {string} tookResource @param {number} amount */
+	#applyThiefsAndTaxes(gameClient, player, resource, amount, randomSeed = 'theft') {
+		// APPLY ROBBERIES
+		let finalAmount = 0 + amount;
+		for (const thiefId of player.tradeHub?.turnThiefs || []) {
+			const thief = gameClient.players[thiefId];
+			if (!thief) continue;
+
+			const theftSuccessRate = thief.tradeHub.getTheftSuccessRate;
+			const rnd = SeededRandom.randomFloat(randomSeed);
+			if (rnd > theftSuccessRate) continue; // theft failed
+
+			const theftLossRate = player.tradeHub.getTheftLossRate;
+			const stolenAmount = finalAmount * 0.1 * theftLossRate; // steal 10% of the amount adjusted by loss rate
+			finalAmount -= stolenAmount;
+			if (this.verb > 1) console.log(`%cPlayer ${thief.id} stole ${stolenAmount.toFixed(3)} ${resource} from Player ${player.id} (Success rate: ${(theftSuccessRate*100).toFixed(2)}%, Random: ${(rnd*100).toFixed(2)}%)`, this.cssStyle);
+
+			thief.inventory.addAmount(resource, stolenAmount);
+			break; // only one thief can steal per transaction
+		}
+
+		// APPLY TAXES
+		if (finalAmount <= 0) return 0;
+		const taxRate = player.tradeHub.getTaxRate;
+		finalAmount -= finalAmount * taxRate;
+		return finalAmount;
 	}
 }
