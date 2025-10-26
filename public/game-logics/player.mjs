@@ -35,12 +35,12 @@ export class PlayerNode {
 		this.upgradeSet = upgradeSet;
 
 		this.reactor = new Reactor(); // DEBUG
-		this.reactor.upgradePoints = 10; // DEBUG bypass
+		this.reactor.upgradePoints = 20; // DEBUG bypass
 		this.upgradeSet.buildReactor = 1; // DEBUG bypass
 		this.fabricator = new Fabricator(); // DEBUG
 		this.upgradeSet.buildFabricator = 1; // DEBUG bypass
 		this.tradeHub = new TradeHub(); // DEBUG
-		this.tradeHub.upgradePoints = 10; // DEBUG bypass
+		this.tradeHub.upgradePoints = 20; // DEBUG bypass
 		this.upgradeSet.buildTradeHub = 1; // DEBUG bypass
 		this.tradeHub.upgradeModule('trader'); // DEBUG bypass
 		this.tradeHub.upgradeModule('trader'); // DEBUG bypass
@@ -209,7 +209,6 @@ export class PlayerNode {
 		deadPlayer.inventory.empty();
 		return true;
 	}
-
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} playerId @param {{ playerData: Object | Array, extractionMode: 'object' | 'array' }} intent */
 	#handleNewPlayerIntent(gameClient, playerId, intent) {
 		const { verb, node, players } = gameClient;
@@ -260,7 +259,7 @@ export class PlayerNode {
 		this.inventory.addAmount('energy', totalProd - totalConso);
 		if (this.inventory.getAmount('energy') > this.maxEnergy) this.inventory.setAmount('energy', this.maxEnergy);
 		if (this.inventory.getAmount('energy') < 0) this.inventory.setAmount('energy', 0);
-		if (!this.inventory.getAmount('energy')) console.log(`%c[${this.id}] Node has run out of energy!`, 'color: red; font-weight: bold;');
+		if (!this.inventory.getAmount('energy')) console.log(`%c[${this.id}]> has run out of energy!`, 'color: red; font-weight: bold;');
 	}
 	#addUpgradeOffer(turnHash) {
 		if (!this.getEnergy) return;

@@ -238,7 +238,11 @@ export class GameClient {
 			const needSync = !consensus.prevHash
 			|| (consensus.nodeIds.size > 1 && consensus.prevHash !== this.turnSystem.prevHash);
 			console.log(`> #${this.height.toString().padStart(4, '0')} | co: ${consensus.prevHash} <=> $${consensus.nodeIds.size}/${consensus.total} nodes`);
-			if (needSync) { this.#handleDesync(consensus.nodeIds); continue; }
+			if (needSync) {
+				console.warn(`%cDesync detected! ${this.turnSystem.prevHash} !== consensus => trying to resync`, 'color: yellow');
+				this.#handleDesync(consensus.nodeIds);
+				continue;
+			}
 
 			const startTime = time;
 			const newTurnHash = this.#execTurn();
@@ -330,13 +334,15 @@ export class GameClient {
 		}
 
 		for (const playerId of toRemove) {
+			// REMOVE PLAYER FROM ALL TRACKING STRUCTURES
 			delete this.players[playerId];
 			this.deadPlayers.delete(playerId);
 			this.playersCount--;
 			if (this.verb > 1) console.log(`Player ${playerId} removed from game (dead).`);
-		}
 
-		for (const nodeId of this.node.peerStore.neighborsList)
-			if (!this.players[nodeId]?.getEnergy) this.node.kickPeer(nodeId, 'Player is dead');
+			// KICK PEER IF CONNECTED
+			for (const nodeId of this.node.peerStore.neighborsList)
+				if (nodeId === playerId) this.node.kickPeer(nodeId, 'Player is dead');
+		}
 	}
 }

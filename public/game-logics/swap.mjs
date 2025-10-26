@@ -69,8 +69,8 @@ export class SwapModule {
 		}
 
 		// DEBUG LOGS
-		if (this.verb > 2) console.log(`%cSwapModule.updatePrices called`, this.cssStyle);
-		if (this.verb > 2) console.log({ soldResource, boughtResource, amount, playersWithOffersCount, totalOppositeAmount, remainingAmount });
+		if (this.verb > 3) console.log(`%cSwapModule.updatePrices called`, this.cssStyle);
+		if (this.verb > 3) console.log({ soldResource, boughtResource, amount, playersWithOffersCount, totalOppositeAmount, remainingAmount });
 		return { totalOppositeAmount, playersToInform };
 	}
 	/** @param {string[]} organizedIds (alive only) @param {string} randomSeed */
@@ -95,7 +95,7 @@ export class SwapModule {
 			}
 		}
 
-		if (this.verb > 1) console.log(`%cTotal turn thefts attributed: ${totalThefts}`, this.cssStyle);
+		if (this.verb > 2) console.log(`%cTotal turn thefts attributed: ${totalThefts}`, this.cssStyle);
 	}
 
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string[]} organizedIds */
@@ -144,8 +144,8 @@ export class SwapModule {
 
 				// DEDUCE FILLED AMOUNT TO TAKER ORDER -> DELETE ORDER IF FULLY FILLED
 				taker.tradeHub.countFillOfTakerOrder(takerPayment);
-				if (this.verb > 1) console.log(`%cSwap executed between Maker ${maker.id} and Taker ${taker.id} | ${makerPayment} ${sentResource} for ${takerPayment} ${tookResource}`, this.cssStyle);
-				if (this.verb > 1) console.log(`After thefts and taxes: Maker received ${makerFinalIncome.toFixed(3)} ${tookResource}, Taker received ${takerFinalIncome.toFixed(3)} ${sentResource}`);
+				if (this.verb > 2) console.log(`%cSwap executed between Maker ${maker.id} and Taker ${taker.id} | ${makerPayment} ${sentResource} for ${takerPayment} ${tookResource}`, this.cssStyle);
+				if (this.verb > 2) console.log(`After thefts and taxes: Maker received ${makerFinalIncome.toFixed(3)} ${tookResource}, Taker received ${takerFinalIncome.toFixed(3)} ${sentResource}`);
 			}
 
 			maker.tradeHub.authorizedFills = {}; // reset after processing all fills
@@ -166,7 +166,7 @@ export class SwapModule {
 			const theftLossRate = player.tradeHub.getTheftLossRate;
 			const stolenAmount = finalAmount * 0.1 * theftLossRate; // steal 10% of the amount adjusted by loss rate
 			finalAmount -= stolenAmount;
-			if (this.verb > 1) console.log(`%cPlayer ${thief.id} stole ${stolenAmount.toFixed(3)} ${resource} from Player ${player.id} (Success rate: ${(theftSuccessRate*100).toFixed(2)}%, Random: ${(rnd*100).toFixed(2)}%)`, this.cssStyle);
+			if (this.verb > 2) console.log(`%cPlayer ${thief.id} stole ${stolenAmount.toFixed(3)} ${resource} from Player ${player.id} (Success rate: ${(theftSuccessRate*100).toFixed(2)}%, Random: ${(rnd*100).toFixed(2)}%)`, this.cssStyle);
 
 			thief.inventory.addAmount(resource, stolenAmount);
 			break; // only one thief can steal per transaction

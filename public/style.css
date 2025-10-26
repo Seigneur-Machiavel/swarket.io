@@ -475,6 +475,9 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	border-color: var(--color2);
 	transition: border-color .2s cubic-bezier(0.175, 0.885, 0.32, .575), scale .2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+.upgrade-offer.selected {
+	border-color: var(--text-main);
+}
 
 .upgrade-offer.producer::before {
 	background-size: 42px 42px;
@@ -1477,6 +1480,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
     margin-bottom: 12px;
 }
 .swap-wrapper .resource {
+	position: relative;
 	justify-content: space-between;
 	flex-direction: row-reverse;
 	width: 150px;
@@ -1507,6 +1511,14 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 .swap-wrapper .resource.bought .resource-value:before {
 	content: 'Buy:';
+}
+.swap-wrapper .taxRate {
+    position: absolute;
+    font-family: system-ui;
+	top: calc(100% + 12px);
+    right: -22px;
+    color: var(--border-main);
+    font-weight: bold;
 }
 .swap-wrapper .arrow {
 	user-select: none;

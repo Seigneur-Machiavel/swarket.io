@@ -185,6 +185,7 @@ class SwapComponent {
 	resourceB_Icon = this.resourceB.querySelector('.resource-icon');
 	
 	reverseResourcesBtn = document.getElementById('reverse-resources-btn');
+	swapTaxRateValue = this.mainElement.querySelector('#swap-tax-rate-value');
 	swapBtn = this.mainElement.querySelector('.swap-confirm-btn');
 	swapBtnText = this.swapBtn.querySelector('span');
 	swapBtnLoader = this.swapBtn.querySelector('.loader');
@@ -203,6 +204,9 @@ class SwapComponent {
 	}
 
 	update() { // OppositeValue & button enable/disable
+		const taxRate = this.gameClient.myPlayer.tradeHub.getTaxRate;
+		this.swapTaxRateValue.textContent = `${(taxRate * 100).toFixed(2).replace(/\.?0+$/, '')}%`;
+
 		const { offeredResource, offeredQty, requestedResource, requestedQty } = this.#getCurrentValues();
 		const bought = this.inputFilledByUser === 'BUY' ? requestedQty : 0;
 		const sold = this.inputFilledByUser === 'SELL' ? offeredQty : 0;

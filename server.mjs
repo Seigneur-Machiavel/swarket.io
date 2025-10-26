@@ -45,11 +45,14 @@ gameClient.onExecutedTurn.push(async(height = 0) => {
 		clients[i].digestMyAction({ type: `${bees[i].id}_${Math.random()}` });
 		//bees[i].broadcast(`Hello everyone! I'm bee ${bees[i].id} :)`);
 		if (!clients[i].alive && IS_DEBUG) {
-			console.log(`%c${bees[i].id} is dead. Respawning...`, 'color: red');
+			const currentId = bees[i].id;
+			console.log(`%c${currentId} is dead. Respawning...`, 'color: red');
 			bees[i].destroy();
+
 			const { bee, client } = await createPlayer();
-			bees[i] = bee; clients[i] = client;
-			console.log(`%c${bees[i].id} respawned.`, 'color: green');
+			bees[i] = bee;
+			clients[i] = client;
+			console.log(`%c${currentId} respawned as ${bees[i].id}`, 'color: green');
 		}
 	}
 
