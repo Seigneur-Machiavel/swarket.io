@@ -290,14 +290,16 @@ export class NodeCardComponent {
 		else this.connectBtn.onclick = () => NodeInteractor.digestConnectionOffer(this.gameClient, playerId);
 	}
 	#updateCardTradeOfferButton(isConnected) {
+		const pid = this.gameClient.showingCardOfId;
+		const isBootstrap = pid ? this.gameClient.node.cryptoCodex.isPublicNode(pid) : false;
 		const hasTradeHub = this.gameClient.myPlayer.tradeHub;
-		this.tradeOfferBtn.disabled = !hasTradeHub || !isConnected;
-		if (this.showingMyOffer && (!hasTradeHub || !isConnected)) this.hideOfferViewer();
+		this.tradeOfferBtn.disabled = isBootstrap || !hasTradeHub || !isConnected;
+		if (this.showingMyOffer && (!pid || isBootstrap || !hasTradeHub || !isConnected)) this.hideOfferViewer();
 	}
 	#updateCardRemoteOfferButton(isConnected) {
 		const hasTradeHub = this.gameClient.myPlayer.tradeHub ? true : false;
 		const playerId = this.gameClient.showingCardOfId;
-		const remoteOffer = playerId ? this.gameClient.players[playerId].tradeHub?.getPrivateTradeOffer(this.gameClient.myPlayer.id) : null;
+		const remoteOffer = playerId ? this.gameClient.players[playerId]?.tradeHub?.getPrivateTradeOffer(this.gameClient.myPlayer.id) : null;
 		const hasRemoteOffer = remoteOffer ? true : false;
 		const offerAvailable = hasTradeHub && isConnected && hasRemoteOffer;
 		this.nodeCardRemoteOfferBtn.disabled = !hasTradeHub || !isConnected || !hasRemoteOffer;

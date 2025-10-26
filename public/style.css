@@ -412,6 +412,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 
 /* === UPGRADE OFFERS === */
 .upgrade-offers-wrapper {
+	z-index: 1;
 	pointer-events: initial;
 	opacity: 0;
 	user-select: none;
@@ -423,8 +424,9 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	flex-direction: row;
 	gap: 12px;
 	filter: blur(8px) grayscale(1);
-	transition: opacity .4s ease-in-out, filter .3s .3s cubic-bezier(0.875, 0.285, 0.52, .75),
-	transform .4s .2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	transition: opacity .4s ease-in-out,
+		filter .3s .3s cubic-bezier(0.875, 0.285, 0.52, .75),
+		transform .4s .2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .upgrade-offers-wrapper.visible {
 	opacity: 1;
@@ -547,6 +549,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 
 /* === RESOURCES BAR === */
 .resources-bar {
+	overflow: hidden;
 	pointer-events: initial;
 	opacity: 0;
 	user-select: none;
@@ -1424,7 +1427,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	justify-content: space-between;
 	flex-direction: row-reverse;
 	width: 150px;
-    height: 50px;
+    height: 46px;
 	padding: 0 16px;
     border-radius: 10px;
     border: 1px solid var(--border-dark);
@@ -1468,6 +1471,34 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .swap-wrapper .arrow:hover {
 	border-color: var(--text-main);
 	color: var(--text-main);
+}
+.swap-confirm-btn {
+	overflow: hidden;
+	position: relative;
+	width: 120px;
+    height: 32px;
+	font-weight: bold;
+}
+.swap-confirm-btn.filling {
+	filter: none !important;
+	background: var(--bg-console);
+}
+.swap-confirm-btn.filling span {
+	mix-blend-mode: difference;
+}
+.swap-confirm-btn .loader {
+	opacity: 0;
+	position: absolute;
+    width: 100%;
+    height: 100%;
+    left: -100%;
+    top: 0;
+	background: linear-gradient(150deg, var(--data-color) -58%, var(--energy-color) 67%);
+	transform: translateX(0%);
+	transition: transform .4s cubic-bezier(0, 0.885, 0.32, 1), opacity .2s ease-in-out;
+}
+.swap-confirm-btn.filling .loader {
+	opacity: 1;
 }
 
 /** === DEAD NODES NOTIFICATIONS === */

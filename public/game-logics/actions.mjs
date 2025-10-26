@@ -24,6 +24,12 @@ export function filterValidActions(actions) {
 	return validActions;
 }
 
+export class newPlayerAction {
+	type = 'new-player';
+	/** @type {Object | Array} */		playerData;
+	/** @type {'object' | 'array'} */	extractionMode;
+}
+
 export class UpgradeAction {
 	type = 'upgrade';
 	/** @type {string} */	upgradeName;
@@ -58,6 +64,22 @@ export class CancelPrivateTradeOffer {
 export class TakePrivateTradeOffer {
 	type = 'take-private-trade-offer';
 	/** @type {string} */	 offererId;
+}
+
+export class SetTakerOrderAction {
+	type = 'set-taker-order';
+	/** @type {string} */	 soldResource;
+	/** @type {number} */	 soldAmount;
+	/** @type {string} */	 boughtResource;
+	/** @type {number} */	 maxPricePerUnit;
+	/** @type {number} */	 expiry;
+}
+
+export class AuthorizedFillsAction {
+	type = 'authorized-fills';
+	/** key: playerId, value: [sentResource, minStock, tookResource, price]
+	 * @type {Record<string, [string, number, string, number]>} */
+	fills;
 }
 
 export class RecycleAction {

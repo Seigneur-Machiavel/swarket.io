@@ -31,10 +31,11 @@ const cryptoCodex = await HiveP2P.CryptoCodex.createCryptoCodex(true, seedUint8A
 const bee0 = await HiveP2P.createPublicNode({ domain: DOMAIN, port: PORT + 1, cryptoCodex, verbose });
 console.log(`%cPublic node id: ${bee0.id} | url: ${bee0.publicUrl}`, 'color: cyan');
 
-const gameClient = new GameClient(bee0, true);
+const gameClient = new GameClient(bee0, true, 'energy');
 gameClient.myPlayer.name = 'bootstrap: Bee0';
-gameClient.myPlayer.inventory.setAmount('energy', 100_000_000_000); // infinite energy
-gameClient.myPlayer.maxEnergy = 100_000_000_000; // infinite energy
+gameClient.myPlayer.production.energy = 1_000; 			// BYPASS
+gameClient.myPlayer.inventory.setAmount('energy', 100); // BYPASS
+gameClient.myPlayer.maxEnergy = 999_999_999; 			// BYPASS
 gameClient.onExecutedTurn.push(async(height = 0) => {
 	await new Promise(resolve => setTimeout(resolve, Math.round(gameClient.turnSystem.turnDuration / 10)));
 	gameClient.digestMyAction({ type: `Bee0_${Math.random()}` });

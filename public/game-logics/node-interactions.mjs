@@ -36,10 +36,12 @@ export class NodeInteractor {
 		const player = gameClient.myPlayer;
 		if (!player.tradeHub) return;
 
+		const expiry = gameClient.height + player.tradeHub.offersExpiryDefault;
 		const publicOffers = player.tradeHub.publicOffers;
-		const data = { topic: 'public-trade-offers', data: { publicOffers } };
+		const data = { topic: 'pto', data: [publicOffers, expiry] };
 		gameClient.node.broadcast(data, undefined, player.tradeHub.getSignalRange);
 		player.tradeHub.publicOffersDispatchRequested = false;
+		player.tradeHub.offersExpiryCounter = player.tradeHub.offersExpiryDefault;
 		if (gameClient.verb > 1) console.log(`%cDispatched ${Object.keys(publicOffers).length} public trade offers`, 'color: orange', publicOffers);
 	}
 }

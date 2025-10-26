@@ -43,9 +43,11 @@ export class SeededRandom {
  * @typedef {import('./actions.mjs').SetPrivateTradeOffer} SetPrivateTradeOffer
  * @typedef {import('./actions.mjs').CancelPrivateTradeOffer} CancelPrivateTradeOffer
  * @typedef {import('./actions.mjs').TakePrivateTradeOffer} TakePrivateTradeOffer
+ * @typedef {import('./actions.mjs').SetTakerOrderAction} SetTakerOrderAction
+ * @typedef {import('./actions.mjs').AuthorizedFillsAction} AuthorizedFillsAction
  * @typedef {import('./actions.mjs').RecycleAction} RecycleAction
  *
- * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetPrivateTradeOffer | CancelPrivateTradeOffer | TakePrivateTradeOffer | RecycleAction} Action
+ * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetPrivateTradeOffer | CancelPrivateTradeOffer | TakePrivateTradeOffer | SetTakerOrderAction| AuthorizedFillsAction | RecycleAction} Action
  */
 
 /** Computes intents consensus

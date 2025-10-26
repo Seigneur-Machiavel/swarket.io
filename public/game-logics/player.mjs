@@ -83,7 +83,10 @@ export class PlayerNode {
 		else if (intent.type === 'set-private-trade-offer') return this.#handleSetPrivateTradeOfferIntent(intent);
 		else if (intent.type === 'cancel-private-trade-offer') return this.#handleCancelPrivateTradeOfferIntent(intent);
 		else if (intent.type === 'take-private-trade-offer') return this.#handleTakePrivateTradeOfferIntent(gameClient, intent);
+		else if (intent.type === 'set-taker-order') return this.#handleSetTakerOrderIntent(intent);
+		else if (intent.type === 'authorized-fills') return this.#handleAuthorizedFillsIntent(intent);
 		else if (intent.type === 'recycle') return this.#handleRecycleIntent(gameClient, intent.fromDeadNodeId);
+		else if (intent.type === 'new-player') return this.#handleNewPlayerIntent(gameClient, nodeId, intent);
 	}
 	execTurn(turnHash = 'toto', height = 0) {
 		if (!this.startTurn || !this.getEnergy) return; // inactive
@@ -102,7 +105,6 @@ export class PlayerNode {
 		if (!this.getEnergy) this.upgradeOffers = []; // clear offers if dead
 	}
 
-	// PRIVATE
 	// TURN EXEC => INTENTS
 	/** @param {{param: string, buildingName: string, lineName: string, value: any}} intent */
 	#handleSetParamIntent(intent) {
@@ -178,42 +180,17 @@ export class PlayerNode {
 		this.inventory.subtractAmount(requestedResourceName, requestedAmount);
 		offerer.tradeHub.cancelPrivateTradeOffer(this.id);
 	}
-	#handleTakeTradeOfferIntent(gameClient, intent) { // DEPRECATED
-		if (!intent.offererId || typeof intent.offererId !== 'string') return;
-		const isPrivate = (!intent.resourceName || !intent.amount);
-		if (!isPrivate && (!intent.resourceName || !intent.amount)) return;
-
-		// Check if the offerer is a valid player -> both needs to have tradeHub
-		const offerer = gameClient.players[intent.offererId];
-		if (!this.tradeHub || !offerer || !offerer.tradeHub) return;
-
-		const offer = isPrivate ? offerer.tradeHub.getPrivateTradeOffer(this.id) : this.tradeHub.getPublicTradeOffer(intent.resourceName);
-		if (!offer) return;
-		
-		const { resourceName, amount, requestedResourceName, requestedAmount } = offer || {};
-		const selfStock = this.inventory.getAmount(requestedResourceName);
-		const offererStock = offerer.inventory.getAmount(resourceName);
-
-		// a: offered amount | b: requested amount
-		const price = requestedAmount / amount;
-		const a = isPrivate ? amount : intent.amount;
-		const b = isPrivate ? requestedAmount : price * a;
-		
-		// check stocks && intent compatibility
-		if (!isPrivate && (a > amount)) return; // cannot take more than offered in public offer
-		if (offererStock < a || selfStock < b) return; // cannot take private offer if not fully available
-		
-		// execute trade
-		offerer.inventory.subtractAmount(resourceName, a);
-		offerer.inventory.addAmount(requestedResourceName, b);
-		this.inventory.addAmount(resourceName, a);
-		this.inventory.subtractAmount(requestedResourceName, b);
-
-		// update the offer
-		if (isPrivate) { offerer.tradeHub.cancelPrivateTradeOffer(this.id); return; }
-		const newOfferedAmount = amount - a;
-		if (newOfferedAmount <= 0) offerer.tradeHub.cancelPublicTradeOffer(resourceName);
-		else offerer.tradeHub.setMyPublicTradeOffer(resourceName, newOfferedAmount, requestedResourceName, requestedAmount);
+	/** @param {{soldResource: string, soldAmount: number, boughtResource: string, maxPricePerUnit: number, expiry: number}} intent */
+	#handleSetTakerOrderIntent(intent) {
+		if (!this.tradeHub) return;
+		const { soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry } = intent;
+		this.tradeHub.setTakerOrder(soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry);
+	}
+	/** fills: key: playerId, value: [sentResource, minStock, tookResource, price]
+	 * @param {{fills: Record<string, [string, number, string, number]>}} intent */
+	#handleAuthorizedFillsIntent(intent) {
+		if (!this.tradeHub) return;
+		this.tradeHub.authorizedFills = intent.fills;
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} fromDeadNodeId */
 	#handleRecycleIntent(gameClient, fromDeadNodeId) {
@@ -230,6 +207,17 @@ export class PlayerNode {
 		if (verb > 1) console.log(`[${this.id}] Recycled resources from ${fromDeadNodeId}:`, resources);
 
 		deadPlayer.inventory.empty();
+		return true;
+	}
+
+	/** @param {import('./game.mjs').GameClient} gameClient @param {string} playerId @param {{ playerData: Object | Array, extractionMode: 'object' | 'array' }} intent */
+	#handleNewPlayerIntent(gameClient, playerId, intent) {
+		const { verb, node, players } = gameClient;
+		if (!node.cryptoCodex.isPublicNode(playerId)) return; // only accept new players from public nodes
+		const p = PlayerNode.playerFromData(intent.playerData, intent.extractionMode);
+		if (!players[p.id]) players[p.id] = p;
+		if (node.publicUrl) gameClient.syncAskedBy.push(p.id); // send game state at the end of the turn
+		if (verb > 2) console.log(`%cImported new player from intent:`, 'color: orange', p.id);
 		return true;
 	}
 

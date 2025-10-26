@@ -23,7 +23,9 @@ try {
 renderConnectionLogs();
 
 // NODE & GAMECLIENT SETUP
-const bootstraps = ['ws://localhost:27261'];
+// get domain from url params or use default
+const domain = window?.location?.hostname || 'localhost';
+const bootstraps = [`ws://${domain}:27261`];
 const node = await HiveP2P.createNode({ bootstraps, verbose: 2 });
 node.topologist.automation.incomingOffer = false;	// disable auto-accept incoming offers
 node.topologist.automation.spreadOffers = false; 	// disable auto-spread offers

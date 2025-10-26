@@ -1,6 +1,6 @@
 import { ModuleTreeComponent } from './modules-tree.mjs';
 import { TRADE_HUB_MODULES } from '../game-logics/buildings-modules.mjs';
-import { RESOURCES_NAMES } from '../game-logics/resources.mjs';
+import { RESOURCES_NAMES, RAW_RESOURCES_PROD_BASIS } from '../game-logics/resources.mjs';
 
 class ElementsBuilder {
 	static createMyTradeOfferLine(offeredResourceName = 'energy') {
@@ -11,7 +11,7 @@ class ElementsBuilder {
 		const offeredResource = ElementsBuilder.createResourceElement('I', offeredResourceName, 1, true, false);
 		offeredResource.resourceElem.classList.add('offered');
 		lineElem.appendChild(offeredResource.resourceElem);
-		
+
 		lineElem.appendChild(ElementsBuilder.createArrowElement());
 
 		const requestedResource = ElementsBuilder.createResourceElement('He', requestedResourceName, 0);
@@ -158,9 +158,18 @@ class MyTradeOfferLineComponent {
 		}
 		return {};
 	}
+	setResourcesAndValues(offeredResourceName, offeredQty, requestedResourceName, requestedQty, minStock, isActive) {
+		this.offeredResourceIconElem.classList = `resource-icon ${offeredResourceName}`;
+		this.offeredResourceValueElem.textContent = offeredQty.toString();
+		this.requestedResourceIconElem.classList = `resource-icon ${requestedResourceName}`;
+		this.requestedResourceValueElem.textContent = requestedQty.toString();
+		this.minStockValueElem.textContent = minStock.toString();
+		this.toggleBtnElem.classList.toggle('active', isActive);
+	}
 }
 
 class SwapComponent {
+	cssStyle = 'color: lightgreen; font-weight: bold;';
 	gameClient;
 	myResourcesBar;
 	mainElement = document.querySelector('.swap-wrapper');
@@ -177,10 +186,14 @@ class SwapComponent {
 	
 	reverseResourcesBtn = document.getElementById('reverse-resources-btn');
 	swapBtn = this.mainElement.querySelector('.swap-confirm-btn');
+	swapBtnText = this.swapBtn.querySelector('span');
+	swapBtnLoader = this.swapBtn.querySelector('.loader');
+	swapBtnClicked = false; // flag
 	/** @type {'BUY' | 'SELL'} which input was last filled by user */
 	inputFilledByUser = 'BUY';
 	/** @type {'A' | 'B'} which input is the bought resource */
-	buyInput = 'B';
+	buyInput = 'B'; // DEPRECATED, IT'S ALWAYS B !!
+	playersToInform = [];
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient @param {import('./resources-bar.mjs').ResourcesBarComponent} myResourcesBar */
 	constructor(gameClient, myResourcesBar) {
@@ -195,24 +208,21 @@ class SwapComponent {
 		const sold = this.inputFilledByUser === 'SELL' ? offeredQty : 0;
 
 		// CALCULATE EXPECTED OPPOSITE VALUE
-		const oppositeAmount = this.gameClient.swapModule.getSwapExpectedResult(offeredResource, requestedResource, { bought, sold });
-		const fixedStr = oppositeAmount.toFixed(3).replace(/\.?0+$/, '');
-		if (bought)
-			if (this.buyInput === 'A') this.resourceB_Value.textContent = fixedStr;
-			else this.resourceA_Value.textContent = fixedStr;
-		else if (sold)
-			if (this.buyInput === 'A') this.resourceA_Value.textContent = fixedStr;
-			else this.resourceB_Value.textContent = fixedStr;
+		const { totalOppositeAmount, playersToInform } = this.gameClient.swapModule.getSwapExpectedResult(offeredResource, requestedResource, { bought, sold });
+		const fixedStr = totalOppositeAmount.toFixed(3).replace(/\.?0+$/, '');
+		if (bought) this.resourceA_Value.textContent = fixedStr;
+		else this.resourceB_Value.textContent = fixedStr;
+		this.playersToInform = playersToInform;
 
 		// ENABLE/DISABLE SWAP BUTTON
-		this.#toggleConfirmButtonDependingOnValues();
+		this.#updateConfirmButtonDependingOnValues();
 	}
 
 	#setupHandlers() {
 		// ICONS
 		this.resourceA_Icon.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
 			this.swapBtn.disabled = true;
-			this.inputFilledByUser = this.buyInput === 'A' ? 'BUY' : 'SELL';
+			this.inputFilledByUser = 'SELL';
 			this.resourceA_Icon.classList = `resource-icon ${resName}`;
 			this.resourceA_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
 			// change requested resource to something different than offered
@@ -221,16 +231,13 @@ class SwapComponent {
 				this.resourceB_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
 			}
 
-			if (this.buyInput === 'A') this.resourceA_Value.textContent = "0";
-			else {
-				const defaultVal = resName === 'energy' ? value / 2 : value;
-				this.resourceA_Value.textContent = defaultVal.toFixed(3).replace(/\.?0+$/, '');
-				this.resourceB_Value.textContent = "0";
-			}
+			const defaultVal = resName === 'energy' ? value / 2 : value;
+			this.resourceA_Value.textContent = defaultVal.toFixed(3).replace(/\.?0+$/, '');
+			this.resourceB_Value.textContent = "0";
 		});
 		this.resourceB_Icon.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
 			this.swapBtn.disabled = true;
-			this.inputFilledByUser = this.buyInput === 'B' ? 'BUY' : 'SELL';
+			this.inputFilledByUser = 'BUY';
 			this.resourceB_Icon.classList = `resource-icon ${resName}`;
 			this.resourceB_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
 			// change offered resource to something different than requested
@@ -239,24 +246,21 @@ class SwapComponent {
 				this.resourceA_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
 			}
 			
-			if (this.buyInput === 'B') this.resourceB_Value.textContent = "0";
-			else {
-				const defaultVal = resName === 'energy' ? value / 2 : value;
-				this.resourceB_Value.textContent = defaultVal.toFixed(3).replace(/\.?0+$/, '');
-				this.resourceA_Value.textContent = "0";
-			}
+			this.resourceB_Value.textContent = "0";
 		});
 		// VALUES
-		const handleValueInteraction = (input = 'A', andUpdate = false) => {
-			if (input === this.buyInput) this.inputFilledByUser = 'BUY';
-			else this.inputFilledByUser = 'SELL';
+		/** @param {'BUY' | 'SELL'} input */
+		const handleValueInteraction = (input = 'BUY', andUpdate = false) => {
+			const valueElement = input === 'BUY' ? this.resourceB_Value : this.resourceA_Value;
+			this.inputFilledByUser = input;
 			this.swapBtn.disabled = true;
+			if (valueElement.textContent.trim() === '') valueElement.textContent = '0';
 			if (andUpdate) this.update();
 		}
-		this.resourceA_Value.onclick = () => handleValueInteraction('A');
-		this.resourceA_Value.oninput = () => handleValueInteraction('A', true);
-		this.resourceB_Value.onclick = () => handleValueInteraction('B');
-		this.resourceB_Value.oninput = () => handleValueInteraction('B', true);
+		this.resourceA_Value.onclick = () => handleValueInteraction('SELL');
+		this.resourceA_Value.oninput = () => handleValueInteraction('SELL', true);
+		this.resourceB_Value.onclick = () => handleValueInteraction('BUY');
+		this.resourceB_Value.oninput = () => handleValueInteraction('BUY', true);
 
 		this.reverseResourcesBtn.onclick = () => this.#reverse();
 		this.swapBtn.onclick = () => this.#handleConfirmSwap();
@@ -273,30 +277,68 @@ class SwapComponent {
 		this.resourceB_Value.textContent = tempValue;
 
 		this.inputFilledByUser = this.inputFilledByUser === 'BUY' ? 'SELL' : 'BUY';
-		this.buyInput = this.buyInput === 'A' ? 'B' : 'A';
-		this.resourceA.classList = `resource ${this.buyInput === 'A' ? 'bought' : 'sold'} hoverable-tooltip`;
-		this.resourceB.classList = `resource ${this.buyInput === 'B' ? 'bought' : 'sold'} hoverable-tooltip`;
 	}
 	#getCurrentValues() {
 		const rA_Name = this.resourceA_Icon.classList.item(1) || 'energy';
 		const rA_Qty = parseInt(this.resourceA_Value.textContent || '0', 10);
 		const rB_Name = this.resourceB_Icon.classList.item(1) || 'chips';
 		const rB_Qty = parseInt(this.resourceB_Value.textContent || '0', 10);
-		if (this.buyInput === 'A') return { offeredResource: rB_Name, offeredQty: rB_Qty, requestedResource: rA_Name, requestedQty: rA_Qty };
-		else return { offeredResource: rA_Name, offeredQty: rA_Qty, requestedResource: rB_Name, requestedQty: rB_Qty };
+		return { offeredResource: rA_Name, offeredQty: rA_Qty, requestedResource: rB_Name, requestedQty: rB_Qty };
 	}
-	#toggleConfirmButtonDependingOnValues() {
+	#updateConfirmButtonDependingOnValues() {
+		const takerOrder = this.gameClient.myPlayer.tradeHub.getTakerOrder;
 		const { offeredQty, requestedQty } = this.#getCurrentValues();
-		if (offeredQty > 0 && requestedQty > 0) this.swapBtn.disabled = false;
+		if (!this.swapBtnClicked && !takerOrder && offeredQty > 0 && requestedQty > 0) this.swapBtn.disabled = false;
 		else this.swapBtn.disabled = true;
+
+		const lastTakerOrderFullyFilled = this.gameClient.myPlayer.tradeHub.lastTakerOrderFullyFilled ? true : false;
+		if (lastTakerOrderFullyFilled) this.gameClient.myPlayer.tradeHub.lastTakerOrderFullyFilled = false; // reset flag
+		
+		const hasFillingClass = this.swapBtn.classList.contains('filling');
+		if (lastTakerOrderFullyFilled && hasFillingClass) {
+			this.swapBtnText.textContent = 'Filled! 100%';
+			this.swapBtnLoader.style.transform = `translateX(100%)`;
+			return this.swapBtnClicked = false; // skip the rest of the update this turn
+		}
+
+		if (takerOrder || this.swapBtnClicked) {
+			const [filled, sold] = [takerOrder?.filledAmount || 0, takerOrder?.soldAmount || 1];
+			const fillingPerc = filled / sold * 100;
+			this.swapBtnText.textContent = fillingPerc === 100 ? 'Filled! 100%' : `Filling... ~${fillingPerc.toFixed(1).replace(/\.?0+$/, '')}%`;
+			this.swapBtn.classList.add('filling');
+			this.swapBtnLoader.style.transform = `translateX(${fillingPerc}%)`;
+		} else {
+			this.swapBtnText.textContent = 'Confirm Swap';
+			this.swapBtn.classList.remove('filling');
+			this.swapBtnLoader.style.transform = `translateX(0%)`;
+		}
+
+		this.swapBtnClicked = false;
 	}
-	#handleConfirmSwap() {
+	#handleConfirmSwap(expiry = 5) {
 		const { offeredResource, offeredQty, requestedResource, requestedQty } = this.#getCurrentValues();
 		if (offeredQty <= 0 || requestedQty <= 0) return;
-		console.log('SWAP', offeredResource, offeredQty, requestedResource, requestedQty);
+		console.log(`%c Confirming swap:`, this.cssStyle);
+		console.log(offeredResource, offeredQty, requestedResource, requestedQty);
+
+		const action = {
+			type: 'set-taker-order',
+			soldResource: offeredResource,
+			soldAmount: offeredQty,
+			boughtResource: requestedResource,
+			maxPricePerUnit: offeredQty / requestedQty,
+			expiry: this.gameClient.height + 1 + expiry
+		};
+		this.gameClient.digestMyAction(action);
+		this.swapBtn.disabled = true; // feedback & prevent multiple clicks
+		this.swapBtnClicked = true;
+
+		// Inform players involved in the swap who can quickly intent 'fill-taker-order'
+		for (const pid of this.playersToInform) this.gameClient.node.sendMessage(pid, action);
 	}
 }
 export class TradeHubComponent {
+	cssStyle = 'color: lightgreen; font-weight: bold;';
 	gameClient;
 	myResourcesBar;
 	modal = document.getElementById('trade-hub-modal');
@@ -329,6 +371,7 @@ export class TradeHubComponent {
 		const tradeHub = this.gameClient?.myPlayer.tradeHub;
 		if (!this.gameClient?.alive || !tradeHub) return this.hide();
 
+		// UPDATE MODULES TREE
 		const tradeHubLevel = tradeHub.level();
 		this.moduleTree.updateLevel(tradeHubLevel);
 		for (let i = 0; i < TRADE_HUB_MODULES.allModulesKeys.length; i++) {
@@ -344,8 +387,9 @@ export class TradeHubComponent {
 		const missingOfferLines = tradeHub.getMaxPublicOffers - this.myTradesOfferLines.length;
 		for (let i = 0; i < missingOfferLines; i++)
 			for (const r of RESOURCES_NAMES) // Create a line on a unused resource
-				if (this.myTradesOfferLines.some(l => l.offeredResourceName === r)) continue;
-				else { this.#initMyTradeOfferLine(r); break;}
+				if (r === 'energy') continue;
+				else if (this.myTradesOfferLines.some(l => l.offeredResourceName === r)) continue;
+				else { this.#initMyTradeOfferLine(r, true); break;}
 
 		// UPDATE MY TRADE OFFERS FROM MY LINES
 		this.#updateTradeHubOffersFromMyLines();
@@ -380,12 +424,21 @@ export class TradeHubComponent {
 			};
 		}
 	}
-
-	/** MY TRADE OFFERS */
-	#initMyTradeOfferLine(r = 'energy') {
+	#initMyTradeOfferLine(r = 'energy', usePreset = false) {
 		const lineComponent = new MyTradeOfferLineComponent(this.myResourcesBar, r);
 		this.myTradesOfferLines.push(lineComponent);
 		this.myTradeOfferLinesWrapper.appendChild(lineComponent.mainElement);
+		if (!usePreset) return;
+
+		// USE NEXT RESOURCE AS REQUESTED AND DOUBLE PRICE, ONLY WORKS WITH RAW RESOURCES
+		const resourceIndex = RESOURCES_NAMES.indexOf(r);
+		const rProdBasis = RAW_RESOURCES_PROD_BASIS[r] || 0;
+		const nextResource = RESOURCES_NAMES[(resourceIndex + 1) % RESOURCES_NAMES.length] || 'chips';
+		const nextRProdBasis = RAW_RESOURCES_PROD_BASIS[nextResource] || 0;
+		if (rProdBasis === 0 || nextRProdBasis === 0) return;
+		
+		const requestedQty = Math.max(1, Math.ceil((nextRProdBasis / rProdBasis) * 2));
+		lineComponent.setResourcesAndValues(r, 1, nextResource, requestedQty, 0, true);
 	}
 	#updateTradeHubOffersFromMyLines() {
 		const tradeHub = this.gameClient.myPlayer.tradeHub;
@@ -393,15 +446,13 @@ export class TradeHubComponent {
 			const { offeredResourceName, offeredQty, requestedResourceName, requestedQty, minStock, isActive } = lineComponent.getResourcesAndValues();
 			if (typeof offeredQty !== 'number' || typeof requestedQty !== 'number' || typeof minStock !== 'number') continue;
 			if (offeredQty <= 0 || requestedQty <= 0) continue;
+			// offeredQty is useless, we always set 1
 
-			const newId = tradeHub.setMyPublicTradeOffer(offeredResourceName, offeredQty, requestedResourceName, requestedQty, minStock, isActive);
+			const newId = tradeHub.setMyPublicTradeOffer(offeredResourceName, requestedResourceName, requestedQty, minStock, isActive);
 			if (!newId) continue; // unchanged offer or invalid
 
 			if (lineComponent.offerId) tradeHub.cancelPublicTradeOffer(lineComponent.offerId);
 			lineComponent.offerId = newId;
 		}
 	}
-
-	/** SWAP */
-
 }

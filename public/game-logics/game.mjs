@@ -11,9 +11,11 @@ import { SwapModule } from './swap.mjs';
  * @typedef {import('./actions.mjs').SetPrivateTradeOffer} SetPrivateTradeOffer
  * @typedef {import('./actions.mjs').CancelPrivateTradeOffer} CancelPrivateTradeOffer
  * @typedef {import('./actions.mjs').TakePrivateTradeOffer} TakePrivateTradeOffer
+ * @typedef {import('./actions.mjs').SetTakerOrderAction} SetTakerOrderAction
+ * @typedef {import('./actions.mjs').AuthorizedFillsAction} AuthorizedFillsAction
  * @typedef {import('./actions.mjs').RecycleAction} RecycleAction
  *
- * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetPrivateTradeOffer | CancelPrivateTradeOffer | TakePrivateTradeOffer | RecycleAction} Action
+ * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetPrivateTradeOffer | CancelPrivateTradeOffer | TakePrivateTradeOffer | SetTakerOrderAction | AuthorizedFillsAction | RecycleAction} Action
  */
 
 export class GameClient {
@@ -44,7 +46,7 @@ export class GameClient {
 	}, 2000);
 
 	/** @param {Node} node */
-	constructor(node, createPlayerAndStart = false) {
+	constructor(node, createPlayerAndStart = false, operatingResource) {
 		this.#turnExecutionLoop(); // start turn loop => do nothing until scheduled time
 		this.node = node; this.verb = node.verbose;
 		this.turnSystem = new TurnSystem(this.node);
@@ -58,7 +60,7 @@ export class GameClient {
 		});
 
 		if (!createPlayerAndStart) return;
-		this.players[node.id] = new PlayerNode(node.id); // operatingResource randomly assigned
+		this.players[node.id] = new PlayerNode(node.id, operatingResource); // operatingResource randomly assigned
 		this.turnSystem.T0 = this.node.time; // set T0 to now
 		console.log(`%cT0: ${this.turnSystem.T0 / 1000}`, 'color: green');
 	}
@@ -79,18 +81,20 @@ export class GameClient {
 	/** @param {string} peerId @param {'in'|'out'} direction */
 	#onPeerConnect(peerId, direction) {
 		if (!this.node.publicUrl || direction !== 'in') return; // we are not a public node
-		if (this.players[peerId]) return console.warn(`Player already exists for connected peer: ${peerId}`);
+		if (this.players[peerId]) {
+			this.syncAskedBy.push(peerId); // send game state at the end of the turn
+			return console.warn(`Player already exists for connected peer: ${peerId}`);
+		}
+		
 		const p = new PlayerNode(peerId); // operatingResource randomly assigned
 		p.inventory.setAmount('energy', p.maxEnergy);
 		p.startTurn = Math.max(this.height, 1); // active from next turn
-		this.players[peerId] = p;
 
 		if (p.production.chips) p.production.engineers = 1; // DEBUG
 		else if (p.production.engineers) p.production.chips = 5; // DEBUG
 
 		const as = this.extractionMode;
-		this.node.broadcast({ topic: 'new-player', data: { playerData: p.extract(as), extractionMode: as } });
-		this.syncAskedBy.push(peerId); // request sync on next turn
+		this.digestMyAction({ type: 'new-player', playerData: p.extract(as), extractionMode: as });
 	}
 	/** @param {string} senderId @param {import('../../node_modules/hive-p2p/core/unicast.mjs').DirectMessage} message */
 	#onDirectMessage(senderId, message) {
@@ -99,8 +103,18 @@ export class GameClient {
 		else if (type === 'game-state-incoming') this.turnSystem.T0Reference = this.node.time - data;
 		else if (type === 'game-state' && this.height === 0) {
 			if (!this.turnSystem.T0Reference) return console.warn(`T0Reference not set, cannot calculate T0 drift`);
+			console.log(`%cGame state received from ${senderId}`, 'color: green');
 			if (!this.node.cryptoCodex.isPublicNode(senderId) && this.gameStateAskedFrom !== senderId) return; // ignore if not from public node or not the one we asked from
 			this.#importGameState(data);
+		} else if (type === 'set-taker-order' && this.myPlayer?.tradeHub) {
+			// TAKER ORDER INTENT RECEIVED -> USE IT TO PRESHOT 'fill-taker-order' ACTION
+			const { soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry } = message || {};
+			if (expiry <= this.height) return; // expired order
+
+			// TODO: CHECK IF WE WILL BE IMPLICATED IN THE SWAP FROM OUR ACTUAL KNOWLEDGE
+
+			// IF WE ARE IMPLICATED, WE SIGNAL THAT WE WANT TO FILL THE ORDER
+			this.myPlayer.tradeHub.handleTakerOrderIntent(senderId, soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry);
 		}
 	}
 	/** @param {string} senderId @param {any} d @param {number} HOPS @param {import('../../node_modules/hive-p2p/core/gossip.mjs').GossipMessage} message */
@@ -109,24 +123,23 @@ export class GameClient {
 		const { topic, data } = d;
 		const { timestamp } = message;
 		//if (this.node.time - timestamp > this.turnSystem.turnDuration / 2) return; // too old message
-		if (topic === 'new-player') {
-			const p = PlayerNode.playerFromData(data.playerData, data.extractionMode);
-			if (!this.players[p.id]) this.players[p.id] = p;
-		} else if (topic === 'turn-intents') {
+		if (topic === 'ti') { // 'turn-intents'
 			// IF INTENT FOR COMING TURN, SHOULD BE SENT AT A MAXIMUM HALFWAY THROUGH THE TURN
-			const isForComingTurn = data.height === this.height;
+			const [ height, prevHash, intents ] = data;
+			const isForComingTurn = height === this.height;
 			if (isForComingTurn && this.node.time > this.turnSystem.maxSentTime) {
-				if (this.verb > 1) console.warn(`Intent for turn #${data.height} from ${senderId} received too late (at ${this.node.time}, max was ${this.turnSystem.maxSentTime}), ignoring.`);
+				if (this.verb > 1) console.warn(`Intent for turn #${height} from ${senderId} received too late (at ${this.node.time}, max was ${this.turnSystem.maxSentTime}), ignoring.`);
 				return this.node.arbiter.adjustTrust(senderId, -60_000, 'Peer sent intents too late');
 			}
 
-			this.digestPlayerIntents(data.intents, data.height, data.prevHash, senderId);
-		} else if (topic === 'public-trade-offers') {
+			this.digestPlayerIntents(intents, height, prevHash, senderId);
+		} else if (topic === 'pto') { // 'public-trade-offers'
 			const player = this.players[senderId];
 			if (!player) return console.warn(`Player not found for public trade offers: ${senderId}`);
 			if (player.tradeHub.getSignalRange < HOPS) return this.node.arbiter.adjustTrust(senderId, -600_000, 'Peer sent public trade offers with insufficient signal range');
-			player.tradeHub.handleIncomingPublicOffers(senderId, data.publicOffers);
-			if (this.verb > 1) console.log(`Public trade offers received from ${senderId}:`, data);
+			if (data[1] <= this.height) return; // expired offers
+			player.tradeHub.handleIncomingPublicOffers(senderId, data[0], data[1] - this.height);
+			if (this.verb > 2) console.log(`Public trade offers received from ${senderId}:`, data);
 		}
 	}
 
@@ -207,8 +220,11 @@ export class GameClient {
 			// CHECK IF WE HAVE HALFWAY INTENTS TO SEND FOR THE CURRENT TURN
 			const turnDuration = this.turnSystem.turnDuration;
 			const [min, max] = [scheduleTime - (turnDuration * .6), scheduleTime - (turnDuration * .55)];
-			if (!myIntentsSent && time > min && time < max)
+			if (!myIntentsSent && time > min && time < max) {
+				const { fills, count } = this.myPlayer.tradeHub?.prepareAuthorizedFill(this); // prepare authorized fills for taker orders
+				if (count > 0) this.digestMyAction({ type: 'authorized-fills', fills });
 				if (this.#cleanAndDispatchMyPlayerIntents()) myIntentsSent = true;
+			}
 
 			// CHECK IF THE TURN SHOULD BE EXECUTED
 			if (scheduleTime > time) continue;
@@ -231,7 +247,7 @@ export class GameClient {
 
 			// MANAGHE PUBLIC TRADE OFFERS => EXPIRY & SELF DISPATCH
 			for (const playerId in this.players)
-				this.players[playerId].tradeHub?.turnUpdate(playerId === this.node.id);
+				this.players[playerId].tradeHub?.turnUpdate(this, playerId === this.node.id);
 			if (this.myPlayer.tradeHub?.publicOffersDispatchRequested)
 				NodeInteractor.dispatchPublicTradeOffers(this);
 
@@ -241,21 +257,26 @@ export class GameClient {
 	}
 	#execTurn() {
 		// EXECUTE INTENTS (PLAYERS ACTIONS) => Set startTurn for new active players
-		const turnIntents = this.turnSystem.organizeIntents(this.height);
-		this.#execTurnIntents(turnIntents);
+		const organizedIds = this.turnSystem.getOrganizedPlayerIds(this.height);
+		const turnIntents = this.turnSystem.playersIntents[this.height];
+		this.#execTurnIntents(organizedIds, turnIntents);
+		this.swapModule.execTurnSwaps(this, organizedIds);
 		
-		// EXECUTE PLAYER TURNS (RESOURCE PRODUCTION, ENERGY DEDUCTION, UPGRADE OFFERS...)
+		// HASH THE TURN AFTER INTENTS EXECUTION > LAST TIME TO AVOID ANTICIPATION
 		const newTurnHash = this.turnSystem.getTurnHash(this.height, this.#extractPlayersData().playersData);
-		this.deadPlayers = new Set(); 		// reset
-		this.#execPlayersTurn(newTurnHash); // will fill deadPlayers set
+		this.deadPlayers = new Set(); 	// reset
+
+		// EXECUTE PLAYER TURNS (RESOURCE PRODUCTION, ENERGY DEDUCTION, UPGRADE OFFERS...)
+		this.#execPlayersTurn(organizedIds, newTurnHash); // will fill deadPlayers set
 		this.#removeDeadPlayers();
 
-		// MANAGE OUR NODE IF WE ARE DEAD
+		// MANAGE OUR NODE DEATH IF WE HAVE NO ENERGY LEFT
 		if (!this.myPlayer.getEnergy) {
 			this.alive = false; // stop the game client
 			this.connectionOffers = {}; // clear offers if dead
 			this.node.topologist.automation.incomingOffer = false; // disable auto-accept if dead
 			this.node.topologist.automation.connectBootstraps = false; // disable auto-connect to bootstraps if dead
+			if (typeof window !== 'undefined') alert('You have run out of energy and are now dead. Refresh the page to restart as a new player.');
 		}
 
 		return newTurnHash;
@@ -265,26 +286,30 @@ export class GameClient {
 		this.selectedDeadNodeId = null; // reset
 		if (!validActions) return; // no valid actions to send
 
-		this.node.broadcast({ topic: 'turn-intents', data: { height, prevHash: this.turnSystem.prevHash, intents: validActions } });
+		const data = [height, this.turnSystem.prevHash, validActions];
+		this.node.broadcast({ topic: 'ti', data });
 		if (this.verb > 3) console.log(`%c[${this.node.id}] Dispatched intents for turn #${height}`, 'color: white');
 		return true;
 	}
-	/** @param {Object<string, Action[]>} turnIntents */
-	#execTurnIntents(turnIntents) {
-		for (const nodeId in turnIntents) {
-			const player = this.players[nodeId];
+	/** @param {string[]} playerIds @param {Object<string, { actions: Action[] }>} turnIntents */
+	#execTurnIntents(playerIds, turnIntents) {
+		for (const playerId of playerIds) {
+			const player = this.players[playerId];
 			if (!player) continue;
 			if (!player.startTurn) player.startTurn = this.height;
-			for (const intent of turnIntents[nodeId]) {
-				if (!player.execIntent(this, nodeId, intent)) continue;
-				if (this.verb > 2) console.log(`%cExecuted intent of ${player.id}:`, 'color: orange', intent.type);
+			for (const intent of turnIntents[playerId]?.actions || []) {
+				if (!player.execIntent(this, playerId, intent)) continue;
+				if (this.verb > 2) console.log(`%cExecuted intent of ${playerId}:`, 'color: orange', intent.type);
 			}
 		}
 	}
-	#execPlayersTurn(newTurnHash = '') {
-		for (const playerId in this.players)
-			if (!this.players[playerId].getEnergy && !this.deadPlayers.has(playerId)) this.deadPlayers.add(playerId);
-			else this.players[playerId].execTurn(newTurnHash, this.height);
+	/** @param {string} playerIds @param {string} newTurnHash */
+	#execPlayersTurn(playerIds, newTurnHash) {
+		for (const playerId of playerIds) {
+			const player = this.players[playerId];
+			if (!player.getEnergy && !this.deadPlayers.has(playerId)) this.deadPlayers.add(playerId);
+			else player.execTurn(newTurnHash, this.height);
+		}
 	}
 	/** @param {number} [minDeathAge] in turns | default 30 */
 	#removeDeadPlayers(minDeathAge = 30) {

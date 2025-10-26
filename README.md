@@ -28,10 +28,10 @@ hivetrade.io, mycelium.io, confluence.io, ataraxie.io..
 - [x] Inventaire UI
 
 **4.1 Buildings**
-- [x] reactor 	 => carte d'upgrade
-- [ ] fabricator => carte d'upgrade
-- [x] tradeHub 	 => carte d'upgrade
-- [ ] Storage => AGI	=> carte d'upgrade
+- [x] reactor 	 	=> carte d'upgrade
+- [ ] fabricator 	=> carte d'upgrade
+- [x] tradeHub		=> carte d'upgrade
+- [ ] Storage => AGI 	=> carte d'upgrade
 
 **5. Networking manuel**
 - [X] Click pour connecter à un peer

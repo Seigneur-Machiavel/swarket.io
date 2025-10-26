@@ -6,10 +6,14 @@ const xxHash32 = typeof window !== 'undefined'
 	: (await import('hive-p2p/libs/xxhash32.mjs').then(m => m.xxHash32));
 
 const KEYS_TO_NOT_EXTRACT = new Set([
+	'lastTakerOrderFullyFilled',
+	'offersExpiryDefault',
 	'offersExpiryCounter',
+	'maxAuthorizedFillsPerTurn',
 	'publicOffersDispatchRequested',
 	'publicOffers',
 	'publicOffersByResource',
+	'localFillIntents'
 ]);
 
 export class BuildingBuilder {
@@ -183,7 +187,7 @@ export class PrivateTradeOffer { // TYPE
 }
 
 export class MyPublicTradeOffer { // TYPE: MY PLAYER'S OFFER (LOCAL)
-	/** @type {string} */ 	resourceName;
+	/** @type {string} */ 	resourceName; // amount is always 1
 	/** @type {string} */ 	requestedResourceName;
 	/** @type {number} */ 	requestedAmount;
 	/** @type {number} */ 	minStock;
@@ -205,10 +209,10 @@ export class TakerOrder { // TYPE: TRADE REQUEST (INTENT)
 	/** @type {number} */ soldAmount;
 	/** @type {string} */ boughtResource;
 	/** @type {number} */ maxPricePerUnit;
+	/** @type {number} */ filledAmount;
 	/** @type {number} */ expiry; // usually the next turn
 }
 
-const offersExpiryDefault = 6; 			// in turns
 export class TradeHub extends Building {
 	type = 't'; // 'trade hub'
 	
@@ -216,13 +220,23 @@ export class TradeHub extends Building {
 	modulesLevel = TRADE_HUB_MODULES.emptyModulesArray();
 	/** key: targetPlayerId, value: [resourceName, amount, requestedResourceName, requestedAmount] @type {Record<string, [string, number, string, number]>} */
 	privateOffers = {};
+	/** [soldResource, soldAmount, boughtResource, maxPricePerUnit, filledAmount, expiry] @type {Array | null}*/
+	takerOrder = null;
+	/** key: playerId, value: [sentResource, minStock, tookResource, price] @type {Record<string, [string, number, string, number]>} */
+	authorizedFills = {}; 			// (from intent) erased after each turn
+	
 	// NOT EXTRACTED ----------------------------
+	lastTakerOrderFullyFilled = false; // FOR UI PURPOSES
+	offersExpiryDefault = 7; 		// in turns
 	offersExpiryCounter = 0; 		// in turns
+	maxAuthorizedFillsPerTurn = 5;
 	publicOffersDispatchRequested = false;
-	/** key: id(hash), value: [resourceName, amount, requestedResourceName, requestedAmount, minStock, isActive] @type {Record<string, [number, string, number, number, boolean]>} */
-	publicOffers = {}; 			 // MY PLAYER ONLY
+	/** key: id(hash), value: [resourceName, requestedResourceName, requestedAmount, minStock, isActive] @type {Record<string, [string, string, number, number, boolean]>} */
+	publicOffers = {}; 			 	// MY PLAYER ONLY
 	/** key: requestedResourceName, key: offerId(hash), value: PublicTradeOffer @type {Record<string, Record<string, PublicTradeOffer>>} */
-	publicOffersByResource = {}; // REMOTE PLAYERS ONLY
+	publicOffersByResource = {}; 	// REMOTE PLAYERS ONLY
+	/** key: playerId, value: [soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry] @type {Record<string, [string, number, string, number, number]>} */
+	localFillIntents = {};
 	// END NOT EXTRACTED ------------------------
 
 	get getMaxConnections() { // DEFAULT 2
@@ -245,6 +259,48 @@ export class TradeHub extends Building {
 		const { signalRange } = TRADE_HUB_MODULES.getModuleEffect('broker', this.modulesLevel[brokerModuleIndex]) || {};
 		return signalRange || 1;
 	}
+	/** @returns {TakerOrder | null} */
+	get getTakerOrder() {
+		if (!this.takerOrder) return null;
+		const [soldResource, soldAmount, boughtResource, maxPricePerUnit, filledAmount, expiry] = this.takerOrder;
+		return { soldResource, soldAmount, boughtResource, maxPricePerUnit, filledAmount, expiry };
+	}
+	/** @param {string} resourceName @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
+	#checkPublicOfferValueAndGetHash(resourceName, requestedResourceName, requestedAmount, minStock, isActive) {
+		if (typeof isActive !== 'boolean') return;
+		if (typeof minStock !== 'number' || minStock < 0) return;
+		if (!this.#checkOfferValues(resourceName, 1, requestedResourceName, requestedAmount)) return;
+		return TradeHub.getOfferHash(resourceName, 1, requestedResourceName, requestedAmount, minStock, isActive);
+	}
+	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
+	#checkOfferValues(resourceName, amount, requestedResourceName, requestedAmount) {
+		if (typeof resourceName !== 'string') return false;
+		if (!VALID_RESOURCES.has(resourceName)) return false;
+		if (typeof amount !== 'number' || amount <= 0) return false;
+		if (typeof requestedResourceName !== 'string') return false;
+		if (!VALID_RESOURCES.has(requestedResourceName)) return false;
+		if (typeof requestedAmount !== 'number' || requestedAmount <= 0) return false;
+		return true;
+	}
+	/** @param {string} soldResource @param {number} soldAmount @param {string} boughtResource @param {number} maxPricePerUnit @param {number} expiry */
+	#checkTakerOrderValues(soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry) {
+		if (typeof soldResource !== 'string') return false;
+		if (!VALID_RESOURCES.has(soldResource)) return false;
+		if (typeof soldAmount !== 'number' || soldAmount <= 0) return false;
+		if (typeof boughtResource !== 'string') return false;
+		if (!VALID_RESOURCES.has(boughtResource)) return false;
+		if (typeof maxPricePerUnit !== 'number' || maxPricePerUnit <= 0) return false;
+		if (typeof expiry !== 'number' || expiry <= 0) return false;
+		return true;
+	}
+	#getMyPublicOfferRelatedToResource(resourceName = '', requestedResourceName = '') {
+		for (const offerId in this.publicOffers) {
+			const offer = this.publicOffers[offerId];
+			if (offer[0] !== requestedResourceName || offer[1] !== resourceName) continue;
+			return offer;
+		}
+		return null;
+	}
 	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
 	static getOfferHash(resourceName, amount, requestedResourceName, requestedAmount, minStock = 0, isActive = false) {
 		return xxHash32(`${resourceName}-${amount}-${requestedResourceName}-${requestedAmount}-${minStock}-${isActive}`).toString(16);
@@ -262,13 +318,6 @@ export class TradeHub extends Building {
 		return { resourceName, amount, requestedResourceName, requestedAmount };
 	}
 	/** @param {string} resourceName @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
-	#checkPublicOfferValueAndGetHash(resourceName, requestedResourceName, requestedAmount, minStock, isActive) {
-		if (typeof isActive !== 'boolean') return;
-		if (typeof minStock !== 'number' || minStock < 0) return;
-		if (!this.#checkOfferValues(resourceName, 1, requestedResourceName, requestedAmount)) return;
-		return TradeHub.getOfferHash(resourceName, 1, requestedResourceName, requestedAmount, minStock, isActive);
-	}
-	/** @param {string} resourceName @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
 	setMyPublicTradeOffer(resourceName, requestedResourceName, requestedAmount, minStock, isActive) {
 		const id = this.#checkPublicOfferValueAndGetHash(resourceName, requestedResourceName, requestedAmount, minStock, isActive);
 		if (!id || this.publicOffers[id]) return; // offer already exists
@@ -281,10 +330,9 @@ export class TradeHub extends Building {
 		
 		this.publicOffers[id] = [resourceName, requestedResourceName, requestedAmount, minStock, isActive];
 		this.publicOffersDispatchRequested = true;
-		this.offersExpiryCounter = offersExpiryDefault;
 	}
-	/** @param {string} playerId @param {Record<string, MyPublicTradeOffer>} offersData */
-	handleIncomingPublicOffers(playerId, offersData) {
+	/** @param {string} playerId @param {Record<string, MyPublicTradeOffer>} offersData @param {number} expiry */
+	handleIncomingPublicOffers(playerId, offersData, expiry) {
 		this.publicOffersByResource = {}; // RESET ALL OFFERS
 		for (const offerId in offersData) {
 			const offer = offersData[offerId];
@@ -297,7 +345,14 @@ export class TradeHub extends Building {
 			if (!this.publicOffersByResource[requestedResourceName]) this.publicOffersByResource[requestedResourceName] = {};
 			this.publicOffersByResource[requestedResourceName][offerId] = { playerId, offerId, resourceName, requestedResourceName, requestedAmount, minStock, isActive };
 		}
-		this.offersExpiryCounter = offersExpiryDefault + 1;
+		this.offersExpiryCounter = expiry;
+	}
+	/** @param {string} playerId @param {string} soldResource @param {number} soldAmount @param {string} boughtResource @param {number} maxPricePerUnit @param {number} expiry */
+	handleTakerOrderIntent(playerId, soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry) {
+		if (this.localFillIntents[playerId]) return; // already has an intent for this player
+		if (!this.#checkTakerOrderValues(soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry)) return;
+	
+		this.localFillIntents[playerId] = [soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry];
 	}
 	/** @param {string} targetPlayerId @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
 	setPrivateTradeOffer(targetPlayerId, resourceName, amount, requestedResourceName, requestedAmount) {
@@ -305,15 +360,18 @@ export class TradeHub extends Building {
 		if (!this.#checkOfferValues(resourceName, amount, requestedResourceName, requestedAmount)) return;
 		this.privateOffers[targetPlayerId] = [resourceName, amount, requestedResourceName, requestedAmount];
 	}
-	/** @param {string} resourceName @param {number} amount @param {string} requestedResourceName @param {number} requestedAmount */
-	#checkOfferValues(resourceName, amount, requestedResourceName, requestedAmount) {
-		if (typeof resourceName !== 'string') return false;
-		if (!VALID_RESOURCES.has(resourceName)) return false;
-		if (typeof amount !== 'number' || amount <= 0) return false;
-		if (typeof requestedResourceName !== 'string') return false;
-		if (!VALID_RESOURCES.has(requestedResourceName)) return false;
-		if (typeof requestedAmount !== 'number' || requestedAmount <= 0) return false;
+	/** @param {string} soldResource @param {number} soldAmount @param {string} boughtResource @param {number} maxPricePerUnit @param {number} expiry */
+	setTakerOrder(soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry) {
+		if (!this.#checkTakerOrderValues(soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry)) return;
+		this.takerOrder = [soldResource, soldAmount, boughtResource, maxPricePerUnit, 0, expiry];
 		return true;
+	}
+	countFillOfTakerOrder(amountFilled = 0) {
+		if (!this.takerOrder || !amountFilled) return;
+		this.takerOrder[4] += amountFilled;
+		if (this.takerOrder[4] < this.takerOrder[1]) return; // not fully filled yet
+		this.takerOrder = null; // fully filled
+		this.lastTakerOrderFullyFilled = true;
 	}
 	/** @param {string} targetPlayerId */
 	cancelPrivateTradeOffer(targetPlayerId) {
@@ -331,8 +389,8 @@ export class TradeHub extends Building {
 		this.publicOffersByResource = {};
 		this.publicOffersDispatchRequested = true;
 	}
-
-	turnUpdate(isMyNode = false) {
+	/** @param {import('./game.mjs').GameClient} gameClient @param {boolean} [isMyNode] */
+	turnUpdate(gameClient, isMyNode = false) {
 		// IF IS_MY_NODE: DISPATCH BEFORE EXPIRY
 		this.offersExpiryCounter--;
 		if (isMyNode && this.offersExpiryCounter <= 1)
@@ -343,7 +401,75 @@ export class TradeHub extends Building {
 		if (!isMyNode && this.offersExpiryCounter <= 0)
 			this.cancelAllPublicTradeOffers();
 
+		// EXPIRE TAKER ORDER IF NEEDED
+		if (this.takerOrder && this.takerOrder[5] <= gameClient.height) {
+			this.takerOrder = null;
+			this.lastTakerOrderFullyFilled = false;
+		}
+
+		// RESET OFFERS EXPIRY COUNTER IF NEEDED
 		if (this.offersExpiryCounter <= 0)
-			this.offersExpiryCounter = offersExpiryDefault;
+			this.offersExpiryCounter = this.offersExpiryDefault;
+	}
+	/** @param {import('./game.mjs').GameClient} gameClient @param {string} pid */
+	#authorizeFillIfOfferMatchOrder(gameClient, pid) {
+		const order = this.localFillIntents[pid] || gameClient.players[pid]?.tradeHub?.takerOrder;
+		if (!order) return;
+
+		const [soldResource, soldAmount, boughtResource, maxPricePerUnit] = order;
+		const relatedOffer = this.#getMyPublicOfferRelatedToResource(soldResource, boughtResource);
+		const isActive = relatedOffer ? relatedOffer[4] : false;
+		if (!relatedOffer || !isActive) return; // no offer to fill this order (or inactive)
+
+		const remoteStock = gameClient.players[pid].inventory.getAmount(soldResource);
+		if (remoteStock <= 0) return; // remote player has no stock
+		
+		const myPrice = relatedOffer[2] / 1; // requestedAmount / amount
+		if (myPrice > maxPricePerUnit) return; // price too high
+
+		// IF WE ARE HERE > AUTHORIZE FILL > REGISTER IT WITH MIN_STOCK AND PRICE=MAX_ACCEPTED
+		const minStock = relatedOffer[3]; // minStock
+		return [boughtResource, minStock, soldResource, maxPricePerUnit];
+	}
+	/** @param {import('./game.mjs').GameClient} gameClient */
+	prepareAuthorizedFill(gameClient) {
+		// FOR NOW WE GO BLIND, SHOULD BE IMPROVED TO OPTIMIZE SALES and avoid abuse
+		let authorizedFillCount = 0;
+		let treatedPids = new Set();
+		const authorizedFills = {};
+
+		// WE FIRST TRY TO FILL ORDERS THAT ARE LOCALLY KNOWN (pre-shot by directMessage)
+		for (const pid in this.localFillIntents) {
+			const [soldResource, soldAmount, boughtResource, maxPricePerUnit, expiry] = this.localFillIntents[pid];
+			if (expiry < gameClient.height) { delete this.localFillIntents[pid]; continue; }
+
+			// IF ORDER IS KNOWN FROM ALL PEERS > ABORT > TREATED BEHIND
+			const [sR, sA, bR, mPPU, f, e] = gameClient.players[pid].tradeHub.takerOrder || [];
+			if (sR === soldResource && sA === soldAmount && bR === boughtResource && mPPU === maxPricePerUnit && e === expiry)
+				continue;
+
+			treatedPids.add(pid);
+			const authorizedFill = this.#authorizeFillIfOfferMatchOrder(gameClient, pid);
+			if (!authorizedFill) continue;
+			authorizedFills[pid] = authorizedFill;
+			authorizedFillCount++;
+			if (authorizedFillCount >= this.maxAuthorizedFillsPerTurn) break;
+		}
+
+		// CLEAR LOCAL INTENTS > THEY WILL BE KNOWN FROM ALL PEERS NEXT TURN
+		this.localFillIntents = {};
+
+		// THEN WE CAN SEARCH TO FILL ANY OTHER PLAYERS' ORDERS
+		for (const pid in gameClient.players) {
+			if (treatedPids.has(pid)) continue; // ALREADY TREATED
+
+			const authorizedFill = this.#authorizeFillIfOfferMatchOrder(gameClient, pid);
+			if (!authorizedFill) continue;
+			authorizedFills[pid] = authorizedFill;
+			authorizedFillCount++;
+			if (authorizedFillCount >= this.maxAuthorizedFillsPerTurn) break;
+		}
+
+		return { fills: authorizedFills, count: authorizedFillCount };
 	}
 }

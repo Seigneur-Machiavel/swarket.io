@@ -13,9 +13,11 @@ import { filterValidActions } from './actions.mjs';
  * @typedef {import('./actions.mjs').SetPrivateTradeOffer} SetPrivateTradeOffer
  * @typedef {import('./actions.mjs').CancelPrivateTradeOffer} CancelPrivateTradeOffer
  * @typedef {import('./actions.mjs').TakePrivateTradeOffer} TakePrivateTradeOffer
+ * @typedef {import('./actions.mjs').SetTakerOrderAction} SetTakerOrderAction
+ * @typedef {import('./actions.mjs').AuthorizedFillsAction} AuthorizedFillsAction
  * @typedef {import('./actions.mjs').RecycleAction} RecycleAction
  *
- * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetPrivateTradeOffer | CancelPrivateTradeOffer | TakePrivateTradeOffer | RecycleAction} Action
+ * @typedef {UpgradeAction | UpgradeModuleAction | SetParamAction | SetPrivateTradeOffer | CancelPrivateTradeOffer | TakePrivateTradeOffer | SetTakerOrderAction | AuthorizedFillsAction | RecycleAction} Action
  */
 
 export class TurnSystem {
@@ -87,15 +89,11 @@ export class TurnSystem {
 		if (id === this.node.id) console.warn(`We received our own intents back from gossip, ignoring.`);
 		else if (this.verb > 2) console.log(`Intents received for turn #${height} from ${id}:`, this.playersIntents[height][id]);
 	}
-	organizeIntents(height = 0) {
+	getOrganizedPlayerIds(height = 0) {
 		const nodeIds = Object.keys(this.playersIntents[height] || {});
-		const turnIntents = {};
-		for (const nodeId of SeededRandom.shuffle(nodeIds, this.prevHash))
-			turnIntents[nodeId] = this.playersIntents[height][nodeId].actions;
-		
 		delete this.playersIntents[height - 2]; // free memory
 		delete this.playersIntents[height - 1]; // free memory
-		return turnIntents;
+		return SeededRandom.shuffle(nodeIds, this.prevHash);
 	}
 	getTurnHash(height, playersData = []) {
 		/** @type {string} */

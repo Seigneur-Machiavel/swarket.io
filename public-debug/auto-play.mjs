@@ -62,7 +62,7 @@ export class AutoPlayer {
 		const { node, turnSystem, myPlayer, alive, selectedDeadNodeId } = this.gameClient;
 
 		// ATTEMPT TO RECYCLE THE SELECTED DEAD NODE
-		if (!selectedDeadNodeId && firstDeadNodeId && height % 3 === 0) {
+		if (!selectedDeadNodeId && firstDeadNodeId && height % 5 === 0) {
 			this.gameClient.selectedDeadNodeId = firstDeadNodeId;
 			console.log(`%c${this.logPrefix} Selected dead node: ${firstDeadNodeId}`, this.cssStyle);
 		}
@@ -73,12 +73,19 @@ export class AutoPlayer {
 			console.log(`%c${this.logPrefix} Upgraded: ${upgradeName}`, this.cssStyle);
 		}
 
+		// ACCEPT CONNECTION OFFERS
 		this.#acceptPendingConnectionOffer();
-		// random from 1 to 10
-		const price = Math.floor(Math.random() * 10) + 1;
-		//const price = 5; // fixed price
-		this.gameClient.myPlayer.tradeHub.setMyPublicTradeOffer('energy', 'chips', price, 50, true); // DEBUG auto-swap
-		this.gameClient.myPlayer.tradeHub.setMyPublicTradeOffer('energy', 'datas', price, 50, true); // DEBUG auto-swap
-		this.gameClient.myPlayer.tradeHub.setMyPublicTradeOffer('energy', 'models', price, 50, true); // DEBUG auto-swap
+
+		// SET PUBLIC TRADE OFFERS (RANDOM PRICES)
+		const tradeHub = myPlayer.tradeHub;
+		if (Math.random() < .04) tradeHub?.cancelAllPublicTradeOffers(); // random cancel all offers
+		if (tradeHub && Object.keys(tradeHub.publicOffers).length === 0) {
+			// random from 1 to 10
+			const price = Math.floor(Math.random() * 10) + 1;
+			//const price = 5; // fixed price
+			tradeHub.setMyPublicTradeOffer('energy', 'chips', price, 50, true); // DEBUG auto-swap
+			tradeHub.setMyPublicTradeOffer('energy', 'datas', price, 50, true); // DEBUG auto-swap
+			tradeHub.setMyPublicTradeOffer('energy', 'models', price, 50, true); // DEBUG auto-swap
+		}
 	}
 }
