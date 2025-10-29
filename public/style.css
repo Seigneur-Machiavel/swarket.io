@@ -27,15 +27,6 @@
 	--fabricator-icon: url(assets/buildings/fabricator.png);
 	--trade-hub-icon: url(assets/buildings/trade-hub.png);
 
-	/* === REACTOR MODULE ICONS === */
-	--efficiency-icon: url(assets/buildings/reactor_modules/efficiency.png);
-	--overload-icon: url(assets/buildings/reactor_modules/overload.png);
-	--synergy-icon: url(assets/buildings/reactor_modules/synergy.png);
-	--stability-icon: url(assets/buildings/reactor_modules/stability.png);
-	--catalyst-icon: url(assets/buildings/reactor_modules/catalyst.png);
-	--burst-icon: url(assets/buildings/reactor_modules/burst.png);
-	--quantum-icon: url(assets/buildings/reactor_modules/quantum.png);
-
 	/* === TRADEHUB MODULE ICONS === */
 	--connectivity-icon: url(assets/buildings/tradehub_modules/connectivity.png);
 	--trader-icon: url(assets/buildings/tradehub_modules/trader.png);
@@ -46,8 +37,24 @@
 	--hacker-icon: url(assets/buildings/tradehub_modules/hacker.png);
 	--optimizer-icon: url(assets/buildings/tradehub_modules/optimizer.png);
 
+	/* === REACTOR MODULE ICONS === */
+	--efficiency-icon: url(assets/buildings/reactor_modules/efficiency.png);
+	--overload-icon: url(assets/buildings/reactor_modules/overload.png);
+	--synergy-icon: url(assets/buildings/reactor_modules/synergy.png);
+	--stability-icon: url(assets/buildings/reactor_modules/stability.png);
+	--catalyst-icon: url(assets/buildings/reactor_modules/catalyst.png);
+	--burst-icon: url(assets/buildings/reactor_modules/burst.png);
+	--quantum-icon: url(assets/buildings/reactor_modules/quantum.png);
+
+	/* === FABRICATOR MODULE ICONS === */
+	--basic-production-line-icon: url(assets/buildings/fabricator_modules/basic_production_line.png);
+	--advanced-production-line-icon: url(assets/buildings/fabricator_modules/advanced_production_line.png);
+	--composite-production-line-icon: url(assets/buildings/fabricator_modules/composite_production_line.png);
+	--ultimate-production-line-icon: url(assets/buildings/fabricator_modules/ultimate_production_line.png);
+
 	/* === UPGRADE ICONS === */
 	--producer-icon: url(assets/upgrades/producer.png);
+	--multi-producer-icon: url(assets/upgrades/multi_producer.png);
 	--energy-drop-icon: url(assets/upgrades/energy.png);
 	--cleaner-icon: url(assets/upgrades/cleaner.png);
 	--maxEnergy-icon: url(assets/upgrades/battery.png);
@@ -81,6 +88,8 @@
 	/* === RESOURCE ICONS (TIER 5 - ULTIMATE) === */
 	--genius-icon: url(assets/resources/genius.png);
 	--agiCell-icon: url(assets/resources/agi_cell.png);
+	/* === SPECIAL RESOURCE ICONS === */
+	--outputcoef-icon: url(assets/output_coef.png);
 
 	--skull-icon: url(assets/skull.png);
 }
@@ -478,10 +487,18 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .upgrade-offer.selected {
 	border-color: var(--text-main);
 }
+.upgrade-offer.disabled {
+	pointer-events: none;
+	filter: grayscale(1) brightness(0.6);
+}
 
 .upgrade-offer.producer::before {
 	background-size: 42px 42px;
 	background-image: var(--producer-icon);
+}
+.upgrade-offer.multiProducer::before {
+	background-size: 42px 42px;
+	background-image: var(--multi-producer-icon);
 }
 .upgrade-offer.energyDrop::before {
 	background-image: var(--energy-drop-icon);
@@ -530,6 +547,17 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	width: 200px;
 	height: 20px;
 	transform: translateX(-50%);
+}
+.energy-bar-wrapper .resource-icon {
+    z-index: 1 !important;
+	position: absolute !important;
+    width: 20px !important;
+    height: 20px !important;
+    top: 50% !important;
+    left: 12px !important;
+    margin: 0 !important;
+	background: var(--bg-console) !important;
+    transform: translate(-50%, -50%) scale(.66) !important;
 }
 .UI-wrapper.started .energy-bar-wrapper {
 	animation: fadeIn .6s 1s forwards cubic-bezier(0.75, -0.5, 0.25, 1.5);
@@ -689,13 +717,13 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .resource-icon.catalyzers {
     width: 19px;
     height: 19px;
-    margin: -2px -4px -2px 1px;
+    margin: -2px -3px -2px 0px;
 	filter: hue-rotate(-58deg) brightness(1.4);
 	-webkit-mask: var(--catalyzer-icon) center/contain no-repeat;
 	mask: var(--catalyzer-icon) center/contain no-repeat;
 	background: var(--engineer-color);
 }
-.resource-icon.aiModules {
+.resource-icon.aimodules {
 	width: 20px;
 	height: 20px;
 	margin: -2px;
@@ -719,7 +747,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	mask: var(--expert-icon) center/contain no-repeat;
 	background: var(--engineer-color);
 }
-.resource-icon.aiCores {
+.resource-icon.aicores {
     width: 22px;
     height: 22px;
     margin: -3px;
@@ -752,7 +780,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	mask: var(--genius-icon) center/contain no-repeat;
 	background: var(--engineer-color);
 }
-.resource-icon.agiCells {
+.resource-icon.agicells {
 	width: 20px;
 	height: 20px;
 	margin: -2px -4px -2px 0px;
@@ -952,9 +980,12 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	filter: invert(1) brightness(1);
 	transition: filter .12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-#fabricator img {
-	transform: scale(1.1) rotate(180deg) translateY(-16%);
+#reactor-icon img {
+	transform: scale(.92) translateY(10%);
 }
+/*#fabricator-icon img {
+	transform: scale(1.1) rotate(180deg) translateY(-16%);
+}*/
 .buildings-wrapper .tooltip {
 	top: 80%;
     right: 80%;
@@ -1105,6 +1136,19 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	transform: scale(1.1);
     background-position-x: 36%;
 }
+.tree-step .module.basicProductionLine::before {
+	background-image: var(--basic-production-line-icon);
+}
+.tree-step .module.advancedProductionLine::before {
+	background-image: var(--advanced-production-line-icon);
+}
+.tree-step .module.compositeProductionLine::before {
+	transform: scale(1.2);
+	background-image: var(--composite-production-line-icon);
+}
+.tree-step .module.ultimateProductionLine::before {
+	background-image: var(--ultimate-production-line-icon);
+}
 .tree-step .module .tooltip {
 	top: 120%;
     left: 50%;
@@ -1124,6 +1168,12 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 /** === SHARED STYLES FOR BUILDING MODALS === */
 /** === PRODUCTION LINE - (WRAPPER) === */
+.production-lines-wrapper {
+	overflow-y: auto;
+	height: 210px;
+	/*box-shadow: inset 0 0px 10px -5px black;*/
+    box-shadow: inset 0 0px 20px -10px black;
+}
 .production-line {
 	user-select: none;
 	display: flex;
@@ -1141,17 +1191,37 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 /** === PRODUCTION LINE - INPUTS & OUTPUTS === */
 .resource-inputs, .resource-outputs {
-	z-index: 1;
+	/*z-index: 1;*/
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	height: 100%;
 	filter: brightness(.8);
 }
+.resource-inputs:hover, .resource-outputs:hover {
+	z-index: 1;
+}
 .production-line .resource {
 	height: 100%;
-	width: fit-content;
+	/*width: fit-content;*/
+	width: 60px;
 }
+.production-line .resource-icon.outputcoef {
+	margin: 0 -1px 0 2px;
+	-webkit-mask: var(--outputcoef-icon) center/contain no-repeat;
+	mask: var(--outputcoef-icon) center/contain no-repeat;
+	background: var(--color1);
+}
+.production-line .resource .tooltip {
+	top: 80%;
+}
+.production-line:not(:first-child):last-child .resource .tooltip {
+	top: -20%;
+}
+.resource-inputs .resource .tooltip {
+	transform: translateX(0%);
+}
+
 .production-line.two .resource {
 	height: 50%;
 }
@@ -1165,6 +1235,9 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	gap: 6px;
 	margin-left: 3px;
 	height: 100%;
+}
+.production-line.one .resource-outputs {
+	margin-left: 7px;
 }
 /** === PRODUCTION CYCLE - FITTINGS & CHAINS === */
 .production-chain, .production-chain-fitting {
@@ -1197,6 +1270,24 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .production-chain-fitting.one-inputs.two-output .fitting:nth-child(1) {
 	transform: rotate(-33deg);
 }
+
+
+.production-chain.three .chain:nth-child(1) {
+	transform: rotate(6deg);
+}
+.production-chain.three .chain:nth-child(3) {
+	transform: rotate(-6deg);
+}
+.production-chain-fitting.three-inputs.one-output .fitting:nth-child(1) {
+	transform: translate(2px, 2px) rotate(40deg);
+}
+.production-chain-fitting.three-inputs.one-output .fitting:nth-child(2) {
+	transform: translateX(-3px);
+}
+.production-chain-fitting.three-inputs.one-output .fitting:nth-child(3) {
+	transform: translate(2px, -2px) rotate(-40deg);
+}
+
 .chain, .fitting {
 	font-weight: bold;
 	position: relative;

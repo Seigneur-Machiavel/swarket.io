@@ -33,6 +33,7 @@
 	</div>
 </div>*/
 
+import { formatCompact3Digits } from '../utils.mjs';
 const numberToWord = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five' };
 
 // IO PARAM
@@ -43,7 +44,7 @@ export class ProductionLineIOParam {
 	}
 }
 // ACTIONS PARAM
-export class ProductionLineVerticalRangeParam {
+class ProductionLineVerticalRangeParam {
 	type = 'input-vertical-range';
 	steps; min; max; step; value;
 	constructor(steps = 5, min = 0, max = 1, step = 0.25, value = 1) {
@@ -74,7 +75,7 @@ class ElementsBuilder {
 
 		const resourceValue = document.createElement('span');
 		resourceValue.classList = 'resource-value';
-		resourceValue.textContent = qty.toFixed(3).replace(/\.?0+$/, '');
+		resourceValue.textContent = formatCompact3Digits(qty);
 		resourceElement.appendChild(resourceValue);
 		return resourceElement;
 	}
@@ -144,7 +145,7 @@ export class ProductionLineComponent {
 	constructor(inputs = [], outputs = [], actions = []) {
 		const [inputsCount, outputsCount, actionsCount] = [inputs.length, outputs.length, actions.length];
 		if (!inputsCount || !outputsCount) throw new Error('Production line must have at least one input and one output');
-		if (inputsCount > 2 || outputsCount > 2) throw new Error('Production line supports up to 2 inputs and 2 outputs');
+		if (inputsCount > 3 || outputsCount > 2) throw new Error('Production line supports up to 3 inputs and 2 outputs');
 		if (actionsCount > 3) throw new Error('Production line supports only 3 actions max');
 		
 		// MAIN: PRODUCTION LINE
@@ -202,6 +203,26 @@ export class ProductionLineComponent {
 
 		const valueElement = element.querySelector('.resource-value');
 		if (!valueElement) return;
-		valueElement.textContent = newQty.toFixed(3).replace(/\.?0+$/, '');
+		valueElement.textContent = formatCompact3Digits(newQty);
 	}
 }
+
+/** @param {string} lineKey */
+const newProductionRateAction = (lineKey, buildingName = 'reactor') => ({
+	actionParam: new ProductionLineVerticalRangeParam(5, 0, 1, .25, 1),
+	events: {
+		/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
+		oninput: (gameClient, value) => {
+			if (!gameClient?.alive) return;
+			const myAction = { type: 'set-param', param: 'buildingProductionRate', buildingName, lineName: lineKey, value };
+			gameClient.digestMyAction(myAction);
+			console.log('oninput', myAction);
+		}
+	}
+});
+export const getLineActions = (lineKey, buildingName = 'reactor') => {
+	const a = [];
+	a.push(newProductionRateAction(lineKey, buildingName));
+	// HERE WE CAN ADD MORE ACTIONS SPECIFIC TO LINES IN THE FUTURE
+	return a;
+};

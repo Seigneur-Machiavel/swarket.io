@@ -48,7 +48,7 @@ export class AutoPlayer {
 	
 		// ATTEMPT TO UPGRADE IF POSSIBLE
 		if (upgradeName && height % 2 === 1) { // limit upgrade speed to 1 every 2 turns
-			this.upgradeOffersComponent.onOfferClick(upgradeName);
+			this.upgradeOffersComponent.onOfferClick(0 + 1, upgradeName);
 			console.log(`%c${this.logPrefix} Upgraded: ${upgradeName}`, this.cssStyle);
 		}
 

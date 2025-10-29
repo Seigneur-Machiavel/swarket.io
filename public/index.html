@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<!-- PRELOAD FILES IN ONE STACK -->
 	<!-- <script src="./hive-config.json" type="json"></script> -->
+	<script src="./utils.mjs" type="module"></script>
 	<script src="./pre-game/connection-loader.mjs" type="module"></script>
 	<script src="./hive-p2p/libs/xxhash32.mjs" type="module"></script>
 	<script src="./visualizer.mjs" type="module"></script>
@@ -59,6 +60,7 @@
 		</div>
 	
 		<div class="energy-bar-wrapper hoverable-tooltip">
+			<div class="resource-icon energy"></div>
 			<div class="tooltip" id="energy-tooltip">0/0</div>
 			<div class="energy-bar">
 				<div class="energy-fill" id="energy-fill"></div>
@@ -158,6 +160,11 @@
 		</div>
 	
 		<div class="buildings-wrapper">
+			<div id="trade-hub-icon" class="building-icon hoverable-tooltip">
+				<div class="building-upgradePoints" id="trade-hub-upgrade-points">0</div>
+				<div class="tooltip">TradeHub: Networking building</div>
+				<img src="./assets/buildings/trade-hub.png" alt="TradeHub">
+			</div>
 			<div id="reactor-icon" class="building-icon hoverable-tooltip">
 				<div class="building-upgradePoints" id="reactor-upgrade-points">0</div>
 				<div class="tooltip">Reactor: Produces energy over time</div>
@@ -168,22 +175,8 @@
 				<div class="tooltip">Fabricator: Produces high tier resources</div>
 				<img src="./assets/buildings/fabricator.png" alt="Fabricator">
 			</div>
-			<div id="trade-hub-icon" class="building-icon hoverable-tooltip">
-				<div class="building-upgradePoints" id="trade-hub-upgrade-points">0</div>
-				<div class="tooltip">TradeHub: Networking building</div>
-				<img src="./assets/buildings/trade-hub.png" alt="TradeHub">
-			</div>
 		</div>
 
-		<div id ="reactor-modal" class="building-modal modal">
-			<div class="close-btn">x</div>
-			<div class="modules-wrapper"></div>
-			<div class="production-lines-wrapper"></div>
-		</div>
-		<div id ="fabricator-modal" class="building-modal modal">
-			<div class="close-btn">x</div>
-			
-		</div>
 		<div id ="trade-hub-modal" class="building-modal modal">
 			<div class="close-btn">x</div>
 			<div class="modules-wrapper"></div>
@@ -239,6 +232,16 @@
 					</button>
 				</div>
 			</div>
+		</div>
+		<div id ="reactor-modal" class="building-modal modal">
+			<div class="close-btn">x</div>
+			<div class="modules-wrapper"></div>
+			<div class="production-lines-wrapper"></div>
+		</div>
+		<div id ="fabricator-modal" class="building-modal modal">
+			<div class="close-btn">x</div>
+			<div class="modules-wrapper"></div>
+			<div class="production-lines-wrapper"></div>
 		</div>
 
 		<div id="connections-list-wrapper">

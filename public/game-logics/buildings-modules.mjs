@@ -1,146 +1,16 @@
 
 
-/** @param {import('./player.mjs').PlayerNode} player */
-export function getModulesDescriptionRelativeToPlayer(player) { // DEPRECATED
-	if (!player.reactor) return null;
-	/** @type {Record<string, { minBuildingLevel: number, currentLevel: number, description: string }>} */
-	const modulesInfos = {};
-	for (const b in buildingModules)
-		for (const m in buildingModules[b]) {
-			const currentLevel = player.reactor.modulesLevel[m] || 0;
-			const { minBuildingLevel } = buildingModules[b][m];
-			if (!modulesInfos[b]) modulesInfos[b] = {};
-			const { description } = buildingModules[b][m].levelEffect[currentLevel] || 'Max level reached';
-			modulesInfos[b][m] = { minBuildingLevel, currentLevel, description };
-		}
-	return modulesInfos;
-}
-
 /** @param {number} reactorLevel @param {string} moduleKey */
 export function getModuleMaxLevel(reactorLevel, moduleKey) {
 	console.log('getModuleMaxLevel', reactorLevel, moduleKey);
 }
 
-class ReactorModuleLevelEffect { // TYPEDEF ONLY
-	/** @type {string} */ 				description;
-	/** @type {number | undefined} */ 	outputCoef;
-	/** @type {number | undefined} */ 	inputCoef;
-	/** @type {number | undefined} */ 	breakdownRiskCoef;
-	/** @type {number | undefined} */ 	energyPerRawResource;
+class ModuleLevelEffect { 								// TYPEDEF
+	/** @type {string} */ 				description; 	// Tooltip description
+	/** @type {number | undefined} */ 	outputCoef;		// Output coefficient
+	/** @type {number | undefined} */ 	inputCoef;		// Input coefficient
 }
-
-export class REACTOR_MODULES {
-	/** @returns {Array<number>} */
-	static emptyModulesArray() {
-		return Array(REACTOR_MODULES.allModulesKeys.length).fill(0);
-	}
-	static allModulesKeys = [
-		'efficiency',
-		'overload',
-		'synergy',
-		'stability',
-		'catalyst',
-		'burst',
-		'quantum'
-	];
-
-	/** @returns {{minBuildingLevel: number, maxLevel: number} | null} */
-	static getModuleRequiredLevelAndMaxLevel(moduleKey = 'toto') {
-		const m = REACTOR_MODULES[moduleKey];
-		return { minBuildingLevel: m.minBuildingLevel, maxLevel: m.levelEffect.length };
-	}
-	/** @returns {ReactorModuleLevelEffect | null} */
-	static getModuleEffect(moduleKey = 'efficiency', level = 0) {
-		return REACTOR_MODULES[moduleKey]?.levelEffect[level - 1] || null;
-	}
-	/** @returns {string} */
-	static getModuleDescription(moduleKey = 'efficiency', level = 0) {
-		let description = REACTOR_MODULES[moduleKey]?.levelEffect[level]?.description;
-		if (!description) description = `${REACTOR_MODULES[moduleKey]?.levelEffect[level - 1]?.description} (Max level reached)`;
-		return description;
-	}
-
-	// REACTOR LEVEL 0
-	static efficiency = {
-		minBuildingLevel: 0,
-		levelEffect: [
-			{ outputCoef: 1.2, description: 'Production rate: 120%' },
-			{ outputCoef: 1.4, description: 'Production rate: 120% > 140%' },
-			{ outputCoef: 1.6, description: 'Production rate: 140% > 160%' },
-			{ outputCoef: 2, description: 'Production rate: 160% > 200%' },
-			{ outputCoef: 2.5, description: 'Production rate: 200% > 250%' }
-		]
-	}
-	static overload = {
-		minBuildingLevel: 0,
-		levelEffect: [
-			{ outputCoef: 1.5, inputCoef: 1.3, description: 'Produces 50% more but consumes 30% more resources' },
-			{ outputCoef: 2, inputCoef: 1.6, description: 'Production: 150% > 200%, Consumption: 30% > 60%' },
-			{ outputCoef: 2.5, inputCoef: 1.9, description: 'Production: 200% > 250%, Consumption: 60% > 90%' },
-			{ outputCoef: 3, inputCoef: 2.2, description: 'Production: 250% > 300%, Consumption: 90% > 120%' },
-			{ outputCoef: 4.5, inputCoef: 2.5, description: 'Production: 300% > 450%, Consumption: 120% > 150%' }
-		]
-	}
-
-	// REACTOR LEVEL 3
-	static synergy = { // default : 0
-		minBuildingLevel: 3,
-		levelEffect: [
-			{ energyPerRawResource: .05, description: 'Produce 0.05 energy per each raw resource produced' },
-			{ energyPerRawResource: .1, description: 'Produce 0.1 energy per each raw resource produced' },
-			{ energyPerRawResource: .2, description: 'Produce 0.2 energy per each raw resource produced' },
-			{ energyPerRawResource: .3, description: 'Produce 0.3 energy per each raw resource produced' },
-			{ energyPerRawResource: .5, description: 'Produce 0.5 energy per each raw resource produced' }
-		]
-	}
-	static stability = { // default : 1
-		minBuildingLevel: 3,
-		levelEffect: [
-			{ breakdownRiskCoef: .75, description: 'Decreases breakdown risk by 25%' },
-			{ breakdownRiskCoef: .5, description: 'Breakdown risk reduction: 25% > 50%' },
-			{ breakdownRiskCoef: .3, description: 'Breakdown risk reduction: 50% > 70%' },
-			{ breakdownRiskCoef: .15, description: 'Breakdown risk reduction: 30% > 15%' },
-			{ breakdownRiskCoef: .05, description: 'Breakdown risk reduction: 15% > 5%' }
-		]
-	}
-
-	// REACTOR LEVEL 5
-	static catalyst = {
-		minBuildingLevel: 5,
-		levelEffect: [
-			{ outputCoef: 2, description: 'Consume catalyzer => Production rate: +100%' },
-			{ outputCoef: 2.5, description: 'Consume catalyzer => Production rate: 150%' },
-			{ outputCoef: 3.5, description: 'Consume catalyzer => Production rate: 250%' },
-			{ outputCoef: 5, description: 'Consume catalyzer => Production rate: 400%' },
-			{ outputCoef: 9, description: 'Consume catalyzer => Production rate: 800%' }
-		]
-	}
-	static burst = {
-		minBuildingLevel: 5,
-		levelEffect: [
-			{ description: 'Consume prototypes => Produce 100 energy' },
-			{ description: 'Consume prototypes => Produce 200 energy' },
-			{ description: 'Consume prototypes => Produce 300 energy' },
-		]
-	}
-
-	// REACTOR LEVEL 10
-	static quantum = {
-		minBuildingLevel: 10,
-		levelEffect: [
-			{ description: 'Consume aiModules => Produce 5000 energy' },
-		]
-	}
-}
-
-export class FABRICATOR_MODULES {
-	// TO BE DEFINED
-}
-
-class TradeHubModuleLevelEffect { // TYPEDEF ONLY
-	/** @type {string} */ 				description;
-	/** @type {number | undefined} */ 	outputCoef;
-	/** @type {number | undefined} */ 	inputCoef;
+class TradeHubModuleLevelEffect extends ModuleLevelEffect { // TYPEDEF
 	/** @type {number | undefined} */ 	maxTradeOffer;
 	/** @type {number | undefined} */ 	maxConnections;
 	/** @type {number | undefined} */ 	maxThefts;
@@ -148,7 +18,15 @@ class TradeHubModuleLevelEffect { // TYPEDEF ONLY
 	/** @type {number | undefined} */ 	theftSuccessRate;
 	/** @type {number | undefined} */ 	theftLossRate;
 	/** @type {number | undefined} */ 	taxRate;
-	/** @type {number | undefined} */ 	comissionRate; // DEPRECATED
+}
+class ReactorModuleLevelEffect extends ModuleLevelEffect { 	// TYPEDEF
+	/** @type {number | undefined} */ 	breakdownRiskCoef;
+	/** @type {number | undefined} */ 	energyPerRawResource;
+}
+class FabricatorModuleLevelEffect extends ModuleLevelEffect { // TYPEDEF
+	/** @type {number | undefined} */ 	breakdownRiskCoef;
+	/** '2' = basic, '3' = advanced, '4' = composite, '5' = ultimate @type {string | undefined} */
+	productTier;
 }
 
 export class TRADE_HUB_MODULES {
@@ -207,16 +85,6 @@ export class TRADE_HUB_MODULES {
 	}
 
 	// TRADE-HUB LEVEL 3
-	static broker = { // default : 0 // DISABLED FOR NOW (removed from allModulesKeys)
-		minBuildingLevel: 3,
-		levelEffect: [
-			{ comissionRate: .02, description: 'Take comission of 2% on any neighbors trades' },
-			{ comissionRate: .04, description: 'Increase comission rate from 2% to 4%' },
-			{ comissionRate: .06, description: 'Increase comission rate from 4% to 6%' },
-			{ comissionRate: .08, description: 'Increase comission rate from 6% to 8%' },
-			{ comissionRate: .1, description: 'Increase comission rate from 8% to 10%' }
-		]
-	}
 	static thief = { // default : 0 // For now, targets are randomly chosen
 		minBuildingLevel: 3,
 		levelEffect: [
@@ -288,9 +156,210 @@ export class TRADE_HUB_MODULES {
 		]
 	}
 }
+export class REACTOR_MODULES {
+	/** @returns {Array<number>} */
+	static emptyModulesArray() {
+		return Array(REACTOR_MODULES.allModulesKeys.length).fill(0);
+	}
+	static allModulesKeys = [
+		'efficiency',
+		'overload',
+		'synergy',
+		'stability',
+		'catalyst',
+		'burst',
+		'quantum'
+	];
 
-const buildingModules = { // NOT USED YET -> AND PROBABLY DEPRECATED SOON
-	reactor: REACTOR_MODULES,
-	// fabricator: FABRICATOR_MODULES, // TODO
-	tradeHub: TRADE_HUB_MODULES
+	/** @returns {{minBuildingLevel: number, maxLevel: number} | null} */
+	static getModuleRequiredLevelAndMaxLevel(moduleKey = 'toto') {
+		const m = REACTOR_MODULES[moduleKey];
+		return { minBuildingLevel: m.minBuildingLevel, maxLevel: m.levelEffect.length };
+	}
+	/** @returns {ReactorModuleLevelEffect | null} */
+	static getModuleEffect(moduleKey = 'efficiency', level = 0) {
+		return REACTOR_MODULES[moduleKey]?.levelEffect[level - 1] || null;
+	}
+	/** @returns {string} */
+	static getModuleDescription(moduleKey = 'efficiency', level = 0) {
+		let description = REACTOR_MODULES[moduleKey]?.levelEffect[level]?.description;
+		if (!description) description = `${REACTOR_MODULES[moduleKey]?.levelEffect[level - 1]?.description} (Max level reached)`;
+		return description;
+	}
+
+	// REACTOR LEVEL 0
+	static efficiency = {
+		minBuildingLevel: 0,
+		levelEffect: [
+			{ outputCoef: 1.1, description: 'Reactor production rate: 110% (passive)' },
+			{ outputCoef: 1.2, description: 'Reactor production rate: 110% > 120% (passive)' },
+			{ outputCoef: 1.3, description: 'Reactor production rate: 120% > 130% (passive)' },
+			{ outputCoef: 1.4, description: 'Reactor production rate: 130% > 140% (passive)' },
+			{ outputCoef: 1.5, description: 'Reactor production rate: 140% > 150% (passive)' }
+		]
+	}
+	static overload = {
+		minBuildingLevel: 0,
+		levelEffect: [
+			{ outputCoef: 1.3, inputCoef: 1.1, description: 'Produces 30% more but consumes 10% more resources' },
+			{ outputCoef: 1.5, inputCoef: 1.3, description: 'Produces 50% more but consumes 30% more resources' },
+			{ outputCoef: 2, inputCoef: 1.6, description: 'Production: 50% > 100%, Consumption: 30% > 60%' },
+			{ outputCoef: 2.5, inputCoef: 1.9, description: 'Production: 100% > 150%, Consumption: 60% > 90%' },
+			{ outputCoef: 3, inputCoef: 2.2, description: 'Production: 150% > 220%, Consumption: 90% > 120%' }
+		]
+	}
+
+	// REACTOR LEVEL 3
+	static synergy = { // default : 0
+		minBuildingLevel: 3,
+		levelEffect: [
+			{ energyPerRawResource: .05, description: 'Produce 0.05 energy per each raw resource produced' },
+			{ energyPerRawResource: .1, description: 'Produce 0.1 energy per each raw resource produced' },
+			{ energyPerRawResource: .2, description: 'Produce 0.2 energy per each raw resource produced' },
+			{ energyPerRawResource: .3, description: 'Produce 0.3 energy per each raw resource produced' },
+			{ energyPerRawResource: .5, description: 'Produce 0.5 energy per each raw resource produced' }
+		]
+	}
+	static stability = { // default : 1
+		minBuildingLevel: 3,
+		levelEffect: [
+			{ breakdownRiskCoef: .75, description: 'Decreases breakdown risk by 25%' },
+			{ breakdownRiskCoef: .5, description: 'Breakdown risk reduction: 25% > 50%' },
+			{ breakdownRiskCoef: .3, description: 'Breakdown risk reduction: 50% > 70%' },
+			{ breakdownRiskCoef: .15, description: 'Breakdown risk reduction: 30% > 15%' },
+			{ breakdownRiskCoef: .05, description: 'Breakdown risk reduction: 15% > 5%' }
+		]
+	}
+
+	// REACTOR LEVEL 5
+	static catalyst = { // associated with production line 'catalyst'
+		minBuildingLevel: 5,
+		levelEffect: [
+			{ description: 'Consume catalyzer => Reactor production rate: +20%' },
+			{ description: 'Consume catalyzer => Reactor production rate: +50%' },
+			{ description: 'Consume catalyzer => Reactor production rate: +80%' },
+			{ description: 'Consume catalyzer => Reactor production rate: +110%' },
+			{ description: 'Consume catalyzer => Reactor production rate: +150%' }
+		]
+	}
+	static burst = { // associated with production line 'burst'
+		minBuildingLevel: 5,
+		levelEffect: [
+			{ description: 'Consume prototypes => Produce 20 energy' },
+			{ description: 'Consume prototypes => Produce 50 energy' },
+			{ description: 'Consume prototypes => Produce 100 energy' },
+		]
+	}
+
+	// REACTOR LEVEL 10
+	static quantum = { // associated with production line 'quantum'
+		minBuildingLevel: 10,
+		levelEffect: [
+			{ description: 'Consume aiModules => Produce 500 energy' },
+		]
+	}
+}
+export class FABRICATOR_MODULES {
+	/** @returns {Array<number>} */
+	static emptyModulesArray() {
+		return Array(FABRICATOR_MODULES.allModulesKeys.length).fill(0);
+	}
+	static allModulesKeys = [
+		'basicProductionLine',
+		'efficiency',
+		'advancedProductionLine',
+		'stability',
+		'compositeProductionLine',
+		'catalyst',
+		'ultimateProductionLine',
+		//TODO : the last one
+	];
+	/** @returns {{minBuildingLevel: number, maxLevel: number} | null} */
+	static getModuleRequiredLevelAndMaxLevel(moduleKey = 'toto') {
+		const m = FABRICATOR_MODULES[moduleKey];
+		return { minBuildingLevel: m.minBuildingLevel, maxLevel: m.levelEffect.length };
+	}
+	/** @returns {FabricatorModuleLevelEffect | null} */
+	static getModuleEffect(moduleKey = 'efficiency', level = 0) {
+		return FABRICATOR_MODULES[moduleKey]?.levelEffect[level - 1] || null;
+	}
+	/** @returns {string} */
+	static getModuleDescription(moduleKey = 'efficiency', level = 0) {
+		let description = FABRICATOR_MODULES[moduleKey]?.levelEffect[level]?.description;
+		if (!description) description = `${FABRICATOR_MODULES[moduleKey]?.levelEffect[level - 1]?.description} (Max level reached)`;
+		return description;
+	}
+
+	// FABRICATOR LEVEL 0
+	static basicProductionLine = {
+		minBuildingLevel: 0,
+		levelEffect: [
+			{ productTier: '2', description: 'Create a random basic production line' },
+			{ productTier: '2', description: 'Create a random basic production line' },
+			{ productTier: '2', description: 'Create a random basic production line' },
+			{ productTier: '2', description: 'Create a random basic production line' }
+		]
+	}
+	static efficiency = {
+		minBuildingLevel: 0,
+		levelEffect: [
+			{ inputCoef: .95, description: 'Fabricator consumption rate: -5% (passive)' },
+			{ inputCoef: .9, description: 'Fabricator consumption rate: -5% > -10% (passive)' },
+			{ inputCoef: .85, description: 'Fabricator consumption rate: -10% > -15% (passive)' },
+			{ inputCoef: .8, description: 'Fabricator consumption rate: -15% > -20% (passive)' },
+			{ inputCoef: .7, description: 'Fabricator consumption rate: -20% > -30% (passive)' },
+			{ inputCoef: .6, description: 'Fabricator consumption rate: -30% > -40% (passive)' },
+			{ inputCoef: .5, description: 'Fabricator consumption rate: -40% > -50% (passive)' },
+			{ inputCoef: .4, description: 'Fabricator consumption rate: -50% > -60% (passive)' },
+		]
+	}
+
+	// FABRICATOR LEVEL 3
+	static advancedProductionLine = {
+		minBuildingLevel: 3,
+		levelEffect: [
+			{ productTier: '3', description: 'Create a random advanced production line' },
+			{ productTier: '3', description: 'Create a random advanced production line' },
+			{ productTier: '3', description: 'Create a random advanced production line' }
+		]
+	}
+	static stability = { // default : 1
+		minBuildingLevel: 3,
+		levelEffect: [
+			{ breakdownRiskCoef: .75, description: 'Decreases breakdown risk by 25%' },
+			{ breakdownRiskCoef: .5, description: 'Breakdown risk reduction: 25% > 50%' },
+			{ breakdownRiskCoef: .3, description: 'Breakdown risk reduction: 50% > 70%' },
+			{ breakdownRiskCoef: .15, description: 'Breakdown risk reduction: 30% > 15%' },
+			{ breakdownRiskCoef: .05, description: 'Breakdown risk reduction: 15% > 5%' }
+		]
+	}
+
+	// FABRICATOR LEVEL 5
+	static compositeProductionLine = {
+		minBuildingLevel: 5,
+		levelEffect: [
+			{ productTier: '4', description: 'Create a random composite production line' },
+			{ productTier: '4', description: 'Create a random composite production line' },
+			{ productTier: '4', description: 'Create a random composite production line' }
+		]
+	}
+	static catalyst = { // associated with production line 'catalyst'
+		minBuildingLevel: 5,
+		levelEffect: [
+			{ description: 'Consume catalyzer => Fabricator production rate: +20%' },
+			{ description: 'Consume catalyzer => Fabricator production rate: +50%' },
+			{ description: 'Consume catalyzer => Fabricator production rate: +80%' },
+			{ description: 'Consume catalyzer => Fabricator production rate: +110%' },
+			{ description: 'Consume catalyzer => Fabricator production rate: +150%' }
+		]
+	}
+
+	// FABRICATOR LEVEL 10
+	static ultimateProductionLine = {
+		minBuildingLevel: 10,
+		levelEffect: [
+			{ productTier: '5', description: 'Create a random ultimate production line' },
+			{ productTier: '5', description: 'Create a random ultimate production line' }
+		]
+	}
 }

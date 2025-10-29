@@ -1,6 +1,6 @@
 // IN THIS FILE WE GROUPED THE LIGHTS UI COMPONENTS USED IN THE GAME
 // OTHER COMPLEX COMPONENTS ARE IN SEPARATE FILES, BUT IMPORTED > EXPORTED HERE
-
+import { formatCompact2Digits, formatCompact3Digits } from '../utils.mjs';
 import { UpgradesTool } from '../game-logics/upgrades.mjs';
 import { NodeInteractor } from '../game-logics/node-interactions.mjs';
 import { ReactorComponent } from './reactor.mjs';
@@ -98,15 +98,17 @@ export class ConnectionsListComponent {
 }
 
 export class UpgradeOffersComponent {
+	gameClient;
 	offerSelectedOnLastTurn = false;
 	upgradeOffersWrapper = document.getElementById('upgrade-offers-wrapper');
 	offer1 = document.getElementById('upgrade-offer-1');
 	offer2 = document.getElementById('upgrade-offer-2');
 	offer3 = document.getElementById('upgrade-offer-3');
 
-	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
-	displayOffers(gameClient) {
-		const offers = gameClient.alive ? gameClient.myPlayer.upgradeOffers[0] : [];
+	constructor(gameClient) { this.gameClient = gameClient; }
+
+	displayOffers() {
+		const offers = this.gameClient.alive ? this.gameClient.myPlayer.upgradeOffers[0] : [];
 		const offerSelectedOnLastTurn = this.offerSelectedOnLastTurn ? true : false;
 		this.offerSelectedOnLastTurn = false;
 		if (!offers || offers.length === 0) return this.hideOffers();
@@ -118,22 +120,26 @@ export class UpgradeOffersComponent {
 			const { tooltip, subClass } = UpgradesTool.getUpgradeTooltipText(offerName);
 			offerElem.classList = `upgrade-offer ${offers[i - 1]}`;
 			if (subClass) offerElem.classList.add(subClass);
-			offerElem.onclick = () => {
-				this.#setSelectedOffer(i);
-				gameClient.digestMyAction({ type: 'upgrade', upgradeName: offerName });
-				this.offerSelectedOnLastTurn = true;
-			}
+			offerElem.onclick = () => this.onOfferClick(i, offerName);
 			offerElem.querySelector('.tooltip').textContent = tooltip;
 		}
 		this.upgradeOffersWrapper.classList.add('visible');
 		// console.log(`%cUpgrade offers displayed: ${offers.join(', ')}`, 'color: green; font-weight: bold;');
 	}
 	hideOffers() { this.upgradeOffersWrapper.classList.remove('visible'); }
+	onOfferClick(i, upgradeName) {
+		this.#setSelectedOffer(i);
+		this.gameClient.digestMyAction({ type: 'upgrade', upgradeName });
+		this.offerSelectedOnLastTurn = true;
+	}
 	#setSelectedOffer(index = 1) {
 		for (let i = 1; i <= 3; i++) {
 			const offerElem = this[`offer${i}`];
 			if (i === index) offerElem.classList.add('selected');
-			else offerElem.classList.remove('selected');
+			else {
+				offerElem.classList.remove('selected');
+				offerElem.classList.add('disabled');
+			}
 		}
 	}
 }
@@ -147,8 +153,8 @@ export class EnergyBarComponent {
 		const percentage = (energy / maxEnergy) * 100;
 		this.fill.style.width = `${percentage}%`;
 		this.fill.style.filter = `brightness(${30 + percentage * .8}%)`;
-		this.text.textContent = `${percentage.toFixed(2).replace(/\.?0+$/, '')}%`;
-		this.tooltip.textContent = `${energy.toFixed(2).replace(/\.?0+$/, '')}/${Math.round(maxEnergy)}`;
+		this.text.textContent = `${formatCompact2Digits(percentage)}%`;
+		this.tooltip.textContent = `${formatCompact2Digits(energy)}/${Math.round(maxEnergy)}`;
 	}
 }
 
@@ -259,7 +265,7 @@ export class DeadNodesComponent {
 		const resources = deadNodeElem.querySelectorAll('.resource-value');
 		for (const r of resources) {
 			const resourceName = r.getAttribute('data-resource-name');
-			r.textContent = this.gameClient.players[nodeId]?.inventory.getAmount(resourceName).toFixed(3).replace(/\.?0+$/, '');
+			r.textContent = formatCompact3Digits(this.gameClient.players[nodeId]?.inventory.getAmount(resourceName));
 		}
 
 		this.deadNodes[nodeId] = deadNodeElem;

@@ -1,3 +1,4 @@
+import { formatCompact2Digits, formatCompact3Digits } from '../utils.mjs';
 import { ModuleTreeComponent } from './modules-tree.mjs';
 import { TRADE_HUB_MODULES } from '../game-logics/buildings-modules.mjs';
 import { RESOURCES_NAMES, RAW_RESOURCES_PROD_BASIS } from '../game-logics/resources.mjs';
@@ -118,7 +119,7 @@ class MyTradeOfferLineComponent {
 		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value, pronoun = 'I') => {
 			elementIcon.classList = `resource-icon ${resName}`;
 			const isValueEditable = elementValue.isContentEditable;
-			if (isValueEditable) elementValue.textContent = (value / 10).toFixed(3).replace(/\.?0+$/, '');;
+			if (isValueEditable) elementValue.textContent = formatCompact3Digits(value / 10);
 			elementTooltip.textContent = `${pronoun} send: ${resName.charAt(0).toUpperCase() + resName.slice(1)}`;
 		}
 		this.offeredResourceIconElem.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
@@ -205,7 +206,7 @@ class SwapComponent {
 
 	update() { // OppositeValue & button enable/disable
 		const taxRate = this.gameClient.myPlayer.tradeHub.getTaxRate;
-		this.swapTaxRateValue.textContent = `${(taxRate * 100).toFixed(2).replace(/\.?0+$/, '')}%`;
+		this.swapTaxRateValue.textContent = `${formatCompact2Digits(taxRate * 100)}%`;
 
 		const { offeredResource, offeredQty, requestedResource, requestedQty } = this.#getCurrentValues();
 		const bought = this.inputFilledByUser === 'BUY' ? requestedQty : 0;
@@ -213,7 +214,7 @@ class SwapComponent {
 
 		// CALCULATE EXPECTED OPPOSITE VALUE
 		const { totalOppositeAmount, playersToInform } = this.gameClient.swapModule.getSwapExpectedResult(offeredResource, requestedResource, { bought, sold });
-		const fixedStr = totalOppositeAmount.toFixed(3).replace(/\.?0+$/, '');
+		const fixedStr = formatCompact3Digits(totalOppositeAmount);
 		if (bought) this.resourceA_Value.textContent = fixedStr;
 		else this.resourceB_Value.textContent = fixedStr;
 		this.playersToInform = playersToInform;
@@ -236,7 +237,7 @@ class SwapComponent {
 			}
 
 			const defaultVal = resName === 'energy' ? value / 2 : value;
-			this.resourceA_Value.textContent = defaultVal.toFixed(3).replace(/\.?0+$/, '');
+			this.resourceA_Value.textContent = formatCompact3Digits(defaultVal);
 			this.resourceB_Value.textContent = "0";
 		});
 		this.resourceB_Icon.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
@@ -308,7 +309,7 @@ class SwapComponent {
 		if (takerOrder || this.swapBtnClicked) {
 			const [filled, sold] = [takerOrder?.filledAmount || 0, takerOrder?.soldAmount || 1];
 			const fillingPerc = filled / sold * 100;
-			this.swapBtnText.textContent = fillingPerc === 100 ? 'Filled! 100%' : `Filling... ${fillingPerc.toFixed(2).replace(/\.?0+$/, '')}%`;
+			this.swapBtnText.textContent = fillingPerc === 100 ? 'Filled! 100%' : `Filling... ${formatCompact2Digits(fillingPerc)}%`;
 			this.swapBtn.classList.add('filling');
 			this.swapBtnLoader.style.transform = `translateX(${fillingPerc}%)`;
 		} else {

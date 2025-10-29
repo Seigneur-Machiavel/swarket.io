@@ -1,3 +1,4 @@
+import { formatCompact3Digits } from '../utils.mjs';
 import { NodeInteractor } from '../game-logics/node-interactions.mjs';
 
 export class NodeCardComponent {
@@ -110,9 +111,9 @@ export class NodeCardComponent {
 		};
 		/** @param {HTMLElement} elementIcon @param {HTMLElement} elementValue @param {HTMLElement} elementTooltip @param {string} resName @param {number} value @param {string} pronoun */
 		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value, pronoun = 'I') => {
-			elementIcon.classList = `resource-icon ${resName}`;
+			elementIcon.classList = `resource-icon ${resName.toLowerCase()}`;
 			const defaultVal = resName === 'energy' ? value / 2 : value;
-			elementValue.textContent = defaultVal.toFixed(3).replace(/\.?0+$/, '');
+			elementValue.textContent = formatCompact3Digits(defaultVal);
 			elementTooltip.textContent = `${pronoun} send: ${resName.charAt(0).toUpperCase() + resName.slice(1)}`;
 			toogleButtonsState();
 		};
@@ -154,10 +155,10 @@ export class NodeCardComponent {
 	}
 	#setOfferViewerIconsAndValues(offer) {
 		const { resourceName, amount, requestedResourceName, requestedAmount } = offer;
-		this.resourceAIcon.classList = `resource-icon ${resourceName}`;
-		this.resourceAValue.textContent = (amount).toFixed(3).replace(/\.?0+$/, '');
-		this.resourceBIcon.classList = `resource-icon ${requestedResourceName}`;
-		this.resourceBValue.textContent = (requestedAmount).toFixed(3).replace(/\.?0+$/, '');
+		this.resourceAIcon.classList = `resource-icon ${resourceName.toLowerCase()}`;
+		this.resourceAValue.textContent = formatCompact3Digits(amount);
+		this.resourceBIcon.classList = `resource-icon ${requestedResourceName.toLowerCase()}`;
+		this.resourceBValue.textContent = formatCompact3Digits(requestedAmount);
 		return { resourceName, amount, requestedResourceName, requestedAmount };
 	}
 	#setOfferViewerConfirmButtonAttributes() {

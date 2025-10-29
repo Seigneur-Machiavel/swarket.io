@@ -1,3 +1,4 @@
+import { formatCompact3Digits } from '../utils.mjs';
 import { newResourcesSet } from '../game-logics/resources.mjs';
 
 export class ResourcesBarComponent {
@@ -34,7 +35,7 @@ export class ResourcesBarComponent {
 		this.show();
 		for (let i = 0; i < this.resourceValueElements.length; i++) {
 			const value = player.inventory.resources[i];
-			this.resourceValueElements[i].textContent = value.toFixed(3).replace(/\.?0+$/, '');
+			this.resourceValueElements[i].textContent = formatCompact3Digits(value);
 		}
 	}
 	handleNextResourceClick(callback, timeout = 5000) {
@@ -83,7 +84,7 @@ export class ResourcesBarComponent {
 		resourceElement.appendChild(tooltip);
 
 		const icon = document.createElement('div');
-		icon.classList = `resource-icon ${resourceName}`;
+		icon.classList = `resource-icon ${resourceName.toLowerCase()}`;
 		resourceElement.appendChild(icon);
 
 		const value = document.createElement('span');

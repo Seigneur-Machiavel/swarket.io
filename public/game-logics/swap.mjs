@@ -10,6 +10,7 @@ export class SwapModule {
 		this.gameClient = gameClient;
 		this.verb = gameClient.verb;
 	}
+
 	/** Only one of the amount should be > 0
 	 * @param {string} soldResource @param {string} boughtResource @param {{ bought: number, sold: number }} amount */
 	getSwapExpectedResult(soldResource = 'energy', boughtResource = 'chips', amount = { bought: 0, sold: 0 }) {
@@ -73,6 +74,7 @@ export class SwapModule {
 		if (this.verb > 3) console.log({ soldResource, boughtResource, amount, playersWithOffersCount, totalOppositeAmount, remainingAmount });
 		return { totalOppositeAmount, playersToInform };
 	}
+	
 	/** @param {string[]} organizedIds (alive only) @param {string} randomSeed */
 	attributeTurnThefts(organizedIds, randomSeed, maxTheftsPerPlayer = 5) {
 		let totalThefts = 0;

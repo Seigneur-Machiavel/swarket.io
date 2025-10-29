@@ -1,5 +1,5 @@
 import { SeededRandom } from './consensus.mjs';
-import { VALID_RESOURCES, BLUEPRINT, ResourcesProductionType } from './resources.mjs';
+import { VALID_RESOURCES, BLUEPRINT, ResourcesProductionType, newResourcesSet } from './resources.mjs';
 import { REACTOR_MODULES, FABRICATOR_MODULES, TRADE_HUB_MODULES } from './buildings-modules.mjs';
 /** @type {import('hive-p2p/libs/xxhash32.mjs').xxHash32} */
 const xxHash32 = typeof window !== 'undefined'
@@ -49,7 +49,6 @@ export class BuildingBuilder {
 		return building;
 	}
 }
-
 export class Building {
 	type = 'b'; // generic building
 	
@@ -80,7 +79,20 @@ export class Building {
 		if (this.type === 't') return TRADE_HUB_MODULES.getModuleRequiredLevelAndMaxLevel(moduleKey) || {};
 		return null;
 	}
-	upgradeModule(moduleKey = '') {
+	/** @returns {{inputCoef: number | undefined, outputCoef: number | undefined}} */
+	#getModuleInputOutputCoef(moduleIndex = 0) {
+		const moduleLevel = this.modulesLevel[moduleIndex] || 0;
+		if (this.type === 'r') return REACTOR_MODULES.getModuleEffect(REACTOR_MODULES.allModulesKeys[moduleIndex], moduleLevel) || {};
+		if (this.type === 'f') return FABRICATOR_MODULES.getModuleEffect(FABRICATOR_MODULES.allModulesKeys[moduleIndex], moduleLevel) || {};
+		if (this.type === 't') return TRADE_HUB_MODULES.getModuleEffect(TRADE_HUB_MODULES.allModulesKeys[moduleIndex], moduleLevel) || {};
+		return {};
+	}
+	/** @param {string} moduleKey @param {string} [randomSeed] */
+	upgradeModule(moduleKey, randomSeed) {
+		if (!moduleKey) return console.warn('Building.upgradeModule: moduleKey and randomSeed are required');
+		if (typeof moduleKey !== 'string') return console.warn('Building.upgradeModule: moduleKey must be strings');
+		if (randomSeed && typeof randomSeed !== 'string') return console.warn('Building.upgradeModule: randomSeed must be a string if provided');
+		
 		const moduleIndex = this.getModuleIndex(moduleKey);
 		if (moduleIndex === -1) return;
 
@@ -92,9 +104,14 @@ export class Building {
 		if (this.upgradePoints <= 0) return;
 		if (buildingLevel < minBuildingLevel) return;
 		if (currentLevel >= maxLevel) return;
-
+		
 		this.modulesLevel[moduleIndex] = currentLevel + 1;
 		this.upgradePoints--;
+
+		this.createModuleUpgradeAssociateProductionline(currentLevel, moduleKey, randomSeed);
+	}
+	createModuleUpgradeAssociateProductionline(currentLevel = 0, moduleKey = '', randomSeed = '') {
+		// OVERRIDE IN CHILD CLASSES
 	}
 	/** @param {import('./player.mjs').PlayerNode} player @param {string} randomSeed @returns {ResourcesProductionType} */
 	consumeResourcesAndGetProduction(player, randomSeed) {
@@ -103,9 +120,12 @@ export class Building {
 		this.linesWhoBrokeThisTurn = [];
 		if (!player.getEnergy) return {};
 		
+		let outputCoef = 1; 	// For lines who produce an output modificator
 		const production = {}; 	// ResourcesProductionType
 		for (const lineKey of this.activeProductionLines) {
-			const { inputs, outputs } = this.getProductionLineEffect(lineKey);
+			const { inputs, outputs, stopped } = this.getProductionLineEffect(lineKey);
+			if (stopped) continue;
+
 			let missingResource = false;
 			for (const r in inputs) { // CHECK IF PLAYER HAS ENOUGH RESOURCES FOR THE LINE
 				if (player.inventory.getAmount(r) >= inputs[r]) continue;
@@ -114,27 +134,59 @@ export class Building {
 			}
 			if (missingResource) continue;
 			
-			// CALCULATE IF BREAKDOWN OCCURS
-			let breakdownChance = this.breakdownRiskBasis; 		// basis 25%
-			breakdownChance *= this.getBreakdownRiskCoef || 1;	// from 1 to .05
-			const hash = xxHash32(`${randomSeed}-${lineKey}-${player.id}`);
-			const rnd = SeededRandom.randomFloat(hash);
-			//console.info(`rdn: ${rnd} vs breakdownChance: ${breakdownChance} for line ${lineKey}`);
-			if (rnd < breakdownChance) {
-				this.linesWhoBrokeThisTurn.push(lineKey);
-				// IF LINE BROKE LAST TURN, DO NOT CONSUME RESOURCES, ELSE CONSUME THEM
-				if (!linesWhoBrokeLastTurn.includes(lineKey))
-					for (const r in inputs) player.inventory.subtractAmount(r, inputs[r]);
-				continue; // line broke, skip production
-			}
+			// IF LINE BREAKDOWN AND NOT BROKE LAST TURN, CONSUME RESOURCES
+			const hashBreakdown = this.#hasLineBreaked(player, lineKey, randomSeed);
+			if (hashBreakdown && !linesWhoBrokeLastTurn.includes(lineKey))
+				for (const r in inputs) player.inventory.subtractAmount(r, inputs[r]);
+			if (hashBreakdown) continue; // line broke this turn
 
 			// CONSUME RESOURCES && FILL PRODUCTION
 			for (const r in inputs) player.inventory.subtractAmount(r, inputs[r]);
-			for (const r in outputs) production[r] = (production[r] || 0) + outputs[r];
+			for (const r in outputs) {
+				if (r === 'outputCoef') outputCoef *= outputs[r]; // Special case for outputCoef
+				else production[r] = (production[r] || 0) + outputs[r]; // other resources
+			}
 			this.linesWhoProducedThisTurn.push(lineKey);
 		}
 
+		// APPLY THE GLOBAL OUTPUT COEF AND RETURN PRODUCTIONS
+		for (const r in production) production[r] *= outputCoef;
 		return production;
+	}
+	#hasLineBreaked(player, lineKey, randomSeed) {
+		let breakdownChance = this.breakdownRiskBasis; 		// basis 25%
+		breakdownChance *= this.getBreakdownRiskCoef || 1;	// from 1 to .05
+		const hash = xxHash32(`${randomSeed}-${lineKey}-${player.id}`);
+		const rnd = SeededRandom.randomFloat(hash);
+		if (rnd > breakdownChance) return false; // line did not break
+		this.linesWhoBrokeThisTurn.push(lineKey);
+		return true; // line broke
+	}
+	getProductionLineEffect(lineName = 'energyFromChipsAndEngineers') { // TODO: MAKE A LOOP WITH ALL PRODUCTION LINES
+		const lineIndex = this.activeProductionLines.indexOf(lineName);
+		if (lineIndex === -1) return { inputs: {}, outputs: {} };
+
+		const productionRate = this.productionRates[lineIndex] || 0;
+		const mod = { inputCoef: 1, outputCoef: 1 };
+		for (let i = 0; i < this.modulesLevel.length; i++) {
+			if (this.modulesLevel[i] === 0) continue;
+			const { inputCoef, outputCoef } = this.#getModuleInputOutputCoef(i) || {};
+			mod.inputCoef *= inputCoef !== undefined ? inputCoef : 1;
+			mod.outputCoef *= outputCoef !== undefined ? outputCoef : 1;
+		}
+
+		const lineModuleLevelIndex = this.getModuleIndex(lineName);
+		const lineModuleLevel = this.modulesLevel[lineModuleLevelIndex] || 0;
+		const lineBluePrintName = lineModuleLevel > 0 ? `${lineName}_${lineModuleLevel}` : lineName;
+		const bluePrint = BLUEPRINT[lineBluePrintName]();
+		const { inputs, outputs } = bluePrint;
+		for (const r in bluePrint.inputs) // APPLY CONSO COEF
+			inputs[r] = inputs[r] * productionRate * mod.inputCoef;
+
+		for (const r in outputs) // APPLY EFFICIENCY/OVERLOAD COEF
+			outputs[r] = outputs[r] * productionRate * mod.outputCoef;
+
+		return { inputs, outputs, stopped: productionRate === 0 };
 	}
 	/** @param {'object' | 'array'} extractionMode @returns {object | Array<any>} */
 	extract(extractionMode) { // FOR SENDING OVER THE NETWORK -> Lighter ARRAY
@@ -155,80 +207,21 @@ export class Building {
 	}
 }
 
-export class Reactor extends Building {
-	type = 'r'; // 'reactor'
-
-	/** @type {Array<0 | .25 | .5 | .75 | 1>} */
-	productionRates = [1];
-	activeProductionLines = ['energyFromChipsAndEngineers'];
-	modulesLevel = REACTOR_MODULES.emptyModulesArray();
-
-	get getEnergyPerRawResource() { // default : 0
-		const efficiencyModuleIndex = this.getModuleIndex('efficiency');
-		const { energyPerRawResource } = REACTOR_MODULES.getModuleEffect('efficiency', this.modulesLevel[efficiencyModuleIndex]) || {};
-		return energyPerRawResource || 0;
-	}
-	get getBreakdownRiskCoef() { // default : 1
-		const efficiencyModuleIndex = this.getModuleIndex('efficiency');
-		const { breakdownRiskCoef } = REACTOR_MODULES.getModuleEffect('efficiency', this.modulesLevel[efficiencyModuleIndex]) || {};
-		return breakdownRiskCoef || 1;
-	}
-	getProductionLineEffect(lineName = 'energyFromChipsAndEngineers') { // TODO: MAKE A LOOP WITH ALL PRODUCTION LINES
-		const lineIndex = this.activeProductionLines.indexOf(lineName);
-		if (lineIndex === -1) return { inputs: {}, outputs: {} };
-
-		const productionRate = this.productionRates[lineIndex] || 0;
-		if (productionRate === 0) return { inputs: {}, outputs: {} };
-
-		const mod = { inputCoef: 1, outputCoef: 1 };
-		for (let i = 0; i < this.modulesLevel.length; i++) {
-			const moduleLevel = this.modulesLevel[i];
-			if (moduleLevel === 0) continue;
-			const moduleKey = REACTOR_MODULES.allModulesKeys[i];
-			const { inputCoef, outputCoef } = REACTOR_MODULES.getModuleEffect(moduleKey, moduleLevel) || {};
-			mod.inputCoef *= inputCoef !== undefined ? inputCoef : 1;
-			mod.outputCoef *= outputCoef !== undefined ? outputCoef : 1;
-		}
-
-		const bluePrint = BLUEPRINT[lineName]();
-		const { inputs, outputs } = bluePrint;
-		for (const r in bluePrint.inputs) // APPLY CONSO COEF
-			inputs[r] = inputs[r] * productionRate * mod.inputCoef;
-
-		for (const r in outputs) // APPLY EFFICIENCY/OVERLOAD COEF
-			outputs[r] = outputs[r] * productionRate * mod.outputCoef;
-
-		return { inputs, outputs };
-	}
-}
-
-export class Fabricator extends Building {
-	type = 'f'; // 'fabricator'
-	/** @type {Array<0 | .25 | .5 | .75 | 1>} */
-	productionRates = [1];
-	linesWhoProducedThisTurn = [];
-	/** @type {string[]} */
-	activeProductionLines = [];
-	modulesLevel = [];
-
-}
-
-export class PrivateTradeOffer { // TYPE
+// -------------------------------- TRADE HUB ---------------------------------
+export class PrivateTradeOffer { 	// TYPE: MY PLAYER'S PRIVATE OFFER (INTENT)
 	/** @type {string} */ resourceName;
 	/** @type {number} */ amount;
 	/** @type {string} */ requestedResourceName;
 	/** @type {number} */ requestedAmount;
 }
-
-export class MyPublicTradeOffer { // TYPE: MY PLAYER'S OFFER (LOCAL)
+export class MyPublicTradeOffer { 	// TYPE: MY PLAYER'S OFFER (LOCAL)
 	/** @type {string} */ 	resourceName; // amount is always 1
 	/** @type {string} */ 	requestedResourceName;
 	/** @type {number} */ 	requestedAmount;
 	/** @type {number} */ 	minStock;
 	/** @type {boolean} */ 	isActive;
 }
-
-export class PublicTradeOffer { // TYPE: REMOTE PLAYER'S OFFER (LOCAL)
+export class PublicTradeOffer { 	// TYPE: REMOTE PLAYER'S OFFER (LOCAL)
 	/** @type {string} */ 	playerId;
 	/** @type {string} */ 	offerId;
 	/** @type {string} */ 	resourceName;
@@ -237,8 +230,7 @@ export class PublicTradeOffer { // TYPE: REMOTE PLAYER'S OFFER (LOCAL)
 	/** @type {number} */ 	minStock;
 	/** @type {boolean} */ 	isActive;
 }
-
-export class TakerOrder { // TYPE: TRADE REQUEST (INTENT)
+export class TakerOrder { 			// TYPE: TRADE REQUEST (INTENT)
 	/** @type {string} */ soldResource;
 	/** @type {number} */ soldAmount;
 	/** @type {string} */ boughtResource;
@@ -246,7 +238,6 @@ export class TakerOrder { // TYPE: TRADE REQUEST (INTENT)
 	/** @type {number} */ filledAmount;
 	/** @type {number} */ expiry; // usually the next turn
 }
-
 export class TradeHub extends Building {
 	type = 't'; // 'trade hub'
 	
@@ -284,11 +275,6 @@ export class TradeHub extends Building {
 		const { maxTradeOffer } = TRADE_HUB_MODULES.getModuleEffect('trader', this.modulesLevel[traderModuleIndex]) || {};
 		return maxTradeOffer || 0;
 	}
-	get getComissionRate() { // DEFAULT 0% // DEPRECATED
-		const brokerModuleIndex = this.getModuleIndex('broker');
-		const { comissionRate } = TRADE_HUB_MODULES.getModuleEffect('broker', this.modulesLevel[brokerModuleIndex]) || {};
-		return comissionRate || 0;
-	}
 	get getMaxThefts() { // DEFAULT 0
 		const thiefModuleIndex = this.getModuleIndex('thief');
 		const { maxThefts } = TRADE_HUB_MODULES.getModuleEffect('thief', this.modulesLevel[thiefModuleIndex]) || {};
@@ -323,6 +309,9 @@ export class TradeHub extends Building {
 		if (!this.takerOrder) return null;
 		const [soldResource, soldAmount, boughtResource, maxPricePerUnit, filledAmount, expiry] = this.takerOrder;
 		return { soldResource, soldAmount, boughtResource, maxPricePerUnit, filledAmount, expiry };
+	}
+	getEnergyConsumption(consumptionBasis = .1) {
+		return 0; // TODO: TRADE HUB DOES NOT CONSUME ENERGY FOR NOW (impossible to use publicOffers who are locales)
 	}
 	/** @param {string} resourceName @param {string} requestedResourceName @param {number} requestedAmount @param {number} minStock @param {boolean} isActive */
 	#checkPublicOfferValueAndGetHash(resourceName, requestedResourceName, requestedAmount, minStock, isActive) {
@@ -532,5 +521,76 @@ export class TradeHub extends Building {
 		}
 
 		return { fills: authorizedFills, count: authorizedFillCount };
+	}
+}
+
+// --------------------------------- REACTOR ----------------------------------
+export class Reactor extends Building {
+	type = 'r'; // 'reactor'
+
+	/** @type {Array<0 | .25 | .5 | .75 | 1>} */
+	productionRates = [1];
+	activeProductionLines = ['energyFromChipsAndEngineers'];
+	modulesLevel = REACTOR_MODULES.emptyModulesArray();
+
+	get getEnergyPerRawResource() { // default : 0
+		const efficiencyModuleIndex = this.getModuleIndex('efficiency');
+		const { energyPerRawResource } = REACTOR_MODULES.getModuleEffect('efficiency', this.modulesLevel[efficiencyModuleIndex]) || {};
+		return energyPerRawResource || 0;
+	}
+	get getBreakdownRiskCoef() { // default : 1
+		const efficiencyModuleIndex = this.getModuleIndex('efficiency');
+		const { breakdownRiskCoef } = REACTOR_MODULES.getModuleEffect('efficiency', this.modulesLevel[efficiencyModuleIndex]) || {};
+		return breakdownRiskCoef || 1;
+	}
+	getEnergyConsumption(consumptionPerProdLine = .5) { // default : 0.5 energy per production line
+		for (let i = 0; i < this.activeProductionLines.length; i++) {
+			if (!this.linesWhoProducedThisTurn.includes(this.activeProductionLines[i])) continue;
+			const productionRate = this.productionRates[i] || 0;
+			return productionRate * consumptionPerProdLine;
+		}
+	}
+	createModuleUpgradeAssociateProductionline(currentLevel = 0, moduleKey = '', randomSeed = '') {
+		// CHECK IF WE NEED TO ADD A NEW PRODUCTION LINE
+		if (currentLevel > 0 || BLUEPRINT[`${moduleKey}_1`] === undefined) return;
+		this.activeProductionLines.push(moduleKey);
+		this.productionRates.push(1); // default rate
+	}
+}
+
+// -------------------------------- FABRICATOR --------------------------------
+export class Fabricator extends Building {
+	type = 'f'; // 'fabricator'
+	/** @type {Array<0 | .25 | .5 | .75 | 1>} */
+	productionRates = [];
+	/** @type {string[]} */
+	activeProductionLines = [];
+	modulesLevel = FABRICATOR_MODULES.emptyModulesArray();
+
+	getEnergyConsumption(consumptionPerProdLine = .5) { // default : 0.5 energy per production line
+		for (let i = 0; i < this.activeProductionLines.length; i++) {
+			if (!this.linesWhoProducedThisTurn.includes(this.activeProductionLines[i])) continue;
+			const productionRate = this.productionRates[i] || 0;
+			return productionRate * consumptionPerProdLine;
+		}
+	}
+	createModuleUpgradeAssociateProductionline(currentLevel = 0, moduleKey = '', randomSeed = '') {
+		// CHECK IF WE NEED TO ADD A NEW PRODUCTION LINE
+		const { productTier } = FABRICATOR_MODULES.getModuleEffect(moduleKey, currentLevel + 1) || {};
+		if (!productTier) return; // not a production line module
+
+		const newLineResourceName = this.#getUnusedProductionLineResourceName(productTier, randomSeed);
+		if (BLUEPRINT[newLineResourceName] === undefined) return;
+		this.activeProductionLines.push(newLineResourceName);
+		this.productionRates.push(1); // default rate
+	}
+	/** @param {'2' | '3' | '4' | '5'} productTier @param {string} randomSeed */
+	#getUnusedProductionLineResourceName(productTier, randomSeed) {
+		const basicResourcesSet = newResourcesSet()[productTier];
+		const resourceNames = Object.keys(basicResourcesSet);
+		const unproductedResouces = resourceNames.filter(rn => this.activeProductionLines.indexOf(rn) === -1);
+		if (unproductedResouces.length === 0) return null;
+		if (unproductedResouces.length === 1) return unproductedResouces[0];
+		return SeededRandom.pickOne(unproductedResouces, randomSeed);
 	}
 }

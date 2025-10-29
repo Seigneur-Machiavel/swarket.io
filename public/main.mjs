@@ -47,7 +47,7 @@ visualizer.onNodeRightClick((nodeId = 'toto') => console.log('Right-click on nod
 const playerStats = new PlayerStatsComponent();
 const connectionsList = new ConnectionsListComponent(gameClient);
 playerStats.connectionCountWrapper.onclick = () => connectionsList.show();
-const upgradeOffers = new UpgradeOffersComponent();
+const upgradeOffers = new UpgradeOffersComponent(gameClient);
 const energyBar = new EnergyBarComponent();
 const myResourcesBar = new ResourcesBarComponent();
 const spectatorResourcesBar = new ResourcesBarComponent(true);

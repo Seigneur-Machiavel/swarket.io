@@ -1,24 +1,6 @@
-import { ProductionLineIOParam, ProductionLineVerticalRangeParam, ProductionLineComponent } from './production-line.mjs';
+import { ProductionLineIOParam, ProductionLineComponent, getLineActions } from './production-line.mjs';
 import { ModuleTreeComponent } from './modules-tree.mjs';
 import { REACTOR_MODULES } from '../game-logics/buildings-modules.mjs';
-
-/** @type {Record<string, Array<{actionParam: ProductionLineVerticalRangeParam, events: Record<string, (gameClient: import('../game-logics/game.mjs').GameClient, value: any) => void>}>>} */
-const lineActionsParam = {
-	energyFromChipsAndEngineers: [
-		{
-			actionParam: new ProductionLineVerticalRangeParam(5, 0, 1, 0.25, 1),
-			events: {
-				/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
-				oninput: (gameClient, value) => {
-					if (!gameClient?.alive) return;
-					const myAction = { type: 'set-param', param: 'buildingProductionRate', buildingName: 'reactor', lineName: 'energyFromChipsAndEngineers', value };
-					gameClient.digestMyAction(myAction);
-					console.log('oninput', myAction);
-				}
-			}
-		}
-	]
-};
 
 export class ReactorComponent {
 	gameClient;
@@ -104,7 +86,8 @@ export class ReactorComponent {
 		const outputsParam = [];
 		for (const r in inputs) inputsParam.push(new ProductionLineIOParam(r, inputs[r]));
 		for (const r in outputs) outputsParam.push(new ProductionLineIOParam(r, outputs[r]));
-		const actionParam = lineActionsParam[lineKey] || [];
+		
+		const actionParam = getLineActions(lineKey, 'reactor');
 		const actions = actionParam.map(a => a.actionParam);
 		const productionLineComponent = new ProductionLineComponent(inputsParam, outputsParam, actions);
 		
@@ -113,7 +96,7 @@ export class ReactorComponent {
 				const actionElement = productionLineComponent.elements.actions[i];
 				actionElement[eventName] = (e) => actionParam[i].events[eventName](this.gameClient, parseFloat(e.target.value));
 			}
-
+			
 		const productionLinesWrapper = this.modal.querySelector('.production-lines-wrapper');
 		productionLinesWrapper.appendChild(productionLineComponent.mainElement);
 		this.productionsLines[lineKey] = productionLineComponent;

@@ -33,7 +33,7 @@ console.log(`%cPublic node id: ${bee0.id} | url: ${bee0.publicUrl}`, 'color: cya
 
 const gameClient = new GameClient(bee0, true, 'energy');
 gameClient.myPlayer.name = 'bootstrap: Bee0';
-gameClient.myPlayer.production.energy = 1_000; 			// BYPASS
+gameClient.myPlayer.rawProductions.energy = 1_000; 		// BYPASS
 gameClient.myPlayer.inventory.setAmount('energy', 100); // BYPASS
 gameClient.myPlayer.maxEnergy = 999_999_999; 			// BYPASS
 gameClient.onExecutedTurn.push(async(height = 0) => {

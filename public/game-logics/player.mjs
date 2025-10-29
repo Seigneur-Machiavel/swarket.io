@@ -10,7 +10,7 @@ export class PlayerNode {
 	get getEnergy() { return this.inventory.getAmount('energy'); }
 	maxEnergy = 100;
 
-	production;			// raw (tier 1) resources only
+	rawProductions;			// raw (tier 1) resources only
 	rawProductionRate = 1; // 0 | .25 | .5 | .75 | 1
 	turnEnergyChanges = { consumptions: [], productions: [] }; // filled only during turn exec
 
@@ -30,21 +30,34 @@ export class PlayerNode {
 	constructor(id, operatingResource, upgradeSet = new UpgradeSet()) {
 		this.id = id;
 		this.operatingResource = operatingResource || randomOperatingResource();
-		this.production = newRawResourcesSet(this.operatingResource);
+		this.rawProductions = newRawResourcesSet(this.operatingResource);
 		this.inventory = new Inventory();
 		this.upgradeSet = upgradeSet;
 
-		this.reactor = new Reactor(); // DEBUG
-		this.reactor.upgradePoints = 20; // DEBUG bypass
-		this.upgradeSet.buildReactor = 1; // DEBUG bypass
-		this.fabricator = new Fabricator(); // DEBUG
-		this.upgradeSet.buildFabricator = 1; // DEBUG bypass
+		// BYPASS FOR DEBUG
+		this.inventory.addAmount('chips', 100_000); // DEBUG bypass
+		this.inventory.addAmount('datas', 100_000); // DEBUG bypass
+		this.inventory.addAmount('models', 100_000); // DEBUG bypass
+		this.inventory.addAmount('engineers', 100_000); // DEBUG bypass
+
 		this.tradeHub = new TradeHub(); // DEBUG
 		this.tradeHub.upgradePoints = 20; // DEBUG bypass
 		this.upgradeSet.buildTradeHub = 1; // DEBUG bypass
 		this.tradeHub.upgradeModule('trader'); // DEBUG bypass
 		this.tradeHub.upgradeModule('trader'); // DEBUG bypass
 		this.tradeHub.upgradeModule('connectivity'); // DEBUG bypass
+
+		this.inventory.addAmount('catalyzers', 100_000); // DEBUG bypass
+		this.inventory.addAmount('prototypes', 100_000); // DEBUG bypass
+		this.reactor = new Reactor(); // DEBUG
+		this.reactor.upgradePoints = 20; // DEBUG bypass
+		this.upgradeSet.buildReactor = 1; // DEBUG bypass
+		for (let i = 0; i < 5; i++) this.reactor.upgradeModule('efficiency'); // DEBUG bypass
+		for (let i = 0; i < 5; i++) this.reactor.upgradeModule('stability'); // DEBUG bypass
+
+		this.fabricator = new Fabricator(); // DEBUG
+		this.upgradeSet.buildFabricator = 1; // DEBUG bypass
+		this.fabricator.upgradePoints = 20; // DEBUG bypass
 	}
 	/** @param {'object' | 'array'} extractionMode */
 	static playerFromData(data, extractionMode) {
@@ -79,7 +92,7 @@ export class PlayerNode {
 		if (intent.type === 'set-param') return this.#handleSetParamIntent(intent);
 		else if (intent.type === 'transaction') console.log(`[${nodeId}] Transaction:`, intent.amount, intent.resource, '->', intent.to);
 		else if (intent.type === 'upgrade') return this.#handleUpgradeIntent(gameClient, intent.upgradeName);
-		else if (intent.type === 'upgrade-module') return this.#handleUpgradeModuleIntent(intent);
+		else if (intent.type === 'upgrade-module') return this.#handleUpgradeModuleIntent(gameClient, intent);
 		else if (intent.type === 'set-private-trade-offer') return this.#handleSetPrivateTradeOfferIntent(intent);
 		else if (intent.type === 'cancel-private-trade-offer') return this.#handleCancelPrivateTradeOfferIntent(intent);
 		else if (intent.type === 'take-private-trade-offer') return this.#handleTakePrivateTradeOfferIntent(gameClient, intent);
@@ -96,10 +109,19 @@ export class PlayerNode {
 		const basis = .5 * (1 + wear); 		// base consumption
 		this.#setEnergyChange(-basis);		// maintenance consumption
 		this.#setEnergyChange(this.#produceRawResources(basis));
+
+		// BUILDINGS PRODUCTION
 		this.#setEnergyChange(this.reactor?.consumeResourcesAndGetProduction(this, turnHash).energy);
+		const fabricatorProd = this.fabricator?.consumeResourcesAndGetProduction(this, turnHash);
+		for (const r in fabricatorProd) this.inventory.addAmount(r, fabricatorProd[r]);
+
+		// BUILDINGS CONSUMPTION
+		for (const building of [this.reactor, this.fabricator, this.tradeHub]) {
+			const buildingConso = building?.getEnergyConsumption() || 0;
+			if (buildingConso) this.#setEnergyChange(-buildingConso);
+		}
+
 		this.#applyEnergyChange();
-		//TODO: tradeHub energy consumption
-		//TODO: fabricator production & consumption
 		this.#addUpgradeOffer(turnHash);
 
 		if (!this.getEnergy) this.upgradeOffers = []; // clear offers if dead
@@ -132,11 +154,12 @@ export class PlayerNode {
 		}
 		return true;
 	}
-	/** @param {{buildingName: string, value: string}} intent */
-	#handleUpgradeModuleIntent(intent) {
+	/** @param {import('./game.mjs').GameClient} gameClient @param {{buildingName: string, value: string}} intent */
+	#handleUpgradeModuleIntent(gameClient, intent) {
 		const buildingName = intent.buildingName;
 		const moduleKey = intent.value;
-		this[buildingName]?.upgradeModule(moduleKey);
+		const randomSeed = `${gameClient.turnSystem.prevHash}-${this.id}-${buildingName}-module-${moduleKey}`;
+		this[buildingName]?.upgradeModule(moduleKey, randomSeed);
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} upgradeName */
 	#handleUpgradeIntent(gameClient, upgradeName) {
@@ -147,7 +170,8 @@ export class PlayerNode {
 		if (UpgradesTool.isMaxedUpgrade(this.upgradeSet, upgradeName)) return verb > 1 ? console.warn(`[${this.id}] Upgrade already maxed:`, upgradeName) : null;
 		this.upgradeOffers.shift();
 		this.upgradeSet[upgradeName]++;
-		Upgrader.applyUpgradeEffects(this, upgradeName);
+		const randomSeed = `${gameClient.turnSystem.prevHash}-${this.id}-${upgradeName}`;
+		Upgrader.applyUpgradeEffects(this, upgradeName, randomSeed);
 		return true;
 	}
 	/** @param {{resourceName: string, amount: number, requestedResourceName: string, requestedAmount: number, targetPlayerId: string}} intent */
@@ -240,9 +264,9 @@ export class PlayerNode {
 		let totalProd = 0;
 		// CALCULATE PRODUCTION WITH UPGRADE MULTIPLIER
 		const multiplier = 1 + (this.upgradeSet.producer * .25);
-		for (const r in this.production) {
-			if (!this.production[r] || !this.rawProductionRate) continue;
-			const prod = this.production[r] * multiplier * this.rawProductionRate;
+		for (const r in this.rawProductions) {
+			if (!this.rawProductions[r] || !this.rawProductionRate) continue;
+			const prod = this.rawProductions[r] * multiplier * this.rawProductionRate;
 			this.inventory.addAmount(r, prod);
 			totalConso -= consumptionBasis * this.rawProductionRate;
 			totalProd += prod;

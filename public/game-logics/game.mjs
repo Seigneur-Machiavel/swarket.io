@@ -92,8 +92,8 @@ export class GameClient {
 		p.inventory.setAmount('energy', p.maxEnergy);
 		p.startTurn = Math.max(this.height, 1); // active from next turn
 
-		if (p.production.chips) p.production.engineers = 1; // DEBUG
-		else if (p.production.engineers) p.production.chips = 5; // DEBUG
+		if (p.rawProductions.chips) p.rawProductions.engineers = 1; // DEBUG
+		else if (p.rawProductions.engineers) p.rawProductions.chips = 5; // DEBUG
 
 		const as = this.extractionMode;
 		this.digestMyAction({ type: 'new-player', playerData: p.extract(as), extractionMode: as });
