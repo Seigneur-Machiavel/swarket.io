@@ -1,10 +1,13 @@
 import { renderConnectionLogs, renderConnectedLogs } from './pre-game/connection-loader.mjs';
-import { PlayerStatsComponent, ConnectionsListComponent, UpgradeOffersComponent, EnergyBarComponent,
-	ResourcesBarComponent, NodeCardComponent, DeadNodesComponent, BuildingsComponent
+import { PlayerStatsComponent, ConnectionsListComponent, UpgradeOffersComponent,
+	EnergyBarComponent, ResourcesBarComponent, NodeCardComponent, SubNodeInfoTrackerComponent,
+	DeadNodesComponent, BuildingsComponent
 } from './components/UI-components.mjs';
+import { ParticlesDisplayer } from './components/particles.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
 import { GameClient } from './game-logics/game.mjs';
 import { NodeInteractor } from './game-logics/node-interactions.mjs';
+import { formatCompact3Digits } from './utils.mjs';
 
 while (!window.HiveP2P) await new Promise(resolve => setTimeout(resolve, 10));
 
@@ -44,6 +47,7 @@ visualizer.onNodeLeftClick((nodeId = 'toto') => {
 visualizer.onNodeRightClick((nodeId = 'toto') => console.log('Right-click on node:', nodeId));
 
 // UI COMPONENTS SETUP
+const uiWrapper = document.querySelector('.UI-wrapper');
 const playerStats = new PlayerStatsComponent();
 const connectionsList = new ConnectionsListComponent(gameClient);
 playerStats.connectionCountWrapper.onclick = () => connectionsList.show();
@@ -54,6 +58,20 @@ const spectatorResourcesBar = new ResourcesBarComponent(true);
 const buildings = new BuildingsComponent(gameClient, myResourcesBar);
 const deadNodes = new DeadNodesComponent(gameClient);
 const nodeCard = new NodeCardComponent(gameClient, visualizer, myResourcesBar, spectatorResourcesBar);
+const subNodeInfoTracker = new SubNodeInfoTrackerComponent(gameClient, visualizer);
+
+// PARTICLES SETUP
+const particlesDisplayer = new ParticlesDisplayer();
+window.particlesDisplayer = particlesDisplayer; // Expose for debugging
+
+const update = () => { // CENTRALIZED ANIMATION LOOP
+	visualizer.networkRenderer.animate();
+	nodeCard.update();
+	subNodeInfoTracker.update();
+	particlesDisplayer.render();
+	requestAnimationFrame(update);
+};
+requestAnimationFrame(update);
 
 // ON TURN EXECUTION
 gameClient.onExecutedTurn.push(async (height = 0) => {
@@ -86,6 +104,15 @@ gameClient.onExecutedTurn.push(async (height = 0) => {
 	// THIS ONE USEFUL TO DEBUG CONSENSUS
 	await new Promise(resolve => setTimeout(resolve, Math.round(gameClient.turnSystem.turnDuration / 10)));
 	gameClient.digestMyAction({ type: `noop_${Math.random()}` });
+
+	setTimeout(() => { // DISABLED FOR NOW
+		particlesDisplayer.updateCanvasSizeAccordingToScreen();
+		/*const changes = player.inventory.turnChanges;
+		for (const r in changes) {
+			const change = formatCompact3Digits(changes[r]);
+			particlesDisplayer.addParticle(12, undefined, undefined, `${changes[r] > 0 ? '+' : ''}${change}`);
+		}*/
+	}, 100);
 });
 window.gameClient = gameClient; // Expose for debugging
 
@@ -94,10 +121,11 @@ while(!node.peerStore.neighborsList.length)
 	await new Promise(resolve => setTimeout(resolve, 100));
 
 renderConnectedLogs();
-document.querySelector('.UI-wrapper').classList.add('started');
+uiWrapper.classList.add('started');
 
 // AUTO-PLAY SETUP (DEBUG ONLY)
 if (IS_DEBUG) {
+	uiWrapper.classList.add('debug');
 	const { AutoPlayer } = await import('./auto-play.mjs');
 	const autoPlayer = new AutoPlayer(gameClient, NodeInteractor, deadNodes, upgradeOffers);
 	window.autoPlayer = autoPlayer; 					// expose to global for debugging

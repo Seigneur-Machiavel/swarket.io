@@ -1,20 +1,27 @@
-import { formatCompact3Digits } from '../utils.mjs';
+import { formatCompact2Digits, formatCompact3Digits } from '../utils.mjs';
 import { newResourcesSet } from '../game-logics/resources.mjs';
 
 export class ResourcesBarComponent {
+	isSpectator = false; 			// flag to indicate if this is for spectator mode
 	selectionEnabled = false; 		// flag to enable/disable resource click selection
+	inventoriesWrapper;
 	resourceBar;
 	expandBtn;
 	/** @type {Record<string, HTMLElement>} */
 	resourceTierWrappers = {};
 	/** @type {HTMLElement[]} */
 	resourceValueElements = [];
+	/** @type {HTMLElement[]} */
+	resourceValueChangeElements = [];
 	onResourceClickOneShot = null; 	// callbacks that will be removed after one call
 	selectionTimeout = null; 		// timeout to reset selection mode
 
 	constructor(spectator = false) {
+		this.isSpectator = spectator;
 		const selector = spectator ? '.resources-bar.spectator' : '.resources-bar';
-		this.resourceBar = document.querySelector(selector);
+		this.inventoriesWrapper = document.querySelector('.inventories-wrapper');
+		this.resourceBar = this.inventoriesWrapper.querySelector(selector);
+		this.resourceBarTitle = this.resourceBar.querySelector('.resource-bar-title');
 		this.resourceBar.onclick = (e) => this.#handleResourceBarClick(e);
 		this.expandBtn = this.#setupExpandButton();
 		const resourcesSet = newResourcesSet();
@@ -33,9 +40,20 @@ export class ResourcesBarComponent {
 	update(player) {
 		if (!player) return this.hide();
 		this.show();
+		
 		for (let i = 0; i < this.resourceValueElements.length; i++) {
 			const value = player.inventory.resources[i];
-			this.resourceValueElements[i].textContent = formatCompact3Digits(value);
+			this.resourceValueElements[i].textContent = formatCompact2Digits(value);
+
+			if (this.isSpectator) this.resourceBarTitle.textContent = `${player.name}`;
+			const change = player.inventory.turnChanges[i];
+			if (change === 0) this.resourceValueChangeElements[i].textContent = '-';
+			else this.resourceValueChangeElements[i].textContent = `${change > 0 ? '+' : ''}${formatCompact2Digits(change)} ${change > 0 ? '▲' : '▼'}`;
+		
+			if (change > 0) this.resourceValueChangeElements[i].classList.add('up');
+			else this.resourceValueChangeElements[i].classList.remove('up');
+			if (change < 0) this.resourceValueChangeElements[i].classList.add('down');
+			else this.resourceValueChangeElements[i].classList.remove('down');
 		}
 	}
 	handleNextResourceClick(callback, timeout = 5000) {
@@ -89,10 +107,16 @@ export class ResourcesBarComponent {
 
 		const value = document.createElement('span');
 		value.classList = 'resource-value';
-		value.id = `${resourceName}-count`;
 		value.textContent = '0';
 		resourceElement.appendChild(value);
 		this.resourceValueElements.push(value);
+		
+		if (!this.isSpectator) {
+			const valueChange = document.createElement('span');
+			valueChange.classList = 'resource-value-change';
+			resourceElement.appendChild(valueChange);
+			this.resourceValueChangeElements.push(valueChange);
+		}
 
 		return resourceElement;
 	}
@@ -101,6 +125,14 @@ export class ResourcesBarComponent {
 		if (enabled) this.resourceBar.classList.add('selection-enabled');
 		else this.resourceBar.classList.remove('selection-enabled');
 	}
-	hide() { this.resourceBar.classList.add('hidden'); }
-	show() { this.resourceBar.classList.remove('hidden'); }
+	hide() {
+		this.resourceBar.classList.add('hidden');
+		if (!this.isSpectator) return;
+		this.inventoriesWrapper.classList.remove('spectating');
+	}
+	show() {
+		this.resourceBar.classList.remove('hidden');
+		if (!this.isSpectator) return;
+		this.inventoriesWrapper.classList.add('spectating');
+	}
 }

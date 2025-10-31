@@ -8,7 +8,8 @@ import { FabricatorComponent } from './fabricator.mjs';
 import { TradeHubComponent } from './tradehub.mjs';
 import { ResourcesBarComponent } from './resources-bar.mjs';
 import { NodeCardComponent } from './node-card.mjs';
-export { ResourcesBarComponent, NodeCardComponent };
+import { SubNodeInfoTrackerComponent } from './sub-node-info-tracker.mjs';
+export { ResourcesBarComponent, NodeCardComponent, SubNodeInfoTrackerComponent };
 
 export class PlayerStatsComponent {
 	playerNameElem = document.getElementById('player-name');
@@ -145,16 +146,31 @@ export class UpgradeOffersComponent {
 }
 
 export class EnergyBarComponent {
+	wrapper = document.getElementById('energy-bar-wrapper');
 	tooltip = document.getElementById('energy-tooltip');
 	fill = document.getElementById('energy-fill');
 	text = document.getElementById('energy-text');
-	
+
+	/** @type {'percent' | 'absolute'} */
+	mode = 'absolute';
+	lastValues = { energy: 0, maxEnergy: 0 };
+
+	constructor() {
+		this.wrapper.onclick = () => {
+			this.mode = this.mode === 'percent' ? 'absolute' : 'percent';
+			this.update(this.lastValues.energy, this.lastValues.maxEnergy);
+		}
+	}
+
 	update(energy, maxEnergy) {
 		const percentage = (energy / maxEnergy) * 100;
 		this.fill.style.width = `${percentage}%`;
 		this.fill.style.filter = `brightness(${30 + percentage * .8}%)`;
-		this.text.textContent = `${formatCompact2Digits(percentage)}%`;
-		this.tooltip.textContent = `${formatCompact2Digits(energy)}/${Math.round(maxEnergy)}`;
+		const p = `${formatCompact2Digits(percentage)}%`;
+		const a = `${formatCompact2Digits(energy)}/${formatCompact2Digits(maxEnergy)}`;
+		this.text.textContent = this.mode === 'percent' ? p : a;
+		//this.tooltip.textContent = this.mode === 'percent' ? a : p;
+		this.lastValues = { energy, maxEnergy };
 	}
 }
 

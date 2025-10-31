@@ -1,9 +1,13 @@
 import { randomOperatingResource, newRawResourcesSet, Inventory } from './resources.mjs';
 import { UpgradesTool, UpgradeSet, Upgrader } from './upgrades.mjs';
 import { BuildingBuilder, Building, Reactor, Fabricator, TradeHub } from './buildings.mjs';
+import { usernames } from '../utils.mjs';
+
+const KEYS_TO_NOT_EXTRACT = new Set([]);
 
 export class PlayerNode {
-	name = 'PlayerName'; id;
+	id;
+	name = usernames[Math.floor(Math.random() * usernames.length)];
 	operatingResource; 	// 'chips' | 'datas' | 'models' | 'engineers' => first assigned
 	lifetime = 0;		// in turns
 	startTurn = 0;
@@ -32,8 +36,10 @@ export class PlayerNode {
 		this.operatingResource = operatingResource || randomOperatingResource();
 		this.rawProductions = newRawResourcesSet(this.operatingResource);
 		this.inventory = new Inventory();
+		this.inventory.addAmount('energy', this.maxEnergy);
 		this.upgradeSet = upgradeSet;
 
+		return;
 		// BYPASS FOR DEBUG
 		this.inventory.addAmount('chips', 100_000); // DEBUG bypass
 		this.inventory.addAmount('datas', 100_000); // DEBUG bypass
@@ -79,12 +85,16 @@ export class PlayerNode {
 	extract(extractionMode = 'object') {
 		if (extractionMode === 'object') {
 			const sendable = {}; 	// TO OBJECT - SAFE
-			for (const k in this) sendable[k] = this[k]?.extract ? this[k].extract(extractionMode) : this[k];
+			for (const k in this)
+				if (KEYS_TO_NOT_EXTRACT.has(k)) continue;
+				else sendable[k] = this[k]?.extract ? this[k].extract(extractionMode) : this[k];
 			return sendable;
 		}
 
 		const sendable = []; 		// TO ARRAY  - LIGHT
-		for (const k in this) sendable.push(this[k]?.extract ? this[k].extract() : this[k]);
+		for (const k in this)
+			if (KEYS_TO_NOT_EXTRACT.has(k)) continue;
+			else sendable.push(this[k]?.extract ? this[k].extract() : this[k]);
 		return sendable;
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} nodeId @param {{type: string}} intent */
@@ -104,11 +114,13 @@ export class PlayerNode {
 	execTurn(turnHash = 'toto', height = 0) {
 		if (!this.startTurn || !this.getEnergy) return; // inactive
 		this.lifetime++;
+		this.inventory.resetTemporaryTurnData();
 		//console.log(`[${this.id}] lifetimme:`, this.lifetime);
 		const wear = Math.floor(this.lifetime / 10) * 0.01; // +1% every 10 turns
 		const basis = .5 * (1 + wear); 		// base consumption
 		this.#setEnergyChange(-basis);		// maintenance consumption
-		this.#setEnergyChange(this.#produceRawResources(basis));
+		const rawConso = this.#produceRawResources(basis);
+		this.#setEnergyChange(rawConso);	// raw resources production consumption
 
 		// BUILDINGS PRODUCTION
 		this.#setEnergyChange(this.reactor?.consumeResourcesAndGetProduction(this, turnHash).energy);
@@ -122,6 +134,7 @@ export class PlayerNode {
 		}
 
 		this.#applyEnergyChange();
+		if (!this.inventory.getAmount('energy')) console.log(`%c[${this.id}]> has run out of energy!`, 'color: red; font-weight: bold;');
 		this.#addUpgradeOffer(turnHash);
 
 		if (!this.getEnergy) this.upgradeOffers = []; // clear offers if dead
@@ -280,10 +293,9 @@ export class PlayerNode {
 	}
 	#applyEnergyChange() {
 		const { totalConso, totalProd } = this.#getAndClearTotalTurnEnergyChange();
-		this.inventory.addAmount('energy', totalProd - totalConso);
-		if (this.inventory.getAmount('energy') > this.maxEnergy) this.inventory.setAmount('energy', this.maxEnergy);
-		if (this.inventory.getAmount('energy') < 0) this.inventory.setAmount('energy', 0);
-		if (!this.inventory.getAmount('energy')) console.log(`%c[${this.id}]> has run out of energy!`, 'color: red; font-weight: bold;');
+		const change = totalProd - totalConso;
+		if (change > 0) this.inventory.addAmount('energy', change, this.maxEnergy);
+		else if (change < 0) this.inventory.subtractAmount('energy', change);
 	}
 	#addUpgradeOffer(turnHash) {
 		if (!this.getEnergy) return;

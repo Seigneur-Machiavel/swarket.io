@@ -61,30 +61,30 @@ export const BLUEPRINT = {
 		inputs: { chips: RAW_PROD.chips, engineers: RAW_PROD.engineers },
 		outputs: { energy: 2 }
 	}),
-	catalyst_1: () => ({ inputs: { energy: 1, catalyzers: 1 }, outputs: { outputCoef: 1.2 } }),
-	catalyst_2: () => ({ inputs: { energy: 2, catalyzers: 1.8 }, outputs: { outputCoef: 1.5 } }),
-	catalyst_3: () => ({ inputs: { energy: 4, catalyzers: 2.5 }, outputs: { outputCoef: 1.8 } }),
-	catalyst_4: () => ({ inputs: { energy: 6, catalyzers: 5 }, outputs: { outputCoef: 2.1 } }),
-	catalyst_5: () => ({ inputs: { energy: 10, catalyzers: 10 }, outputs: { outputCoef: 2.5 } }),
-	burst_1: () => ({ inputs: { energy: 5, prototypes: 1 }, outputs: { energy: 20 } }),
-	burst_2: () => ({ inputs: { energy: 10, prototypes: 2 }, outputs: { energy: 50 } }),
-	burst_3: () => ({ inputs: { energy: 30, prototypes: 3 }, outputs: { energy: 100 } }),
-	quantum: () => ({ inputs: { energy: 100, aiModules: 1 }, outputs: { energy: 500 } }),
+	catalyst_1: () => ({ inputs: { catalyzers: 1 }, outputs: { outputCoef: 1.2 } }),
+	catalyst_2: () => ({ inputs: { catalyzers: 1.8 }, outputs: { outputCoef: 1.5 } }),
+	catalyst_3: () => ({ inputs: { catalyzers: 2.5 }, outputs: { outputCoef: 1.8 } }),
+	catalyst_4: () => ({ inputs: { catalyzers: 5 }, outputs: { outputCoef: 2.1 } }),
+	catalyst_5: () => ({ inputs: { catalyzers: 10 }, outputs: { outputCoef: 2.5 } }),
+	burst_1: () => ({ inputs: { prototypes: 1 }, outputs: { energy: 20 } }),
+	burst_2: () => ({ inputs: { prototypes: 2 }, outputs: { energy: 50 } }),
+	burst_3: () => ({ inputs: { prototypes: 3 }, outputs: { energy: 100 } }),
+	quantum_1: () => ({ inputs: { energy: 100, aiModules: 1 }, outputs: { energy: 500 } }),
 
 	// FABRICATOR PRODUCTION LINES
 	// Tier 2 -- Basic Products
 	algorithms: () => ({ inputs: { chips: 15, models: 6 }, outputs: { algorithms: .9 } }),
-	datasets: () => ({ inputs: { datas: 100, models: 18 }, outputs: { datasets: 1.2 } }),
-	prototypes: () => ({ inputs: { datas: 20, models: 10, engineers: 2 }, outputs: { prototypes: .75 } }),
+	datasets: () => ({ inputs: { datas: 50, models: 18 }, outputs: { datasets: 4 } }),
+	prototypes: () => ({ inputs: { models: 10, engineers: 2 }, outputs: { prototypes: .75 } }),
 	catalyzers: () => ({ inputs: { chips: 30, engineers: 5 }, outputs: { catalyzers: .4 } }),
 	// Tier 3 -- Advanced Products
-	aiModules: () => ({ inputs: { chips: 220, algorithms: 4, datasets: 10 }, outputs: { aiModules: .85 } }),
-	robots: () => ({ inputs: { chips: 500, prototypes: 10, engineers: 4 }, outputs: { robots: .5 } }),
-	experts: () => ({ inputs: { datas: 1500, datasets: 2, engineers: 5 }, outputs: { experts: .3 } }),
+	aiModules: () => ({ inputs: { chips: 20, algorithms: 4, datasets: 10 }, outputs: { aiModules: .85 } }),
+	robots: () => ({ inputs: { chips: 50, prototypes: 10, engineers: 4 }, outputs: { robots: .5 } }),
+	experts: () => ({ inputs: { datas: 150, datasets: 2, engineers: 5 }, outputs: { experts: .3 } }),
 	// Tier 4 -- Composite Products
-	aiCores: () => ({ inputs: { chips: 500, aiModules: 5, experts: 2 }, outputs: { aiCores: .8 } }),
-	drones: () => ({ inputs: { datas: 5000, robots: 4, experts: 1 }, outputs: { drones: .35 } }),
-	superconductors: () => ({ inputs: { models: 1000, aiModules: 2, robots: 2 }, outputs: { superconductors: .1 } }),
+	aiCores: () => ({ inputs: { aiModules: 5, experts: 2 }, outputs: { aiCores: .8 } }),
+	drones: () => ({ inputs: { robots: 4, experts: 1.6 }, outputs: { drones: .35 } }),
+	superconductors: () => ({ inputs: { energy: 20, aiModules: 2, robots: 2 }, outputs: { superconductors: .1 } }),
 	// Tier 5 -- Ultimate Products
 	geniuses: () => ({ inputs: { experts: 4, aiCores: 2 }, outputs: { geniuses: .05 } }),
 	agiCells: () => ({ inputs: { drones: 3, superconductors: 3, geniuses: 3 }, outputs: { agiCells: .25 } })
@@ -102,32 +102,42 @@ function newResourcesArray() {
 	return r;
 }
 export class Inventory {
+	turnChanges = newResourcesArray();	// changes during the current turn
+	turnExcess = newResourcesArray(); // discarded resources during the current turn
 	resources;
 	
 	/** @param {Array<number> | undefined} resources */
 	constructor(resources) { this.resources = resources || newResourcesArray(); }
 	extract() { return this.resources; }
+	resetTemporaryTurnData() { // called at the start of each turn
+		for (const r in this.turnChanges) this.turnChanges[r] = 0;
+		for (const r in this.turnExcess) this.turnExcess[r] = 0;
+	}
 
 	/** Get a resource amount from the inventory @param {string} resourceName */
 	getAmount(resourceName) {
 		return RESOURCE_INDEX[resourceName] === undefined ? 0 : this.resources[RESOURCE_INDEX[resourceName]];
 	}
-	/** Set a resource amount in the inventory @param {string} resourceName @param {number} amount */
-	setAmount(resourceName, amount) {
-		if (RESOURCE_INDEX[resourceName] === undefined) return;
-		this.resources[RESOURCE_INDEX[resourceName]] = amount;
-	}
 	/** Add a resource amount to the inventory
 	 * @param {'energy' | 'chips' | 'datas' | 'models' | 'engineers' | 'algorithms' | 'datasets' | 'prototypes' | 'catalyzers' | 'aiModules' | 'robots' | 'experts' | 'aiCores' | 'drones' | 'superconductors' | 'geniuses' | 'agiCells'} resourceName
-	 * @param {number} amount */
-	addAmount(resourceName, amount) {
+	 * @param {number} amount @param {number} [maxAmount] */
+	addAmount(resourceName, amount, maxAmount) {
 		if (RESOURCE_INDEX[resourceName] === undefined) return;
-		this.resources[RESOURCE_INDEX[resourceName]] += amount;
+		const index = RESOURCE_INDEX[resourceName];
+		const newAmount = maxAmount ? Math.min(this.resources[index] + amount, maxAmount) : this.resources[index] + amount;
+		this.turnChanges[index] += newAmount - this.resources[index];
+		this.resources[index] = newAmount;
+
+		const remainAmount = maxAmount ? newAmount - maxAmount : 0;
+		if (remainAmount > 0) this.turnExcess[index] += remainAmount;
 	}
 	/** Subtract a resource amount from the inventory @param {string} resourceName @param {number} amount */
-	subtractAmount(resourceName, amount) {
+	subtractAmount(resourceName, amount, minAmount = 0) {
 		if (RESOURCE_INDEX[resourceName] === undefined) return;
-		this.resources[RESOURCE_INDEX[resourceName]] -= amount;
+		const index = RESOURCE_INDEX[resourceName];
+		const newAmount = Math.max(this.resources[index] - Math.abs(amount), minAmount);
+		this.turnChanges[index] -= this.resources[index] - newAmount;
+		this.resources[index] = newAmount;
 	}
 
 	// END OF LIFE

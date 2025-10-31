@@ -81,7 +81,8 @@ export class SwapModule {
 		const { players, deadPlayers } = this.gameClient;
 
 		// AT FIRST WE CLEANUP PREVIOUS TURN THEFTS
-		for (const pid in players) players[pid].tradeHub.turnThiefs = [];
+		for (const pid in players)
+			if (players[pid].tradeHub) players[pid].tradeHub.turnThiefs = [];
 
 		// THEN WE ATTRIBUTE NEW TURN THEFTS BASED ON THEFT CAPACITY
 		for (const pid of organizedIds) {

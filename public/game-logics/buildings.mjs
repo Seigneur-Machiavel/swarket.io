@@ -576,9 +576,14 @@ export class Fabricator extends Building {
 	}
 	createModuleUpgradeAssociateProductionline(currentLevel = 0, moduleKey = '', randomSeed = '') {
 		// CHECK IF WE NEED TO ADD A NEW PRODUCTION LINE
+		if (currentLevel === 0 && BLUEPRINT[`${moduleKey}_1`] !== undefined) {
+			this.activeProductionLines.push(moduleKey);
+			this.productionRates.push(1); // default rate
+		}
+		
 		const { productTier } = FABRICATOR_MODULES.getModuleEffect(moduleKey, currentLevel + 1) || {};
-		if (!productTier) return; // not a production line module
-
+		if (!productTier) return;
+		
 		const newLineResourceName = this.#getUnusedProductionLineResourceName(productTier, randomSeed);
 		if (BLUEPRINT[newLineResourceName] === undefined) return;
 		this.activeProductionLines.push(newLineResourceName);

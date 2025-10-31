@@ -43,7 +43,7 @@ class ElementsBuilder {
 		resourceElem.appendChild(tooltipElem);
 
 		const resourceIconElem = document.createElement('div');
-		resourceIconElem.classList = `resource-icon ${resourceName}`;
+		resourceIconElem.classList = `resource-icon ${resourceName.toLowerCase()}`;
 		if (!editableResource) resourceIconElem.style.cursor = 'default';
 
 		const resourceValueElem = document.createElement('span');
@@ -160,10 +160,12 @@ class MyTradeOfferLineComponent {
 		return {};
 	}
 	setResourcesAndValues(offeredResourceName, offeredQty, requestedResourceName, requestedQty, minStock, isActive) {
-		this.offeredResourceIconElem.classList = `resource-icon ${offeredResourceName}`;
+		this.offeredResourceIconElem.classList = `resource-icon ${offeredResourceName.toLowerCase()}`;
 		this.offeredResourceValueElem.textContent = offeredQty.toString();
-		this.requestedResourceIconElem.classList = `resource-icon ${requestedResourceName}`;
+		this.requestedResourceTooltip.textContent = `He send: ${requestedResourceName.charAt(0).toUpperCase() + requestedResourceName.slice(1)}`;
+		this.requestedResourceIconElem.classList = `resource-icon ${requestedResourceName.toLowerCase()}`;
 		this.requestedResourceValueElem.textContent = requestedQty.toString();
+		this.requestedResourceTooltip.textContent = `He send: ${requestedResourceName.charAt(0).toUpperCase() + requestedResourceName.slice(1)}`;
 		this.minStockValueElem.textContent = minStock.toString();
 		this.toggleBtnElem.classList.toggle('active', isActive);
 	}

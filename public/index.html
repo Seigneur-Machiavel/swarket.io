@@ -43,9 +43,15 @@
 		</div>
 
 		<!-- Dynamic Inventory Display -->
-		<div class="resources-bar"></div>
-		<!-- Dynamic OtherNode Inventory Display for Spectators -->
-		<div class="resources-bar spectator hidden"></div>
+		<div class="inventories-wrapper">
+			<div class="resources-bar">
+				<div class="resource-bar-title"><span class="me">Me</span><span class="my-inventory">My inventory</span></div>
+			</div>
+			<!-- Dynamic OtherNode Inventory Display for Spectators -->
+			<div class="resources-bar spectator hidden">
+				<div class="resource-bar-title">Jacques</div>
+			</div>
+		</div>
 
 		<div class="upgrade-offers-wrapper" id ="upgrade-offers-wrapper">
 			<div class="upgrade-offer trade-hub" id="upgrade-offer-1">
@@ -59,9 +65,9 @@
 			</div>
 		</div>
 	
-		<div class="energy-bar-wrapper hoverable-tooltip">
+		<div id="energy-bar-wrapper" class="hoverable-tooltip">
 			<div class="resource-icon energy"></div>
-			<div class="tooltip" id="energy-tooltip">0/0</div>
+			<div class="tooltip" id="energy-tooltip">Your energy is precious, your die if it reaches zero.</div>
 			<div class="energy-bar">
 				<div class="energy-fill" id="energy-fill"></div>
 				<div class="energy-text" id="energy-text"></div>
@@ -79,7 +85,7 @@
 				<span id="player-id">...</span>
 			</div>
 			<div class="player-stats-wrapper">
-				<div class="player-stat hoverable-tooltip">
+				<div class="player-stat hoverable-tooltip" id="lifetimeCountWrapper">
 					<div class="tooltip">Lifetime</div>
 					<img src="./assets/lifetime.png" alt="Lifetime">
 					<span id="lifetimeCount">0</span>
@@ -126,6 +132,14 @@
 		</div>
 	
 		<div id="node-tooltip"></div>
+		<div id="sub-node-info">
+			<div class="productions-wrapper"></div>
+			<div><span class="player-name">PlayerName</span></div>
+			<div id="my-sub-node-marker">
+				<div class="arrow-up">^</div>
+				<div>Me</div>
+			</div>
+		</div>
 		<div id="node-card">
 			<div class="top-left-corner-decoration"></div>
 			<div class="close-btn" id="node-card-close-btn">x</div>
@@ -153,7 +167,13 @@
 			
 			<div class="node-actions">
 				<button id="node-card-chat-btn">Open chat</button>
-				<button id="node-card-connect-btn" disabled>Offer connection</button>
+				<button id="node-card-connect-btn" disabled>
+					<span id="node-card-connect-btn-text">Offer connection</span>
+					<div id="node-card-connect-btn-cost">
+						<div class="resource-icon energy"></div>
+						<span id="node-card-connect-btn-cost-value">10</span>
+					</div>
+				</button>
 				<button id="node-card-trade-offer-btn" disabled>Offer trade</button>
 				<button id="node-card-remote-offer-btn" disabled>View remote offer</button>
 			</div>
@@ -264,5 +284,6 @@
 			</div>
 		</div>
 	</div>
+	<canvas id="particles-canvas"></canvas>
 </body>
 </html>

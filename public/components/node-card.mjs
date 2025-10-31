@@ -8,6 +8,9 @@ export class NodeCardComponent {
 	nodeIdElem = document.getElementById('node-card-id');
 	chatBtn = document.getElementById('node-card-chat-btn');
 	connectBtn = document.getElementById('node-card-connect-btn');
+	nodeCardConnectBtnText = document.getElementById('node-card-connect-btn-text');
+	nodeCardConnectBtnCost = document.getElementById('node-card-connect-btn-cost');
+	nodeCardConnectBtnCostValue = document.getElementById('node-card-connect-btn-cost-value');
 	tradeOfferBtn = document.getElementById('node-card-trade-offer-btn');
 	nodeCardRemoteOfferBtn = document.getElementById('node-card-remote-offer-btn');
 
@@ -32,6 +35,8 @@ export class NodeCardComponent {
 	myResourcesBar;
 	spectatorResourcesBar;
 	lastPosition = { x: 0, y: 0 };
+	updateEveryNFrames = 30;
+	frameCounter = 0;
 
 	/**
 	 * @param {import('../game-logics/game.mjs').GameClient} gameClient
@@ -43,9 +48,6 @@ export class NodeCardComponent {
 		this.visualizer = visualizer;
 		this.myResourcesBar = myResourcesBar;
 		this.spectatorResourcesBar = spectatorResourcesBar;
-		// use requestAnimationFrame for smoother position update
-		const update = () => { this.#updateCard(); requestAnimationFrame(update); };
-		requestAnimationFrame(update);
 		this.nodeCardCloseBtn.onclick = () => this.hide();
 		this.tradeOfferBtn.onclick = () => this.showMyOffer(true); // true = toggle
 		this.nodeCardRemoteOfferBtn.onclick = () => this.showRemoteOffer(true); // true = toggle
@@ -247,8 +249,7 @@ export class NodeCardComponent {
 	}
 
 	/** PLAYER CARD PRIVATE METHODS */
-	#updateCardPositionCounter = 0;
-	#updateCard(connectedOnly = false) { // CALLED EACH FRAME
+	update(connectedOnly = false) { // CALLED EACH FRAME
 		const playerId = this.gameClient.showingCardOfId;
 		const remotePlayer = playerId ? this.gameClient.players[playerId] : null;
 		if (!playerId || !remotePlayer) return this.nodeCardElem.classList.remove('visible');
@@ -268,12 +269,13 @@ export class NodeCardComponent {
 		this.#updateCardRemoteOfferButton(connectedOnly ? isConnected : true);
 	}
 	#updateCardPosition(playerId = 'toto', positionTolerance = 12) {
+		if (this.frameCounter++ < this.updateEveryNFrames) return;
+		this.frameCounter = 0;
+
 		const position = this.visualizer.networkRenderer.getNodePositionRelativeToCanvas(playerId);
 		if (!position) return this.hide();
 
-		this.#updateCardPositionCounter--;
 		if (positionTolerance >= 0 && Math.abs((position.x + 4) - this.lastPosition.x) < positionTolerance && Math.abs(position.y - this.lastPosition.y) < positionTolerance) return;
-		if (this.#updateCardPositionCounter <= 0) return this.#updateCardPositionCounter = 60;
 		this.lastPosition = position;
 		const { x, y } = { x: Math.round(position.x), y: Math.round(position.y) };
 		this.nodeCardElem.style.transform = `translate(${x + 12 + 4}px, ${y + 12}px)`;
@@ -283,8 +285,13 @@ export class NodeCardComponent {
 		const canConnect = NodeInteractor.canTryToConnect(this.gameClient, playerId);
 		const hasOffer = this.gameClient.connectionOffers[playerId];
 		this.connectBtn.disabled = !canConnect && !isConnected;
-		if (canConnect) this.connectBtn.textContent = hasOffer ? 'Accept connection' : 'Offer connection';
-		else if (isConnected) this.connectBtn.textContent = 'Disconnect';
+		if (canConnect) {
+			this.nodeCardConnectBtnText.textContent = hasOffer ? 'Accept connection' : 'Offer connection';
+			this.nodeCardConnectBtnCost.style.display = 'none'; // DISABLED FOR NOW -> set to 'block' to enable
+		} else if (isConnected) {
+			this.nodeCardConnectBtnText.textContent = 'Disconnect';
+			this.nodeCardConnectBtnCost.style.display = 'none';
+		}
 		
 		if (isConnected) this.connectBtn.onclick = () => this.gameClient.node.kickPeer(playerId);
 		else if (!hasOffer) this.connectBtn.onclick = () => NodeInteractor.tryToConnect(this.gameClient, playerId);

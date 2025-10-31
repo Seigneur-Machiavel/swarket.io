@@ -127,7 +127,6 @@ export class NetworkRenderer {
 
 		if (this.isAnimating) return;
         this.isAnimating = true;
-        this.#animate();
     }
 
     // Public API methods
@@ -822,7 +821,7 @@ export class NetworkRenderer {
 	lastPhysicUpdate = 0;
 	frameCount = 60;
 	lastFpsUpdate = 0;
-	#animate() {
+	animate() {
 		if (!this.isAnimating) return;
 		
 		const currentTime = performance.now();
@@ -847,7 +846,5 @@ export class NetworkRenderer {
 		this.instancedMesh.instanceMatrix.needsUpdate = true;
 		this.instancedMesh.instanceColor.needsUpdate = true;
 		this.renderer.render(this.scene, this.camera);
-		
-		requestAnimationFrame(() => this.#animate());
 	}
 }

@@ -89,11 +89,10 @@ export class GameClient {
 		}
 		
 		const p = new PlayerNode(peerId); // operatingResource randomly assigned
-		p.inventory.setAmount('energy', p.maxEnergy);
 		p.startTurn = Math.max(this.height, 1); // active from next turn
-
-		if (p.rawProductions.chips) p.rawProductions.engineers = 1; // DEBUG
-		else if (p.rawProductions.engineers) p.rawProductions.chips = 5; // DEBUG
+		
+		//if (p.rawProductions.chips) p.rawProductions.engineers = 1; // DEBUG: BYPASS
+		//else if (p.rawProductions.engineers) p.rawProductions.chips = 5; // DEBUG: BYPASS
 
 		const as = this.extractionMode;
 		this.digestMyAction({ type: 'new-player', playerData: p.extract(as), extractionMode: as });
@@ -225,8 +224,8 @@ export class GameClient {
 			const turnDuration = this.turnSystem.turnDuration;
 			const [min, max] = [scheduleTime - (turnDuration * .6), scheduleTime - (turnDuration * .55)];
 			if (!myIntentsSent && time > min && time < max) {
-				const { fills, count } = this.myPlayer.tradeHub?.prepareAuthorizedFill(this); // prepare authorized fills for taker orders
-				if (count > 0) this.digestMyAction({ type: 'authorized-fills', fills });
+				const { fills, count } = this.myPlayer.tradeHub?.prepareAuthorizedFill(this) || {}; // prepare authorized fills for taker orders
+				if (count && count > 0) this.digestMyAction({ type: 'authorized-fills', fills });
 				if (this.#cleanAndDispatchMyPlayerIntents()) myIntentsSent = true;
 			}
 

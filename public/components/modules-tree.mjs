@@ -109,5 +109,6 @@ export class ModuleTreeComponent {
 		m.currentLevelElement.textContent = level;
 		if (description) m.tooltipElement.textContent = description;
 		m.mainElement.classList.toggle('isClickable', isClickable);
+		m.mainElement.classList.toggle('isBought', level > 0);
 	}
 }

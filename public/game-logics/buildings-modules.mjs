@@ -236,18 +236,18 @@ export class REACTOR_MODULES {
 		minBuildingLevel: 5,
 		levelEffect: [
 			{ description: 'Consume catalyzer => Reactor production rate: +20%' },
-			{ description: 'Consume catalyzer => Reactor production rate: +50%' },
-			{ description: 'Consume catalyzer => Reactor production rate: +80%' },
-			{ description: 'Consume catalyzer => Reactor production rate: +110%' },
-			{ description: 'Consume catalyzer => Reactor production rate: +150%' }
+			{ description: 'Catalyzer => Production rate: +20% > +50%' },
+			{ description: 'Catalyzer => Production rate: +50% > +80%' },
+			{ description: 'Catalyzer => Production rate: +80% > +110%' },
+			{ description: 'Catalyzer => Production rate: +110% > +150%' }
 		]
 	}
 	static burst = { // associated with production line 'burst'
 		minBuildingLevel: 5,
 		levelEffect: [
 			{ description: 'Consume prototypes => Produce 20 energy' },
-			{ description: 'Consume prototypes => Produce 50 energy' },
-			{ description: 'Consume prototypes => Produce 100 energy' },
+			{ description: 'Prototypes => 20 > 50 energy' },
+			{ description: 'Prototypes => 50 > 100 energy' },
 		]
 	}
 
@@ -347,10 +347,10 @@ export class FABRICATOR_MODULES {
 		minBuildingLevel: 5,
 		levelEffect: [
 			{ description: 'Consume catalyzer => Fabricator production rate: +20%' },
-			{ description: 'Consume catalyzer => Fabricator production rate: +50%' },
-			{ description: 'Consume catalyzer => Fabricator production rate: +80%' },
-			{ description: 'Consume catalyzer => Fabricator production rate: +110%' },
-			{ description: 'Consume catalyzer => Fabricator production rate: +150%' }
+			{ description: 'Catalyzer => Production rate: +20% > +50%' },
+			{ description: 'Catalyzer => Production rate: +50% > +80%' },
+			{ description: 'Catalyzer => Production rate: +80% > +110%' },
+			{ description: 'Catalyzer => Production rate: +110% > +150%' }
 		]
 	}
 

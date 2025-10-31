@@ -153,7 +153,7 @@ export class Upgrader {
 				if (player.tradeHub) player.tradeHub.upgradePoints += 1;
 				break;
 			case 'energyDrop':
-				player.inventory.setAmount('energy', player.maxEnergy);
+				player.inventory.addAmount('energy', player.maxEnergy, player.maxEnergy);
 				break;
 			case 'maxEnergy':
 				const max = player.maxEnergy;

@@ -94,7 +94,6 @@ class ElementsBuilder {
 		return chainElement;
 	}
 	static createFittingElement(inputsCount = 2, outputsCount = 1) { // always two inputs or outputs
-		if (inputsCount === outputsCount) return;
 		const fittingElement = document.createElement('div');
 		fittingElement.classList = `production-chain-fitting ${numberToWord[inputsCount]}-inputs ${numberToWord[outputsCount]}-output`;
 		
@@ -168,12 +167,11 @@ export class ProductionLineComponent {
 		// CHAIN - FITTING
 		const chainElement = ElementsBuilder.createChainElement(productionLineSize);
 		const fittingElement = ElementsBuilder.createFittingElement(inputsCount, outputsCount);
-		if (fittingElement) // SET FITTING FIRST IF MORE OUTPUTS THAN INPUTS
-			if (outputsCount > inputsCount) mainElement.appendChild(fittingElement);
+		mainElement.appendChild(fittingElement);
+		if (inputsCount < outputsCount) mainElement.appendChild(chainElement);
 
 		mainElement.appendChild(chainElement);
-		if (fittingElement) // SET FITTING LAST IF MORE INPUTS THAN OUTPUTS
-			if (inputsCount > outputsCount) mainElement.appendChild(fittingElement);
+		if (inputsCount >= outputsCount) mainElement.appendChild(fittingElement);
 
 		// OUTPUTS RESOURCES
 		const outputsWrapper = document.createElement('div');

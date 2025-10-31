@@ -32,9 +32,8 @@ const bee0 = await HiveP2P.createPublicNode({ domain: DOMAIN, port: PORT + 1, cr
 console.log(`%cPublic node id: ${bee0.id} | url: ${bee0.publicUrl}`, 'color: cyan');
 
 const gameClient = new GameClient(bee0, true, 'energy');
-gameClient.myPlayer.name = 'bootstrap: Bee0';
+gameClient.myPlayer.name = 'Bootstrap: Bee0';
 gameClient.myPlayer.rawProductions.energy = 1_000; 		// BYPASS
-gameClient.myPlayer.inventory.setAmount('energy', 100); // BYPASS
 gameClient.myPlayer.maxEnergy = 999_999_999; 			// BYPASS
 gameClient.onExecutedTurn.push(async(height = 0) => {
 	await new Promise(resolve => setTimeout(resolve, Math.round(gameClient.turnSystem.turnDuration / 10)));

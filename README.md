@@ -24,23 +24,23 @@ hivetrade.io, mycelium.io, confluence.io, ataraxie.io..
 **4. Resources basiques**
 - [4] 5 tiers de ressources (structure data)
 - [x] Production passive Tier 1
-- [ ] Crafting Tier 2-5 (coûts énergie)
+- [x] Crafting Tier 2-5 (coûts énergie)
 - [x] Inventaire UI
 
 **4.1 Buildings**
 - [x] reactor 	 	=> carte d'upgrade
-- [ ] fabricator 	=> carte d'upgrade
+- [x] fabricator 	=> carte d'upgrade
 - [x] tradeHub		=> carte d'upgrade
 - [ ] Storage => AGI 	=> carte d'upgrade
 
 **5. Networking manuel**
 - [X] Click pour connecter à un peer
-- [ ] Coût connexion (petit = cheap/rapide)
+- [x] Coût connexion (petit = cheap/rapide) | note: disable for now
 - [x] Slots limités selon les upgrades
 - [x] Visualisation connections
 
 **6 Trading P2P**
-- [ ] Offers (broadcast)
+- [x] Offers (broadcast)
 - [x] Trade offer (unicast)
 - [x] Accept/reject (intent)
 - [ ] Curseur taxation (0-100%)
