@@ -6,7 +6,7 @@
 	<!-- PRELOAD FILES IN ONE STACK -->
 	<!-- <script src="./hive-config.json" type="json"></script> -->
 	<script src="./utils.mjs" type="module"></script>
-	<script src="./pre-game/connection-loader.mjs" type="module"></script>
+	<script src="./components/console.mjs" type="module"></script>
 	<script src="./hive-p2p/libs/xxhash32.mjs" type="module"></script>
 	<script src="./visualizer.mjs" type="module"></script>
 	<script src="./rendering/NetworkRenderer.mjs" type="module"></script>
@@ -54,6 +54,7 @@
 		</div>
 
 		<div class="upgrade-offers-wrapper" id ="upgrade-offers-wrapper">
+			<div class="helper-text">Pick one upgrade to boost your node!</div>
 			<div class="upgrade-offer trade-hub" id="upgrade-offer-1">
 				<div class="tooltip">Connection +1</div>
 			</div>
@@ -79,7 +80,7 @@
 		</div>
 
 		<div class="player-info">
-			<div class="player-name"><span id="player-name">PlayerName</span></div>
+			<div class="player-name"><span id="player-name" contenteditable="true">PlayerName</span></div>
 			<div class="player-id hoverable-tooltip">
 				<div class="tooltip">My player/node identifier</div>
 				<span id="player-id">...</span>
@@ -97,6 +98,12 @@
 					<span id="connectionCount">0</span>/<span id="connectionMax">0</span>
 					<div id="connection-offer-notification">!</div>
 				</div>
+
+				<div class="player-stat hoverable-tooltip" id="playerLevelWrapper">
+					<div class="tooltip">Player Level</div>
+					<img src="./assets/star.png" alt="Player Level" style="transform: scale(.9);">
+					<span id="playerLevel">1</span>
+				</div>
 			</div>
 		</div>
 
@@ -107,6 +114,9 @@
 			<div class="console-body" id="console-log"></div>
 		</div>
 
+		<div id="dead-nodes-helper" class="helper-text">
+			Click on dead nodes to intent resources recycling!
+		</div>
 		<div id="dead-nodes-wrapper">
 			<div class="dead-node-notification"> <!-- TEMPLATE -->
 				<div class="tooltip">
@@ -135,10 +145,6 @@
 		<div id="sub-node-info">
 			<div class="productions-wrapper"></div>
 			<div><span class="player-name">PlayerName</span></div>
-			<div id="my-sub-node-marker">
-				<div class="arrow-up">^</div>
-				<div>Me</div>
-			</div>
 		</div>
 		<div id="node-card">
 			<div class="top-left-corner-decoration"></div>
@@ -180,6 +186,10 @@
 		</div>
 	
 		<div class="buildings-wrapper">
+			<div id="buildings-helper-text" class="helper-text">
+				Click on buildings to manage them!
+				<div class="helper-bar"></div>
+			</div>
 			<div id="trade-hub-icon" class="building-icon hoverable-tooltip">
 				<div class="building-upgradePoints" id="trade-hub-upgrade-points">0</div>
 				<div class="tooltip">TradeHub: Networking building</div>

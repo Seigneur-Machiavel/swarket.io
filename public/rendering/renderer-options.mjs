@@ -55,8 +55,8 @@ export class NetworkRendererOptions {
 		mode = '3d',
 		antialias = true, // Enable or disable antialiasing
 		precision = "highp", // "lowp"
-		nodeRadius = 12,
-		nodeBorderRadius = 3,
+		nodeRadius = 18, //12,
+		nodeBorderRadius = 5, //3,
 		attraction = .000001, // .0001
 		repulsion = 5_000, // 50000
 		damping = .005, // .5

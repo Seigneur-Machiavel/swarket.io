@@ -35,8 +35,9 @@ export class NodeCardComponent {
 	myResourcesBar;
 	spectatorResourcesBar;
 	lastPosition = { x: 0, y: 0 };
-	updateEveryNFrames = 30;
+	updateEveryNFrames = 10;
 	frameCounter = 0;
+	cardPositionMoveTimeout = null;
 
 	/**
 	 * @param {import('../game-logics/game.mjs').GameClient} gameClient
@@ -115,7 +116,8 @@ export class NodeCardComponent {
 		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value, pronoun = 'I') => {
 			elementIcon.classList = `resource-icon ${resName.toLowerCase()}`;
 			const defaultVal = resName === 'energy' ? value / 2 : value;
-			elementValue.textContent = formatCompact3Digits(defaultVal);
+			//elementValue.textContent = formatCompact3Digits(defaultVal);
+			elementValue.textContent = defaultVal;
 			elementTooltip.textContent = `${pronoun} send: ${resName.charAt(0).toUpperCase() + resName.slice(1)}`;
 			toogleButtonsState();
 		};
@@ -158,9 +160,11 @@ export class NodeCardComponent {
 	#setOfferViewerIconsAndValues(offer) {
 		const { resourceName, amount, requestedResourceName, requestedAmount } = offer;
 		this.resourceAIcon.classList = `resource-icon ${resourceName.toLowerCase()}`;
-		this.resourceAValue.textContent = formatCompact3Digits(amount);
 		this.resourceBIcon.classList = `resource-icon ${requestedResourceName.toLowerCase()}`;
-		this.resourceBValue.textContent = formatCompact3Digits(requestedAmount);
+		//this.resourceAValue.textContent = formatCompact3Digits(amount);
+		//this.resourceBValue.textContent = formatCompact3Digits(requestedAmount);
+		this.resourceAValue.textContent = amount;
+		this.resourceBValue.textContent = requestedAmount;
 		return { resourceName, amount, requestedResourceName, requestedAmount };
 	}
 	#setOfferViewerConfirmButtonAttributes() {
@@ -268,17 +272,24 @@ export class NodeCardComponent {
 		this.#updateCardTradeOfferButton(connectedOnly ? isConnected : true);
 		this.#updateCardRemoteOfferButton(connectedOnly ? isConnected : true);
 	}
+	cardPositionMoveTimeout = null;
 	#updateCardPosition(playerId = 'toto', positionTolerance = 12) {
-		if (this.frameCounter++ < this.updateEveryNFrames) return;
-		this.frameCounter = 0;
-
 		const position = this.visualizer.networkRenderer.getNodePositionRelativeToCanvas(playerId);
 		if (!position) return this.hide();
 
-		if (positionTolerance >= 0 && Math.abs((position.x + 4) - this.lastPosition.x) < positionTolerance && Math.abs(position.y - this.lastPosition.y) < positionTolerance) return;
+		if (this.frameCounter++ < this.updateEveryNFrames) return;
+		this.frameCounter = 0;
+
+		const tol = positionTolerance;
+		const hasMovedSignificantly = !this.lastPosition || (Math.abs((position.x + 4) - this.lastPosition.x) >= tol || Math.abs(position.y - this.lastPosition.y) >= tol);
+		if (!hasMovedSignificantly) return;
 		this.lastPosition = position;
-		const { x, y } = { x: Math.round(position.x), y: Math.round(position.y) };
-		this.nodeCardElem.style.transform = `translate(${x + 12 + 4}px, ${y + 12}px)`;
+
+		clearTimeout(this.cardPositionMoveTimeout);
+		this.cardPositionMoveTimeout = setTimeout(() => {
+			const { x, y } = { x: Math.round(position.x), y: Math.round(position.y) };
+			this.nodeCardElem.style.transform = `translate(${x + 12 + 4}px, ${y + 12}px)`;
+		}, 200);
 	}
 	#updateCardConnectionButton(isConnected) {
 		const playerId = this.gameClient.showingCardOfId;

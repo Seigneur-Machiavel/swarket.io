@@ -7,6 +7,7 @@ export class NodeInteractor {
 	static canTryToConnect(gameClient, nodeId = 'toto') {
 		const { node, players } = gameClient;
 		const player = players[nodeId];
+		if (player.isBot) return; // do not connect to bots
 		if (nodeId === node.id || !node.peerStore.known[nodeId] || !player) return;
 		if (node.peerStore.standardNeighborsList.includes(nodeId)) return; // already connected
 		const selfCanConnect = node.peerStore.standardNeighborsList.length < players[node.id].getMaxConnections;
@@ -42,6 +43,6 @@ export class NodeInteractor {
 		gameClient.node.broadcast(data, undefined, player.tradeHub.getSignalRange);
 		player.tradeHub.publicOffersDispatchRequested = false;
 		player.tradeHub.offersExpiryCounter = player.tradeHub.offersExpiryDefault;
-		if (gameClient.verb > 1) console.log(`%cDispatched ${Object.keys(publicOffers).length} public trade offers`, 'color: orange', publicOffers);
+		if (gameClient.verb > 2) console.log(`%cDispatched ${Object.keys(publicOffers).length} public trade offers`, 'color: orange', publicOffers);
 	}
 }

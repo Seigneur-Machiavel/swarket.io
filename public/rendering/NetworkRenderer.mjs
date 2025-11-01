@@ -2,7 +2,7 @@ import { NetworkRendererElements, NetworkRendererOptions } from './renderer-opti
 import { Node, NodesStore, ConnectionsStore } from './renderer-stores.mjs';
 
 export class NetworkRenderer {
-	initCameraZ = 1200;
+	initCameraZ = 1500;
 	avoidPanning = true;
 	avoidAutoZoomUntil = 0;
 	lastAutoZoomDistance = 0;

@@ -4,7 +4,6 @@ export class SubNodeInfoTrackerComponent {
 	mainElement = document.getElementById('sub-node-info');
 	playerNameElement = this.mainElement.querySelector('.player-name');
 	productionsWrapper = this.mainElement.querySelector('.productions-wrapper');
-	mySubNodeMarker = document.getElementById('my-sub-node-marker');
 
 	gameClient;
 	visualizer;
@@ -26,19 +25,15 @@ export class SubNodeInfoTrackerComponent {
 		const hoveredNode = this.visualizer.networkRenderer.hoveredNodeId;
 		if (!hoveredNode) return this.hide();
 
-		const myNodeId = this.gameClient.node.id;
 		const p = this.gameClient.players[hoveredNode];
 		if (!p) return this.hide();
 
-		this.show(hoveredNode === myNodeId);
-		if (hoveredNode !== myNodeId) {
-			const playerName = p.name || `Player ${p.id}`;
-			this.playerNameElement.textContent = playerName;
-			const productions = p?.rawProductions || {};
-			this.#updateProductions(productions);
-		}
-
-		this.playerNameElement.style.display = hoveredNode === myNodeId ? 'none' : 'block';
+		this.show();
+		let playerName = p.name || `Player ${p.id}`;
+		if (hoveredNode === this.gameClient.node.id) playerName += ' (Me)';
+		this.playerNameElement.textContent = playerName;
+		const productions = p?.rawProductions || {};
+		this.#updateProductions(productions);
 		this.#updatePosition(hoveredNode);
 	}
 	#updatePosition(playerId = 'toto', positionTolerance = 6) {
@@ -74,11 +69,8 @@ export class SubNodeInfoTrackerComponent {
 			this.productionsWrapper.appendChild(pElem);
 		}
 	}
-	show(isSelf = false) {
+	show() {
 		this.mainElement.classList.add('visible');
-		this.mySubNodeMarker.classList.toggle('visible', isSelf);
-		this.productionsWrapper.classList.toggle('visible', isSelf === false);
-		if (isSelf) return;
 	}
 	hide() {
 		this.mainElement.classList.remove('visible');

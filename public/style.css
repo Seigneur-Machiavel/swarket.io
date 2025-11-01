@@ -198,6 +198,17 @@ button:not(:disabled):hover {
 .hoverable-tooltip:hover .tooltip {
 	display: block;
 }
+.helper-text {
+	pointer-events: none;
+	display: none;
+	font-size: 14px;
+	font-weight: bold;
+	color: var(--text-dim);
+	animation: blinkBright 1s infinite;
+}
+.helper-text.visible {
+	display: block;
+}
 .top-left-corner-decoration {
 	position: absolute;
 	width: 16px;
@@ -505,7 +516,6 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	pointer-events: none;
 	filter: grayscale(1) brightness(0.6);
 }
-
 .upgrade-offer.producer::before {
 	background-size: 42px 42px;
 	background-image: var(--producer-icon);
@@ -529,7 +539,6 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .upgrade-offer:hover::before {
 	filter: invert(1) brightness(1);
 }
-
 .upgrade-offer.buildReactor::before, .upgrade-offer.reactor::before {
 	background-image: var(--reactor-icon);
 }
@@ -539,7 +548,6 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .upgrade-offer.buildTradeHub::before, .upgrade-offer.tradeHub::before {
 	background-image: var(--trade-hub-icon);
 }
-
 .upgrade-offer.levelUp::after {
     content: '+';
     position: absolute;
@@ -548,6 +556,15 @@ input[type="range"]:focus::-webkit-slider-thumb {
     font-size: 20px;
     font-weight: bold;
     opacity: .8;
+}
+.upgrade-offers-wrapper .helper-text {
+	pointer-events: none;
+	position: absolute;
+    width: max-content;
+    top: 120%;
+    left: 50%;
+	text-align: center;
+	transform: translateX(-50%);
 }
 
 /* === ENERGY BAR === */
@@ -605,7 +622,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	color: var(--text-main);
 	font-size: 12px;
 	font-weight: bold;
-	-webkit-text-stroke: 2px var(--bg-dark);
+	-webkit-text-stroke: 2.5px var(--bg-dark);
   	paint-order: stroke fill;
 }
 
@@ -946,10 +963,14 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	font-weight: normal !important;
 	transform: translate(-40%, -180%);
 }
-.player-name {
+.player-info .player-name {
 	text-align: center;
 }
+#player-name {
+	padding: 0;
+}
 .player-id {
+	color: var(--text-dim);
 	margin-top: 2px;
 	position: relative;
 }
@@ -969,9 +990,10 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	display: flex;
 	align-items: center;
 	gap: 6px;
+	color: var(--text-dim);
 }
 #lifetimeCountWrapper {
-	opacity: .75;
+	color: var(--text-darker);
 }
 #connectionCountWrapper {
 	cursor: pointer;
@@ -1015,6 +1037,23 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	right: 2%;
 	padding: 4px 8px;
 }
+.buildings-wrapper .helper-text {
+	position: absolute;
+	align-items: center;
+    height: 110%;
+    width: 170px;
+	top: -7%;
+    right: 110%;
+}
+.buildings-wrapper .helper-text.visible {
+	display: flex;
+}
+.buildings-wrapper .helper-bar {
+	height: 100%;
+	width: 12px;
+	border: solid 4px var(--color2);
+	border-right: none;
+}
 .buildings-wrapper .building-upgradePoints {
 	z-index: 1;
 	pointer-events: none;
@@ -1035,7 +1074,8 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .buildings-wrapper .building-upgradePoints.visible {
 	transform: scale(1);
 }
-.buildings-wrapper .building-icon, .buildings-wrapper .building-icon img {
+/** OLD VERSION : WITH HEIGHT ANIMATION **/
+/*.buildings-wrapper .building-icon, .buildings-wrapper .building-icon img {
 	pointer-events: none;
 	position: relative;
 	margin-bottom: 12px;
@@ -1045,17 +1085,32 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	pointer-events: initial;
 	height: 38px;
 	transition: height .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}*/
+/** NEW VERSION : WITHOUT HEIGHT ANIMATION, BRIGHTNESS CHANGE ON VISIBLE **/
+.buildings-wrapper .building-icon, .buildings-wrapper .building-icon img {
+	pointer-events: none;
+	position: relative;
+	margin-bottom: 12px;
+	height: 38px;
 }
+.buildings-wrapper .building-icon.visible, .buildings-wrapper .building-icon.visible img {
+	pointer-events: initial;
+	
+}
+
 .buildings-wrapper img {
 	user-select: none;
 	width: 38px;
 	cursor: pointer;
-	filter: invert(1) brightness(.4);
+	filter: invert(1) brightness(.2);
 	transition: filter .06s .06s ease-in-out;
 }
-.buildings-wrapper img:hover {
+.buildings-wrapper .building-icon.visible img {
+	filter: invert(1) brightness(.7);
+}
+.buildings-wrapper .building-icon.visible img:hover {
 	filter: invert(1) brightness(1);
-	transition: filter .12s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	transition: filter .06s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 #reactor-icon img {
 	transform: scale(.92) translateY(10%);
@@ -1683,6 +1738,10 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	position: relative;
 	transform: translateY(4px);
 	padding-left: 4px;
+	color: var(--text-darker);
+}
+.swap-wrapper .resource .resource-value.input-filled-by-user {
+	color: var(--text-main);
 }
 .swap-wrapper .resource .resource-value:before {
 	position: absolute;
@@ -1746,13 +1805,17 @@ input[type="range"]:focus::-webkit-slider-thumb {
     top: 0;
 	background: linear-gradient(150deg, var(--data-color) -58%, var(--energy-color) 67%);
 	transform: translateX(0%);
-	transition: transform .4s cubic-bezier(0, 0.885, 0.32, 1), opacity .2s ease-in-out;
+	transition: transform 0 .4s cubic-bezier(0, 0.885, 0.32, 1), opacity .4s ease-in-out;
 }
 .swap-confirm-btn.filling .loader {
 	opacity: 1;
+	transition: transform .4s cubic-bezier(0, 0.885, 0.32, 1), opacity .2s ease-in-out;
 }
 
 /** === DEAD NODES NOTIFICATIONS === */
+#dead-nodes-helper {
+	width: 230px;
+}
 #dead-nodes-wrapper {
 	opacity: 0;
 	position: fixed;
@@ -1763,6 +1826,11 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	display: flex;
 	align-items: center;
 	flex-direction: row-reverse;
+}
+#dead-nodes-helper {
+	position: fixed;
+	bottom: 26%;
+	right: 3%;
 }
 .UI-wrapper.started #dead-nodes-wrapper {
 	animation: fadeIn .6s .4s forwards cubic-bezier(0.75, -0.5, 0.25, 1.5);
@@ -2008,27 +2076,10 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	font-weight: bold;
 }
 #sub-node-info .productions-wrapper {
-	display: none;
+	display: flex;
 	justify-content: center;
 	gap: 8px;
 }
-#sub-node-info .productions-wrapper.visible {
-	display: flex;
-}
 #sub-node-info.visible {
-	pointer-events: auto;
 	display: flex;
-}
-#my-sub-node-marker {
-	display: none;
-    font-weight: bold;
-    flex-direction: column;
-    align-items: center;
-}
-#my-sub-node-marker.visible {
-	display: flex;
-}
-#my-sub-node-marker .arrow-up {
-	margin-bottom: -6px;
-    font-size: 20px;
 }

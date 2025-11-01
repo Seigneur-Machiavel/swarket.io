@@ -118,9 +118,11 @@ class MyTradeOfferLineComponent {
 	#setupHandlers() {
 		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value, pronoun = 'I') => {
 			elementIcon.classList = `resource-icon ${resName}`;
-			const isValueEditable = elementValue.isContentEditable;
-			if (isValueEditable) elementValue.textContent = formatCompact3Digits(value / 10);
 			elementTooltip.textContent = `${pronoun} send: ${resName.charAt(0).toUpperCase() + resName.slice(1)}`;
+			const isValueEditable = elementValue.isContentEditable;
+			if (!isValueEditable) return;
+			elementValue.dataset.rawValue = value / 10;
+			elementValue.textContent = formatCompact3Digits(value / 10);
 		}
 		this.offeredResourceIconElem.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
 			handleResourceNameAndValue(this.offeredResourceIconElem, this.offeredResourceValueElem, this.offeredResourceTooltip, resName, value, 'I');
@@ -216,9 +218,9 @@ class SwapComponent {
 
 		// CALCULATE EXPECTED OPPOSITE VALUE
 		const { totalOppositeAmount, playersToInform } = this.gameClient.swapModule.getSwapExpectedResult(offeredResource, requestedResource, { bought, sold });
-		const fixedStr = formatCompact3Digits(totalOppositeAmount);
-		if (bought) this.resourceA_Value.textContent = fixedStr;
-		else this.resourceB_Value.textContent = fixedStr;
+		const oppositeValueElement = bought ? this.resourceA_Value : this.resourceB_Value;
+		oppositeValueElement.dataset.rawValue = totalOppositeAmount;
+		oppositeValueElement.textContent = formatCompact3Digits(totalOppositeAmount);
 		this.playersToInform = playersToInform;
 
 		// ENABLE/DISABLE SWAP BUTTON
@@ -229,7 +231,7 @@ class SwapComponent {
 		// ICONS
 		this.resourceA_Icon.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
 			this.swapBtn.disabled = true;
-			this.inputFilledByUser = 'SELL';
+			this.#setInputFilledByUser('SELL');
 			this.resourceA_Icon.classList = `resource-icon ${resName}`;
 			this.resourceA_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
 			// change requested resource to something different than offered
@@ -239,12 +241,14 @@ class SwapComponent {
 			}
 
 			const defaultVal = resName === 'energy' ? value / 2 : value;
+			this.resourceA_Value.dataset.rawValue = defaultVal;
 			this.resourceA_Value.textContent = formatCompact3Digits(defaultVal);
+			this.resourceB_Value.dataset.rawValue = 0;
 			this.resourceB_Value.textContent = "0";
 		});
 		this.resourceB_Icon.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
 			this.swapBtn.disabled = true;
-			this.inputFilledByUser = 'BUY';
+			//this.#setInputFilledByUser('BUY');
 			this.resourceB_Icon.classList = `resource-icon ${resName}`;
 			this.resourceB_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
 			// change offered resource to something different than requested
@@ -252,17 +256,21 @@ class SwapComponent {
 				this.resourceA_Icon.classList = `resource-icon ${resName === 'chips' ? 'energy' : 'chips'}`;
 				this.resourceA_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
 			}
-			
+
+			this.resourceB_Value.dataset.rawValue = 0;
 			this.resourceB_Value.textContent = "0";
 		});
 		// VALUES
 		/** @param {'BUY' | 'SELL'} input */
-		const handleValueInteraction = (input = 'BUY', andUpdate = false) => {
+		const handleValueInteraction = (input = 'BUY', isInput = false) => {
 			const valueElement = input === 'BUY' ? this.resourceB_Value : this.resourceA_Value;
-			this.inputFilledByUser = input;
 			this.swapBtn.disabled = true;
 			if (valueElement.textContent.trim() === '') valueElement.textContent = '0';
-			if (andUpdate) this.update();
+			const val = parseInt(valueElement.textContent, 10);
+			if (val) this.#setInputFilledByUser(input);
+			if (!isInput) return;
+			valueElement.dataset.rawValue = val;
+			this.update();
 		}
 		this.resourceA_Value.onclick = () => handleValueInteraction('SELL');
 		this.resourceA_Value.oninput = () => handleValueInteraction('SELL', true);
@@ -271,6 +279,13 @@ class SwapComponent {
 
 		this.reverseResourcesBtn.onclick = () => this.#reverse();
 		this.swapBtn.onclick = () => this.#handleConfirmSwap();
+	}
+	#setInputFilledByUser(input = 'BUY') {
+		this.inputFilledByUser = input;
+		const valueElement = input === 'BUY' ? this.resourceB_Value : this.resourceA_Value;
+		const oppositeValueElement = input === 'BUY' ? this.resourceA_Value : this.resourceB_Value;
+		valueElement.classList.add('input-filled-by-user');
+		oppositeValueElement.classList.remove('input-filled-by-user');
 	}
 	#reverse() {
 		const tempIconClass = this.resourceA_Icon.classList.item(1);
@@ -283,14 +298,14 @@ class SwapComponent {
 		this.resourceA_Value.textContent = this.resourceB_Value.textContent;
 		this.resourceB_Value.textContent = tempValue;
 
-		this.inputFilledByUser = this.inputFilledByUser === 'BUY' ? 'SELL' : 'BUY';
+		this.#setInputFilledByUser(this.inputFilledByUser === 'BUY' ? 'SELL' : 'BUY');
 	}
 	#getCurrentValues() {
-		const rA_Name = this.resourceA_Icon.classList.item(1) || 'energy';
-		const rA_Qty = parseInt(this.resourceA_Value.textContent || '0', 10);
-		const rB_Name = this.resourceB_Icon.classList.item(1) || 'chips';
-		const rB_Qty = parseInt(this.resourceB_Value.textContent || '0', 10);
-		return { offeredResource: rA_Name, offeredQty: rA_Qty, requestedResource: rB_Name, requestedQty: rB_Qty };
+		const offeredResource = this.resourceA_Icon.classList.item(1) || 'energy';
+		const offeredQty = parseInt(this.resourceA_Value.dataset.rawValue || '0', 10);
+		const requestedResource = this.resourceB_Icon.classList.item(1) || 'chips';
+		const requestedQty = parseInt(this.resourceB_Value.dataset.rawValue || '0', 10);
+		return { offeredResource, offeredQty, requestedResource, requestedQty };
 	}
 	#updateConfirmButtonDependingOnValues() {
 		const takerOrder = this.gameClient.myPlayer.tradeHub.getTakerOrder;

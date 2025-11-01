@@ -1,4 +1,4 @@
-import { renderConnectionLogs, renderConnectedLogs } from './pre-game/connection-loader.mjs';
+import { GameConsole } from './components/console.mjs';
 import { PlayerStatsComponent, ConnectionsListComponent, UpgradeOffersComponent,
 	EnergyBarComponent, ResourcesBarComponent, NodeCardComponent, SubNodeInfoTrackerComponent,
 	DeadNodesComponent, BuildingsComponent
@@ -7,10 +7,12 @@ import { ParticlesDisplayer } from './components/particles.mjs';
 import { NetworkVisualizer } from './visualizer.mjs';
 import { GameClient } from './game-logics/game.mjs';
 import { NodeInteractor } from './game-logics/node-interactions.mjs';
-import { formatCompact3Digits } from './utils.mjs';
 
+// WAIT FOR HIVE-P2P TO BE LOADED
 while (!window.HiveP2P) await new Promise(resolve => setTimeout(resolve, 10));
 
+const gameConsole = new GameConsole();
+window.gameConsole = gameConsole;
 const params = new URLSearchParams(window.location.search);
 const IS_DEBUG = params.has('debug');
 
@@ -23,7 +25,7 @@ try {
   const { default: overrides } = await import('./hive-config.json', { with: { type: 'json' } });
   HiveP2P.mergeConfig(HiveP2P.CONFIG, overrides);
 } catch (e) { console.log('No hive-config.json found, using default configuration.'); }
-renderConnectionLogs();
+gameConsole.renderConnectionLogs();
 
 // NODE & GAMECLIENT SETUP
 // get domain from url params or use default
@@ -48,7 +50,7 @@ visualizer.onNodeRightClick((nodeId = 'toto') => console.log('Right-click on nod
 
 // UI COMPONENTS SETUP
 const uiWrapper = document.querySelector('.UI-wrapper');
-const playerStats = new PlayerStatsComponent();
+const playerStats = new PlayerStatsComponent(gameClient);
 const connectionsList = new ConnectionsListComponent(gameClient);
 playerStats.connectionCountWrapper.onclick = () => connectionsList.show();
 const upgradeOffers = new UpgradeOffersComponent(gameClient);
@@ -120,7 +122,7 @@ window.gameClient = gameClient; // Expose for debugging
 while(!node.peerStore.neighborsList.length)
 	await new Promise(resolve => setTimeout(resolve, 100));
 
-renderConnectedLogs();
+gameConsole.renderConnectedLogs();
 uiWrapper.classList.add('started');
 
 // AUTO-PLAY SETUP (DEBUG ONLY)

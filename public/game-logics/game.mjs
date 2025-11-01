@@ -19,16 +19,17 @@ import { SwapModule } from './swap.mjs';
  */
 
 export class GameClient {
-	extractionMode = 'array'; // 'object'(safe) | 'array'(fast) for data extraction
-	alive = true; // Flag to indicate the game is running
-	node; verb; height = 0; // number of turns
+	extractionMode = 'array'; 	// 'object'(safe) | 'array'(fast) for data extraction
+	alive = true; 				// Flag to indicate the game is running
+	node; verb; height = 0; 	// number of turns
 	turnSystem;
-	gameStateAskedFrom = null; // id of node we asked game state from
+	gameStateAskedFrom = null; 	// id of node we asked game state from
 
 	/** @type {Record<string, PlayerNode>} */ players = {};
 	playersCount = 0;
 	alivePlayersCount() { return this.playersCount - this.deadPlayers.size; }
 	deadPlayers = new Set();	// temp storage of dead players to be removed
+	botsIds = new Set();		// ids of bot players
 	onExecutedTurn = []; 		// callbacks
 	syncAskedBy = []; 			// ids of nodes who asked for sync
 	selectedDeadNodeId = null; 	// selected node to recycle from UI
@@ -88,8 +89,9 @@ export class GameClient {
 			return console.warn(`Player already exists for connected peer: ${peerId}`);
 		}
 		
-		const p = new PlayerNode(peerId); // operatingResource randomly assigned
-		p.startTurn = Math.max(this.height, 1); // active from next turn
+		const p = new PlayerNode(peerId); 				// operatingResource randomly assigned
+		if (this.botsIds.has(peerId)) p.setAsBot(); 	// mark as bot if needed
+		p.startTurn = Math.max(this.height, 1); 		// active from next turn
 		
 		//if (p.rawProductions.chips) p.rawProductions.engineers = 1; // DEBUG: BYPASS
 		//else if (p.rawProductions.engineers) p.rawProductions.chips = 5; // DEBUG: BYPASS
@@ -273,7 +275,7 @@ export class GameClient {
 		
 		// HASH THE TURN AFTER INTENTS EXECUTION > LAST TIME TO AVOID ANTICIPATION
 		const newTurnHash = this.turnSystem.getTurnHash(this.height, this.#extractPlayersData().playersData);
-		this.deadPlayers = new Set(); 	// reset
+		//this.deadPlayers = new Set(); 	// reset
 
 		// EXECUTE PLAYER TURNS (RESOURCE PRODUCTION, ENERGY DEDUCTION, UPGRADE OFFERS...)
 		this.#execPlayersTurn(organizedIds, newTurnHash); // will fill deadPlayers set
@@ -336,6 +338,7 @@ export class GameClient {
 			// REMOVE PLAYER FROM ALL TRACKING STRUCTURES
 			delete this.players[playerId];
 			this.deadPlayers.delete(playerId);
+			this.botsIds.delete(playerId);
 			this.playersCount--;
 			if (this.verb > 1) console.log(`Player ${playerId} removed from game (dead).`);
 

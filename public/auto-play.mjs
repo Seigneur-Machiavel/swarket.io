@@ -1,3 +1,5 @@
+import { RAW_RESOURCES_PROD_BASIS } from './game-logics/resources.mjs';
+
 export class AutoPlayer {
 	logPrefix = '[AutoPlayer]';
 	cssStyle = 'color: cyan';
@@ -6,12 +8,13 @@ export class AutoPlayer {
 	NodeInteractor;
 	deadNodesComponent;
 	upgradeOffersComponent;
+	readyToRecycleDelay = 10;
 
 	/** Instance of AutoPlayer - can work with or without frontend.
-	 * @param {import('../public/game-logics/game.mjs').GameClient} gameClient
-	 * @param {import('../public/game-logics/node-interactions.mjs').NodeInteractor} NodeInteractor
-	 * @param {import('../public/components/UI-components.mjs').DeadNodesComponent} deadNodesComponent
-	 * @param {import('../public/components/UI-components.mjs').UpgradeOffersComponent} upgradeOffersComponent */
+	 * @param {import('./game-logics/game.mjs').GameClient} gameClient
+	 * @param {import('./game-logics/node-interactions.mjs').NodeInteractor} NodeInteractor
+	 * @param {import('./components/UI-components.mjs').DeadNodesComponent} deadNodesComponent
+	 * @param {import('./components/UI-components.mjs').UpgradeOffersComponent} upgradeOffersComponent */
 	constructor(gameClient, NodeInteractor, deadNodesComponent, upgradeOffersComponent) {
 		this.gameClient = gameClient;
 		this.NodeInteractor = NodeInteractor;
@@ -42,8 +45,11 @@ export class AutoPlayer {
 
 		// ATTEMPT TO RECYCLE THE SELECTED DEAD NODE
 		if (!selectedDeadNodeId && firstDeadNodeId && this.deadNodesComponent.deadNodes[firstDeadNodeId]) {
-			this.deadNodesComponent.setSelectedDeadNode(firstDeadNodeId);
-			console.log(`%c${this.logPrefix} Selected dead node: ${firstDeadNodeId}`, this.cssStyle);
+			if (this.readyToRecycleDelay-- <= 0) {
+				this.readyToRecycleDelay = 5;
+				this.deadNodesComponent.setSelectedDeadNode(firstDeadNodeId);
+				console.log(`%c${this.logPrefix} Selected dead node: ${firstDeadNodeId}`, this.cssStyle);
+			}
 		}
 	
 		// ATTEMPT TO UPGRADE IF POSSIBLE
@@ -62,7 +68,8 @@ export class AutoPlayer {
 		const { node, turnSystem, myPlayer, alive, selectedDeadNodeId } = this.gameClient;
 
 		// ATTEMPT TO RECYCLE THE SELECTED DEAD NODE
-		if (!selectedDeadNodeId && firstDeadNodeId && height % 5 === 0) {
+		if (!selectedDeadNodeId && firstDeadNodeId && this.readyToRecycleDelay-- <= 0) {
+			this.readyToRecycleDelay = 10;
 			this.gameClient.selectedDeadNodeId = firstDeadNodeId;
 			console.log(`%c${this.logPrefix} Selected dead node: ${firstDeadNodeId}`, this.cssStyle);
 		}
@@ -79,13 +86,26 @@ export class AutoPlayer {
 		// SET PUBLIC TRADE OFFERS (RANDOM PRICES)
 		const tradeHub = myPlayer.tradeHub;
 		if (Math.random() < .04) tradeHub?.cancelAllPublicTradeOffers(); // random cancel all offers
-		if (tradeHub && Object.keys(tradeHub.publicOffers).length === 0) {
-			// random from 1 to 10
-			const price = Math.floor(Math.random() * 10) + 1;
-			//const price = 5; // fixed price
-			tradeHub.setMyPublicTradeOffer('energy', 'chips', price, 50, true); // DEBUG auto-swap
-			tradeHub.setMyPublicTradeOffer('energy', 'datas', price, 50, true); // DEBUG auto-swap
-			tradeHub.setMyPublicTradeOffer('energy', 'models', price, 50, true); // DEBUG auto-swap
+		if (tradeHub && Object.keys(tradeHub.publicOffers).length === 0)
+			this.#setRandomOfferRelatedToProductions();
+	}
+	#setRandomOfferRelatedToProductions() {
+		const RRPB = RAW_RESOURCES_PROD_BASIS;
+		RRPB.energy = .5; // add energy basis for calculations
+		for (const offeredResource in this.gameClient.myPlayer.rawProductions) {
+			const offeredBasis = RRPB[offeredResource];
+			const prod = this.gameClient.myPlayer.rawProductions[offeredResource];
+			if (!prod || prod <= 0) continue;
+
+			for (const requestedResource in RRPB) {
+				if (requestedResource === offeredResource) continue;
+				
+				const rnd = Math.random() * .95 + 1.05; // random from 1.05 to 2.0
+				const requestedBasis = RRPB[requestedResource];
+				const price = parseFloat((requestedBasis / offeredBasis * rnd).toFixed(2));
+				if (price <= 0) continue;
+				this.gameClient.myPlayer.tradeHub?.setMyPublicTradeOffer(offeredResource, requestedResource, price, 50, true);
+			}
 		}
 	}
 }

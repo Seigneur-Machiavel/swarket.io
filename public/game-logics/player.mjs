@@ -1,15 +1,17 @@
 import { randomOperatingResource, newRawResourcesSet, Inventory } from './resources.mjs';
 import { UpgradesTool, UpgradeSet, Upgrader } from './upgrades.mjs';
 import { BuildingBuilder, Building, Reactor, Fabricator, TradeHub } from './buildings.mjs';
-import { usernames } from '../utils.mjs';
+import { usernames, nameAcceptedChars, formatCompact3Digits } from '../utils.mjs';
 
 const KEYS_TO_NOT_EXTRACT = new Set([]);
 
 export class PlayerNode {
-	id;
+	id; 				// unique identifier: nodeId / playerId
+	isBot; 				// flag to indicate if this is a bot client
 	name = usernames[Math.floor(Math.random() * usernames.length)];
 	operatingResource; 	// 'chips' | 'datas' | 'models' | 'engineers' => first assigned
 	lifetime = 0;		// in turns
+	level = 1; 			// player level
 	startTurn = 0;
 	get getEnergy() { return this.inventory.getAmount('energy'); }
 	maxEnergy = 100;
@@ -97,6 +99,10 @@ export class PlayerNode {
 			else sendable.push(this[k]?.extract ? this[k].extract() : this[k]);
 		return sendable;
 	}
+	setAsBot() {
+		this.isBot = true;
+		this.name = `${this.name} (Bot)`;
+	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} nodeId @param {{type: string}} intent */
 	execIntent(gameClient, nodeId, intent) {
 		if (intent.type === 'set-param') return this.#handleSetParamIntent(intent);
@@ -146,13 +152,17 @@ export class PlayerNode {
 		const { param, buildingName, lineName, value } = intent;
 		/** @type {Building | null} */
 		const building = this[buildingName] || null;
-		if (!buildingName && building === null) return console.warn(`[${this.id}] Cannot set param, no building:`, buildingName);
+		if (buildingName && building === null) return console.warn(`[${this.id}] Cannot set param, no building:`, buildingName);
 		
 		const lineIndex = lineName ? building?.activeProductionLines.indexOf(lineName) : -1;
 		if (lineName && lineIndex === -1) return console.warn(`[${this.id}] Cannot set param, unknown production line:`, lineName);
 		
 		console.log(`[${this.id}] Set param:`, param, value);
 		switch (param) {
+			case 'name':
+				if (typeof value !== 'string' || value.length < 3 || value.length > 12) return;
+				this.name = Array.from(value).filter(c => nameAcceptedChars.includes(c)).join('');
+				break;
 			case 'rawProductionRate':
 				if (![0, .25, .5, .75, 1].includes(value)) return;
 				this.rawProductionRate = value;
@@ -184,7 +194,8 @@ export class PlayerNode {
 		this.upgradeOffers.shift();
 		this.upgradeSet[upgradeName]++;
 		const randomSeed = `${gameClient.turnSystem.prevHash}-${this.id}-${upgradeName}`;
-		Upgrader.applyUpgradeEffects(this, upgradeName, randomSeed);
+		const consoleText = Upgrader.applyUpgradeEffects(this, upgradeName, randomSeed);
+		this.#logIfSelf(gameClient, consoleText, 'success');
 		return true;
 	}
 	/** @param {{resourceName: string, amount: number, requestedResourceName: string, requestedAmount: number, targetPlayerId: string}} intent */
@@ -242,6 +253,10 @@ export class PlayerNode {
 
 		for (const r in resources) this.inventory.addAmount(r, resources[r]);
 		if (verb > 1) console.log(`[${this.id}] Recycled resources from ${fromDeadNodeId}:`, resources);
+		
+		this.#logIfSelf(gameClient, `> ${fromDeadNodeId} recycled!`, 'success');
+		for (const r in resources)
+			if (resources[r]) this.#logIfSelf(gameClient, `+ ${formatCompact3Digits(resources[r])} ${r}`);
 
 		deadPlayer.inventory.empty();
 		return true;
@@ -301,9 +316,16 @@ export class PlayerNode {
 		if (!this.getEnergy) return;
 		if (!Upgrader.shouldUpgrade(this.lifetime)) return;
 
+		this.level++;
 		const offerSeed = `${this.id}-${turnHash}`;
 		const offer = Upgrader.getRandomUpgradeOffer(this, offerSeed);
 		this.upgradeOffers.push(offer);
 		// console.log(`%c[${this.id}] New upgrade offer: ${offer.join(', ')}`, 'color: green; font-weight: bold;');
+	}
+	/** @param {import('./game.mjs').GameClient} gameClient @param {string} text @param {'info' | 'success' | 'error'} type */
+	#logIfSelf(gameClient, text, type = 'info') {
+		if (gameClient.myPlayer.id !== this.id) return;
+		if (typeof window === 'undefined' || !window.gameConsole) return;
+		window.gameConsole.addLog(text, type);
 	}
 }

@@ -1,6 +1,6 @@
 // IN THIS FILE WE GROUPED THE LIGHTS UI COMPONENTS USED IN THE GAME
 // OTHER COMPLEX COMPONENTS ARE IN SEPARATE FILES, BUT IMPORTED > EXPORTED HERE
-import { formatCompact2Digits, formatCompact3Digits } from '../utils.mjs';
+import { formatCompact2Digits, formatCompact3Digits, nameAcceptedChars } from '../utils.mjs';
 import { UpgradesTool } from '../game-logics/upgrades.mjs';
 import { NodeInteractor } from '../game-logics/node-interactions.mjs';
 import { ReactorComponent } from './reactor.mjs';
@@ -12,21 +12,49 @@ import { SubNodeInfoTrackerComponent } from './sub-node-info-tracker.mjs';
 export { ResourcesBarComponent, NodeCardComponent, SubNodeInfoTrackerComponent };
 
 export class PlayerStatsComponent {
+	gameClient;
 	playerNameElem = document.getElementById('player-name');
 	playerIdElem = document.getElementById('player-id');
 	lifetimeElem = document.getElementById('lifetimeCount');
+	playerLevelElem = document.getElementById('playerLevel');
 	connectionCountWrapper = document.getElementById('connectionCountWrapper');
 	connectionElem = document.getElementById('connectionCount');
 	connectionMaxElem = document.getElementById('connectionMax');
 	connectionOfferNotification = document.getElementById('connection-offer-notification');
+	turnBeforePlayerNameUpdate = 0;
+	setPlayerNameTimeout = null;
 
-	setPlayerName(playerName) { this.playerNameElem.textContent = playerName; }
+	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
+	constructor(gameClient) {
+		this.gameClient = gameClient;
+		this.playerNameElem.oninput = (e) => {
+			const filteredName = Array.from(e.target.textContent)
+				.filter(c => nameAcceptedChars.includes(c))
+				.join('')
+				.slice(0, 12);
+			if (e.target.textContent !== filteredName) e.target.textContent = filteredName;
+			this.turnBeforePlayerNameUpdate = 8; // delay updates to avoid overriding while typing
+
+			if (this.setPlayerNameTimeout) clearTimeout(this.setPlayerNameTimeout);
+			this.setPlayerNameTimeout = setTimeout(() => {
+				if (filteredName.length < 3) return; // too short
+				this.gameClient.digestMyAction({ type: 'set-param', param: 'name', value: filteredName });
+			}, 4000);
+		};
+	}
+
+	setPlayerName(playerName) {
+		this.turnBeforePlayerNameUpdate = Math.max(this.turnBeforePlayerNameUpdate - 1, 0);
+		if (this.turnBeforePlayerNameUpdate) return;
+		this.playerNameElem.textContent = playerName;
+	}
 	setPlayerId(id) { this.playerIdElem.textContent = id; }
 	/** @param {import('../game-logics/player.mjs').PlayerNode} player @param {number} connections */
 	update(player, connections, lifetimeAsDate = true) {
 		const l = lifetimeAsDate ? new Date(player.lifetime * 1000).toISOString().substr(11, 8) : player.lifetime;
 		this.lifetimeElem.textContent = l;
 		this.connectionElem.textContent = connections;
+		this.playerLevelElem.textContent = player.level;
 		this.connectionMaxElem.textContent = player.getMaxConnections;
 	}
 	showConnectionOfferNotification() {
@@ -105,7 +133,9 @@ export class UpgradeOffersComponent {
 	offer1 = document.getElementById('upgrade-offer-1');
 	offer2 = document.getElementById('upgrade-offer-2');
 	offer3 = document.getElementById('upgrade-offer-3');
+	helperText = this.upgradeOffersWrapper.querySelector('.helper-text');
 
+	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
 	constructor(gameClient) { this.gameClient = gameClient; }
 
 	displayOffers() {
@@ -125,13 +155,21 @@ export class UpgradeOffersComponent {
 			offerElem.querySelector('.tooltip').textContent = tooltip;
 		}
 		this.upgradeOffersWrapper.classList.add('visible');
+		this.#displayHelperIfNeeded();
 		// console.log(`%cUpgrade offers displayed: ${offers.join(', ')}`, 'color: green; font-weight: bold;');
+	}
+	#displayHelperIfNeeded() {
+		let areFirstOffers = true;
+		for (const u in this.gameClient.myPlayer.upgradeSet)
+			if (this.gameClient.myPlayer.upgradeSet[u]) { areFirstOffers = false; break; }
+		this.helperText.classList.toggle('visible', areFirstOffers);
 	}
 	hideOffers() { this.upgradeOffersWrapper.classList.remove('visible'); }
 	onOfferClick(i, upgradeName) {
 		this.#setSelectedOffer(i);
 		this.gameClient.digestMyAction({ type: 'upgrade', upgradeName });
 		this.offerSelectedOnLastTurn = true;
+		this.helperText.classList.remove('visible');
 	}
 	#setSelectedOffer(index = 1) {
 		for (let i = 1; i <= 3; i++) {
@@ -177,6 +215,8 @@ export class EnergyBarComponent {
 export class BuildingsComponent {
 	gameClient;
 	myResourcesBar;
+	buildingsHelperText = document.getElementById('buildings-helper-text');
+	displayHelper = true;
 	icons = {
 		reactor: document.getElementById('reactor-icon'),
 		fabricator: document.getElementById('fabricator-icon'),
@@ -187,7 +227,7 @@ export class BuildingsComponent {
 		fabricator: document.getElementById('fabricator-upgrade-points'),
 		tradeHub: document.getElementById('trade-hub-upgrade-points'),
 	}
-
+	
 	reactor;		// COMPONENT
 	fabricator;		// COMPONENT
 	tradeHub;		// COMPONENT
@@ -229,6 +269,7 @@ export class BuildingsComponent {
 		for (const b in this.icons) {
 			if (!player[b]) { this.icons[b].classList.remove('visible'); continue; }
 			this.icons[b].classList.add('visible');
+			if (this.displayHelper) this.buildingsHelperText.classList.add('visible');
 			this[b].update();
 		}
 	}
@@ -236,21 +277,26 @@ export class BuildingsComponent {
 	/** @param {'reactor' | 'fabricator' | 'tradeHub'} buildingName */
 	#handleIconClick(buildingName) {
 		if (!this[buildingName]) return;
-
+		
 		for (const b in this.icons)
 			if (b === buildingName) this[b].toggle();
 			else this[b].hide();
+		// hide helper for ever
+		this.displayHelper = false;
+		this.buildingsHelperText.classList.remove('visible');
 	}
 }
 
 export class DeadNodesComponent {
 	deadNodesWrapper = document.getElementById('dead-nodes-wrapper');
+	deadNodesHelper = document.getElementById('dead-nodes-helper');
 	deadNodeTemplate = this.deadNodesWrapper.querySelector('.dead-node-notification');
 
 	/** @type {Record<string, HTMLElement>} */
 	deadNodes = {};
 	gameClient;
 	selectedDeadNodeId = null;
+	displayHelper = true;
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
 	constructor(gameClient) {
@@ -267,6 +313,10 @@ export class DeadNodesComponent {
 
 		for (const nodeId in this.deadNodes)
 			if (!nodeIds.has(nodeId)) this.#removeDeadNodeNotification(nodeId);
+
+		const hasNotification = Object.keys(this.deadNodes).length > 0;
+		if (this.displayHelper && hasNotification) this.deadNodesHelper.classList.add('visible');
+		else this.deadNodesHelper.classList.remove('visible');
 
 		if (this.gameClient.selectedDeadNodeId === this.selectedDeadNodeId) return;
 		if (this.selectedDeadNodeId) this.deadNodes[this.selectedDeadNodeId]?.classList.remove('selected');
@@ -296,6 +346,10 @@ export class DeadNodesComponent {
 		deadNodeElem.classList.add('selected');
 		this.gameClient.selectedDeadNodeId = nodeId;
 		this.selectedDeadNodeId = nodeId;
+
+		// hide helper for ever
+		this.displayHelper = false;
+		this.deadNodesHelper.classList.remove('visible');
 	}
 	#removeDeadNodeNotification(nodeId = '') {
 		if (!this.deadNodes[nodeId]) return;

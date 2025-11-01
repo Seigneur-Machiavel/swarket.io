@@ -43,9 +43,14 @@ export class ResourcesBarComponent {
 		
 		for (let i = 0; i < this.resourceValueElements.length; i++) {
 			const value = player.inventory.resources[i];
+			this.resourceValueElements[i].dataset.rawValue = value;
 			this.resourceValueElements[i].textContent = formatCompact2Digits(value);
 
-			if (this.isSpectator) this.resourceBarTitle.textContent = `${player.name}`;
+			if (this.isSpectator) {
+				this.resourceBarTitle.textContent = `${player.name}`;
+				continue;
+			}
+			
 			const change = player.inventory.turnChanges[i];
 			if (change === 0) this.resourceValueChangeElements[i].textContent = '-';
 			else this.resourceValueChangeElements[i].textContent = `${change > 0 ? '+' : ''}${formatCompact2Digits(change)} ${change > 0 ? '▲' : '▼'}`;
@@ -72,8 +77,9 @@ export class ResourcesBarComponent {
 		const resourceName = resourceElem?.dataset?.resourceName;
 		if (!resourceName) return;
 
-		const resourceValue = resourceElem.querySelector('.resource-value')?.textContent;
-		const asNumber = parseFloat(resourceValue);
+		//const resourceValue = resourceElem.querySelector('.resource-value')?.textContent;
+		const rawValue = resourceElem.querySelector('.resource-value')?.dataset?.rawValue;
+		const asNumber = parseFloat(rawValue);
 		if (isNaN(asNumber)) return;
 		if (this.onResourceClickOneShot) this.onResourceClickOneShot(resourceName, asNumber);
 		this.resetHandleNextResourceClick();

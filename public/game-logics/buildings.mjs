@@ -54,7 +54,7 @@ export class Building {
 	
 	/** @type {Array<number>} */
 	modulesLevel = [];
-	upgradePoints = 0;
+	upgradePoints = 1;
 
 	// NOT EXTRACTED ----------------------------
 	linesWhoProducedThisTurn = [];

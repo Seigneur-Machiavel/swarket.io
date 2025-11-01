@@ -3,7 +3,7 @@ import { join } from 'path';
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { GameClient } from './public/game-logics/game.mjs';
-import { AutoPlayer } from './public-debug/auto-play.mjs';
+import { AutoPlayer } from './public/auto-play.mjs';
 import HiveP2P from 'hive-p2p';
 import { NodeInteractor } from './public/game-logics/node-interactions.mjs';
 HiveP2P.CLOCK.mockMode = true;
@@ -19,7 +19,7 @@ const DOMAIN = '0.0.0.0'; // '0.0.0.0' | 'localhost'
 const PORT = 27260;
 const app = express();
 app.use(express.static(join(__dirname, 'public')));
-if (IS_DEBUG) app.use(express.static(join(__dirname, 'public-debug')));
+//if (IS_DEBUG) app.use(express.static(join(__dirname, 'public-debug'))); // folder deleted
 app.listen(PORT, DOMAIN, () => console.log(`Server running at http://${DOMAIN}:${PORT}/`));
 app.use('/hive-p2p', express.static(hiveP2PRoot));
 app.get('/', (req, res) => res.sendFile(join(__dirname, 'public/index.html')));
@@ -32,9 +32,10 @@ const bee0 = await HiveP2P.createPublicNode({ domain: DOMAIN, port: PORT + 1, cr
 console.log(`%cPublic node id: ${bee0.id} | url: ${bee0.publicUrl}`, 'color: cyan');
 
 const gameClient = new GameClient(bee0, true, 'energy');
-gameClient.myPlayer.name = 'Bootstrap: Bee0';
+gameClient.myPlayer.name = 'Bee0 (Bootstrap)';
 gameClient.myPlayer.rawProductions.energy = 1_000; 		// BYPASS
 gameClient.myPlayer.maxEnergy = 999_999_999; 			// BYPASS
+new AutoPlayer(gameClient, NodeInteractor);
 gameClient.onExecutedTurn.push(async(height = 0) => {
 	await new Promise(resolve => setTimeout(resolve, Math.round(gameClient.turnSystem.turnDuration / 10)));
 	gameClient.digestMyAction({ type: `Bee0_${Math.random()}` });
@@ -60,19 +61,26 @@ gameClient.onExecutedTurn.push(async(height = 0) => {
 
 async function createPlayer() {
 	const bee = await HiveP2P.createNode({ bootstraps: [bee0.publicUrl], verbose });
+	gameClient.botsIds.add(bee.id); 					// track bot ids
 	bee.topologist.automation.incomingOffer = false;	// disable auto-accept incoming offers
 	bee.topologist.automation.spreadOffers = false; 	// disable auto-spread offers
-	const client = new GameClient(bee);
-	if (IS_DEBUG) new AutoPlayer(client, NodeInteractor);
+	const client = new GameClient(bee, undefined, undefined, true);
+	new AutoPlayer(client, NodeInteractor);
 	return { bee, client };
 }
 
 const bees = [];
 const clients = [];
-//await new Promise(resolve => setTimeout(resolve, 10000));
-for (let i = 0; i < 2; i++) {
-	const { bee, client } = await createPlayer();
-	bees.push(bee); clients.push(client);
+let playerCreationDelay = 0;
+for (let i = 0; i < 4; i++) {
+	setTimeout(async () => {
+		console.log(`Creating player bee${i + 1}...`)
+		const { bee, client } = await createPlayer();
+		bees.push(bee); clients.push(client);
+	}, playerCreationDelay);
+
+	// Delay next player creation between 2s and 5s
+	playerCreationDelay += Math.round(Math.random() * 3000) + 2000;
 }
 
 // DEBUG: LOG ALL GOSSIP MESSAGES

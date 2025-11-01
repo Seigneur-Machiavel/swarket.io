@@ -123,6 +123,7 @@ export class Upgrader {
 	}
 	/** @param {import('./player.mjs').PlayerNode} player @param {string} upgradeName @param {string} randomSeed */
 	static applyUpgradeEffects(player, upgradeName, randomSeed) {
+		let consoleText = null;
 		if (!player.getEnergy) return;
 		switch (upgradeName) {
 			case 'multiProducer':
@@ -130,36 +131,53 @@ export class Upgrader {
 					const r = SeededRandom.pickOne(RAW_RESOURCES, randomSeed + `-multi-prod-${i}`);
 					if (player.rawProductions[r] || !RAW_RESOURCES_PROD_BASIS[r]) continue;
 					player.rawProductions[r] = RAW_RESOURCES_PROD_BASIS[r];
+					consoleText = `# New production line: ${r}`;
 					return true;
 				}
 				console.error('Failed to add multiProducer upgrade: no available resource found');
 				break;
 			case 'buildReactor':
-				if (!player.reactor) player.reactor = new Reactor();
+				if (player.reactor) return;
+				player.reactor = new Reactor();
+				consoleText = '✓ Reactor built';
 				break;
 			case 'buildFabricator':
-				if (!player.fabricator) player.fabricator = new Fabricator();
+				if (player.fabricator) return;
+				player.fabricator = new Fabricator();
+				consoleText = '✓ Fabricator built';
 				break;
 			case 'buildTradeHub':
-				if (!player.tradeHub) player.tradeHub = new TradeHub();
+				if (player.tradeHub) return;
+				player.tradeHub = new TradeHub();
+				consoleText = '✓ Trade Hub built';
 				break;
 			case 'reactor':
-				if (player.reactor) player.reactor.upgradePoints += 1;
+				if (!player.reactor) return;
+				player.reactor.upgradePoints += 1;
+				consoleText = '✓ Reactor upgraded';
 				break;
 			case 'fabricator':
-				if (player.fabricator) player.fabricator.upgradePoints += 1;
+				if (!player.fabricator) return;
+				player.fabricator.upgradePoints += 1;
+				consoleText = '✓ Fabricator upgraded';
 				break;
 			case 'tradeHub':
-				if (player.tradeHub) player.tradeHub.upgradePoints += 1;
+				if (!player.tradeHub) return;
+				player.tradeHub.upgradePoints += 1;
+				consoleText = '✓ Trade Hub upgraded';
 				break;
 			case 'energyDrop':
 				player.inventory.addAmount('energy', player.maxEnergy, player.maxEnergy);
+				consoleText = '> Energy fully refilled!';
 				break;
 			case 'maxEnergy':
 				const max = player.maxEnergy;
 				player.maxEnergy += max; // x2
 				player.inventory.addAmount('energy', max); // add the difference
+				consoleText = `✓ Max Energy increased to ${player.maxEnergy}`;
 				break;
 		}
+
+		return consoleText;
 	}
 }
