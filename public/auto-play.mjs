@@ -68,11 +68,13 @@ export class AutoPlayer {
 		const { node, turnSystem, myPlayer, alive, selectedDeadNodeId } = this.gameClient;
 
 		// ATTEMPT TO RECYCLE THE SELECTED DEAD NODE
-		if (!selectedDeadNodeId && firstDeadNodeId && this.readyToRecycleDelay-- <= 0) {
-			this.readyToRecycleDelay = 10;
-			this.gameClient.selectedDeadNodeId = firstDeadNodeId;
-			console.log(`%c${this.logPrefix} Selected dead node: ${firstDeadNodeId}`, this.cssStyle);
-		}
+		if (!selectedDeadNodeId && firstDeadNodeId) {
+			if (this.readyToRecycleDelay-- <= 0) {
+				this.readyToRecycleDelay = 10;
+				this.gameClient.selectedDeadNodeId = firstDeadNodeId;
+				console.log(`%c${this.logPrefix} Selected dead node: ${firstDeadNodeId}`, this.cssStyle);
+			}
+		} else this.readyToRecycleDelay = 10;
 		
 		// ATTEMPT TO UPGRADE IF POSSIBLE
 		if (upgradeName && height % 2 === 0) { // limit upgrade speed to 1 every 2 turns

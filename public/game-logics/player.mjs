@@ -7,7 +7,7 @@ const KEYS_TO_NOT_EXTRACT = new Set([]);
 
 export class PlayerNode {
 	id; 				// unique identifier: nodeId / playerId
-	isBot; 				// flag to indicate if this is a bot client
+	//isBot; 				// flag to indicate if this is a bot client
 	name = usernames[Math.floor(Math.random() * usernames.length)];
 	operatingResource; 	// 'chips' | 'datas' | 'models' | 'engineers' => first assigned
 	lifetime = 0;		// in turns
@@ -100,7 +100,7 @@ export class PlayerNode {
 		return sendable;
 	}
 	setAsBot() {
-		this.isBot = true;
+		//this.isBot = true;
 		this.name = `${this.name} (Bot)`;
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} nodeId @param {{type: string}} intent */

@@ -492,6 +492,19 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	transform: scale(1);
 	transition: border-color .2s .06s ease-in-out, transform .14s .12s ease-in-out;
 }
+.upgrade-offer:hover, .upgrade-offer.selected {
+	border-color: var(--color2);
+	transition: border-color .2s cubic-bezier(0.175, 0.885, 0.32, .575), transform .16s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	/*transition: border-color .2s cubic-bezier(0.175, 0.885, 0.32, .575), scale .2s cubic-bezier(0.175, 0.885, 0.32, 1.275);*/
+	transform: scale(1.05) translateY(2%);
+}
+.upgrade-offer.selected {
+	border-color: var(--text-main);
+}
+.upgrade-offer.disabled {
+	pointer-events: none;
+	filter: grayscale(1) brightness(0.6);
+}
 .upgrade-offer::before {
 	content: '';
 	position: absolute;
@@ -504,17 +517,17 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	filter: invert(1) brightness(.66);
 	transition: filter .2s .06s ease-in-out;
 }
-.upgrade-offer:hover, .upgrade-offer.selected {
-	transform: scale(1.02);
-	border-color: var(--color2);
-	transition: border-color .2s cubic-bezier(0.175, 0.885, 0.32, .575), scale .2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.upgrade-offer:hover::before, .upgrade-offer.selected::before {
+	filter: invert(1) brightness(1);
 }
-.upgrade-offer.selected {
-	border-color: var(--text-main);
-}
-.upgrade-offer.disabled {
-	pointer-events: none;
-	filter: grayscale(1) brightness(0.6);
+.upgrade-offer.levelUp::after {
+    content: '+';
+    position: absolute;
+    top: 2px;
+    right: 6px;
+    font-size: 20px;
+    font-weight: bold;
+    opacity: .8;
 }
 .upgrade-offer.producer::before {
 	background-size: 42px 42px;
@@ -536,9 +549,6 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .upgrade-offer.autoCleaner::before {
 	background-image: var(--autoCleaner-icon);
 }
-.upgrade-offer:hover::before {
-	filter: invert(1) brightness(1);
-}
 .upgrade-offer.buildReactor::before, .upgrade-offer.reactor::before {
 	background-image: var(--reactor-icon);
 }
@@ -547,15 +557,6 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 .upgrade-offer.buildTradeHub::before, .upgrade-offer.tradeHub::before {
 	background-image: var(--trade-hub-icon);
-}
-.upgrade-offer.levelUp::after {
-    content: '+';
-    position: absolute;
-    top: 2px;
-    right: 6px;
-    font-size: 20px;
-    font-weight: bold;
-    opacity: .8;
 }
 .upgrade-offers-wrapper .helper-text {
 	pointer-events: none;

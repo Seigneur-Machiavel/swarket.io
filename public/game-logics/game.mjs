@@ -327,6 +327,7 @@ export class GameClient {
 		const toRemove = [];
 		for (const playerId of this.deadPlayers) {
 			if (playerId === this.node.id) continue;
+			if (!this.players[playerId]) { toRemove.push(playerId); continue; }
 			// CHECK IF PLAYER HAS NO RAW RESOURCES or DIED A LONG TIME AGO BEFORE REMOVING.
 			const deathHeight = this.players[playerId].startTurn + this.players[playerId].lifetime;
 			const isDeadALongTimeAgo = this.height - deathHeight > minDeathAge;
