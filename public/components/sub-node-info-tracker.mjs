@@ -1,3 +1,4 @@
+import { text } from '../language.mjs';
 import { formatCompact3Digits } from '../utils.mjs';
 
 export class SubNodeInfoTrackerComponent {
@@ -30,7 +31,7 @@ export class SubNodeInfoTrackerComponent {
 
 		this.show();
 		let playerName = p.name || `Player ${p.id}`;
-		if (hoveredNode === this.gameClient.node.id) playerName += ' (Me)';
+		if (hoveredNode === this.gameClient.node.id) playerName += ` (${text('Me')})`;
 		this.playerNameElement.textContent = playerName;
 		const productions = p?.rawProductions || {};
 		this.#updateProductions(productions);

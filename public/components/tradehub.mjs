@@ -1,3 +1,4 @@
+import { text } from '../language.mjs';
 import { formatCompact2Digits, formatCompact3Digits } from '../utils.mjs';
 import { ModuleTreeComponent } from './modules-tree.mjs';
 import { TRADE_HUB_MODULES } from '../game-logics/buildings-modules.mjs';
@@ -9,13 +10,13 @@ class ElementsBuilder {
 		const lineElem = document.createElement('div');
 		lineElem.classList = 'my-trade-offer-line';
 
-		const offeredResource = ElementsBuilder.createResourceElement('I', offeredResourceName, 1, true, false);
+		const offeredResource = ElementsBuilder.createResourceElement(offeredResourceName, 1, true, false);
 		offeredResource.resourceElem.classList.add('offered');
 		lineElem.appendChild(offeredResource.resourceElem);
 
 		lineElem.appendChild(ElementsBuilder.createArrowElement());
 
-		const requestedResource = ElementsBuilder.createResourceElement('He', requestedResourceName, 0);
+		const requestedResource = ElementsBuilder.createResourceElement(requestedResourceName, 0);
 		requestedResource.resourceElem.classList.add('requested');
 		lineElem.appendChild(requestedResource.resourceElem);
 
@@ -32,14 +33,15 @@ class ElementsBuilder {
 
 		return { lineElem, offeredResource, requestedResource, toggleBtnElem, toggleTooltipElem, minStockValueElem };
 	}
-	/** @param {string} pronoun @param {string} resourceName @param {number} qty @param {boolean} editableResource @param {boolean} editableQty */
-	static createResourceElement(pronoun, resourceName, qty, editableResource = true, editableQty = true) {
+	/** @param {string} resourceName @param {number} qty @param {boolean} editableResource @param {boolean} editableQty */
+	static createResourceElement(resourceName, qty, editableResource = true, editableQty = true) {
 		const resourceElem = document.createElement('div');
 		resourceElem.classList = 'resource';
 
 		const tooltipElem = document.createElement('div');
 		tooltipElem.classList = 'tooltip';
-		tooltipElem.textContent = `${pronoun} send: ${resourceName.charAt(0).toUpperCase() + resourceName.slice(1)}`;
+		const translatedName = text(resourceName);
+		tooltipElem.textContent = `${translatedName.charAt(0).toUpperCase() + translatedName.slice(1)}`;
 		resourceElem.appendChild(tooltipElem);
 
 		const resourceIconElem = document.createElement('div');
@@ -68,7 +70,7 @@ class ElementsBuilder {
 
 		const tooltipElem = document.createElement('div');
 		tooltipElem.classList = 'tooltip';
-		tooltipElem.textContent = 'Minimum stock to keep';
+		tooltipElem.textContent = text('minStockTooltip');
 		const minStockValueElem = document.createElement('span');
 		minStockValueElem.classList = 'min-stock-value';
 		minStockValueElem.setAttribute('contenteditable', 'true');
@@ -116,35 +118,38 @@ class MyTradeOfferLineComponent {
 	}
 
 	#setupHandlers() {
-		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value, pronoun = 'I') => {
+		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value) => {
 			elementIcon.classList = `resource-icon ${resName}`;
-			elementTooltip.textContent = `${pronoun} send: ${resName.charAt(0).toUpperCase() + resName.slice(1)}`;
+			const translatedName = text(resName);
+			elementTooltip.textContent = `${translatedName.charAt(0).toUpperCase() + translatedName.slice(1)}`;
 			const isValueEditable = elementValue.isContentEditable;
 			if (!isValueEditable) return;
 			elementValue.dataset.rawValue = value / 10;
 			elementValue.textContent = formatCompact3Digits(value / 10);
 		}
 		this.offeredResourceIconElem.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
-			handleResourceNameAndValue(this.offeredResourceIconElem, this.offeredResourceValueElem, this.offeredResourceTooltip, resName, value, 'I');
+			handleResourceNameAndValue(this.offeredResourceIconElem, this.offeredResourceValueElem, this.offeredResourceTooltip, resName, value);
 			// reset requested value to avoid mistake
 			this.requestedResourceValueElem.textContent = '0';
 			// change requested resource to something different than offered
 			if (this.requestedResourceIconElem.classList.item(1) !== resName) return;
 			this.requestedResourceIconElem.classList = `resource-icon ${resName === 'chips' ? 'energy' : 'chips'}`;
-			this.requestedResourceTooltip.textContent = `He send: ${this.requestedResourceIconElem.classList.item(1).charAt(0).toUpperCase() + this.requestedResourceIconElem.classList.item(1).slice(1)}`;
+			const translatedName = text(this.requestedResourceIconElem.classList.item(1));
+			this.requestedResourceTooltip.textContent = `${translatedName.charAt(0).toUpperCase() + translatedName.slice(1)}`;
 		});
 		this.requestedResourceIconElem.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
-			handleResourceNameAndValue(this.requestedResourceIconElem, this.requestedResourceValueElem, this.requestedResourceTooltip, resName, 0, 'He');
+			handleResourceNameAndValue(this.requestedResourceIconElem, this.requestedResourceValueElem, this.requestedResourceTooltip, resName, 0);
 		
 			// change offered resource to something different than requested
 			if (this.offeredResourceIconElem.classList.item(1) !== resName) return;
 			this.offeredResourceIconElem.classList = `resource-icon ${resName === 'chips' ? 'energy' : 'chips'}`;
-			this.offeredResourceTooltip.textContent = `I send: ${this.offeredResourceIconElem.classList.item(1).charAt(0).toUpperCase() + this.offeredResourceIconElem.classList.item(1).slice(1)}`;
+			const translatedName = text(this.offeredResourceIconElem.classList.item(1));
+			this.offeredResourceTooltip.textContent = `${translatedName.charAt(0).toUpperCase() + translatedName.slice(1)}`;
 		});
 		this.toggleBtnElem.onclick = () => {
 			this.toggleBtnElem.classList.toggle('active');
 			const isActive = this.toggleBtnElem.classList.contains('active');
-			this.toggleTooltipElem.textContent = `Currently: ${isActive ? 'Active' : 'Inactive'}`;
+			this.toggleTooltipElem.textContent = `${text('currently')}${isActive ? text('active') : text('inactive')}`;
 		};
 	}
 	getResourcesAndValues() {
@@ -164,12 +169,13 @@ class MyTradeOfferLineComponent {
 	setResourcesAndValues(offeredResourceName, offeredQty, requestedResourceName, requestedQty, minStock, isActive) {
 		this.offeredResourceIconElem.classList = `resource-icon ${offeredResourceName.toLowerCase()}`;
 		this.offeredResourceValueElem.textContent = offeredQty.toString();
-		this.requestedResourceTooltip.textContent = `He send: ${requestedResourceName.charAt(0).toUpperCase() + requestedResourceName.slice(1)}`;
 		this.requestedResourceIconElem.classList = `resource-icon ${requestedResourceName.toLowerCase()}`;
 		this.requestedResourceValueElem.textContent = requestedQty.toString();
-		this.requestedResourceTooltip.textContent = `He send: ${requestedResourceName.charAt(0).toUpperCase() + requestedResourceName.slice(1)}`;
 		this.minStockValueElem.textContent = minStock.toString();
+		const translatedName = text(requestedResourceName);
+		this.requestedResourceTooltip.textContent = `${translatedName.charAt(0).toUpperCase() + translatedName.slice(1)}`;
 		this.toggleBtnElem.classList.toggle('active', isActive);
+		this.toggleTooltipElem.textContent = `${text('currently')}${isActive ? text('active') : text('inactive')}`;
 	}
 }
 
@@ -233,11 +239,14 @@ class SwapComponent {
 			this.swapBtn.disabled = true;
 			this.#setInputFilledByUser('SELL');
 			this.resourceA_Icon.classList = `resource-icon ${resName}`;
-			this.resourceA_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
+			const translatedName = text(resName);
+			this.resourceA_tooltip.textContent = `${translatedName.charAt(0).toUpperCase() + translatedName.slice(1)}`;
 			// change requested resource to something different than offered
 			if (this.resourceB_Icon.classList.item(1) === resName) {
-				this.resourceB_Icon.classList = `resource-icon ${resName === 'chips' ? 'energy' : 'chips'}`;
-				this.resourceB_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
+				const otherResName = resName === 'chips' ? 'energy' : 'chips';
+				this.resourceB_Icon.classList = `resource-icon ${otherResName}`;
+				const otherTranslatedName = text(otherResName);
+				this.resourceB_tooltip.textContent = `${otherTranslatedName.charAt(0).toUpperCase() + otherTranslatedName.slice(1)}`;
 			}
 
 			const defaultVal = resName === 'energy' ? value / 2 : value;
@@ -250,11 +259,14 @@ class SwapComponent {
 			this.swapBtn.disabled = true;
 			//this.#setInputFilledByUser('BUY');
 			this.resourceB_Icon.classList = `resource-icon ${resName}`;
-			this.resourceB_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
+			const translatedName = text(resName);
+			this.resourceB_tooltip.textContent = `${translatedName.charAt(0).toUpperCase() + translatedName.slice(1)}`;
 			// change offered resource to something different than requested
 			if (this.resourceA_Icon.classList.item(1) === resName) {
-				this.resourceA_Icon.classList = `resource-icon ${resName === 'chips' ? 'energy' : 'chips'}`;
-				this.resourceA_tooltip.textContent = resName.charAt(0).toUpperCase() + resName.slice(1);
+				const otherResName = resName === 'chips' ? 'energy' : 'chips';
+				this.resourceA_Icon.classList = `resource-icon ${otherResName}`;
+				const otherTranslatedName = text(otherResName);
+				this.resourceA_tooltip.textContent = `${otherTranslatedName.charAt(0).toUpperCase() + otherTranslatedName.slice(1)}`;
 			}
 
 			this.resourceB_Value.dataset.rawValue = 0;
@@ -366,6 +378,9 @@ export class TradeHubComponent {
 	myResourcesBar;
 	modal = document.getElementById('trade-hub-modal');
 	closeBtn = this.modal.querySelector('.close-btn');
+	helperText = this.modal.querySelector('.helper-text');
+	helperShown = false;
+	
 	myTradeOfferLinesWrapper = this.modal.querySelector('.my-trade-offer-lines-wrapper');
 
 	/** @type {MyTradeOfferLineComponent[]} */
@@ -418,6 +433,10 @@ export class TradeHubComponent {
 		this.#updateTradeHubOffersFromMyLines();
 
 		this.swapComponent.update(this.gameClient);
+
+		if (this.helperShown) return;
+		this.helperShown = true;
+		setTimeout(() => this.helperText.classList.add('visible'), 600);
 	}
 
 	show() { this.modal.classList.add('visible'); }
@@ -444,6 +463,7 @@ export class TradeHubComponent {
 				this.gameClient.digestMyAction(myAction);
 				console.log('onclick module', myAction);
 				this.moduleTree.updateModule(moduleKey, moduleLevel + 1); // feedback instantly
+				this.helperText.classList.remove('visible'); // remove for ever
 			};
 		}
 	}

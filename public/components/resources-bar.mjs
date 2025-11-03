@@ -1,3 +1,4 @@
+import { text } from '../language.mjs';
 import { formatCompact2Digits, formatCompact3Digits } from '../utils.mjs';
 import { newResourcesSet } from '../game-logics/resources.mjs';
 
@@ -104,7 +105,8 @@ export class ResourcesBarComponent {
 
 		const tooltip = document.createElement('div');
 		tooltip.classList = 'tooltip';
-		tooltip.textContent = resourceName.charAt(0).toUpperCase() + resourceName.slice(1);
+		const translatedName = text(resourceName);
+		tooltip.textContent = translatedName.charAt(0).toUpperCase() + translatedName.slice(1);
 		resourceElement.appendChild(tooltip);
 
 		const icon = document.createElement('div');

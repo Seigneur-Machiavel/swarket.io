@@ -33,6 +33,7 @@
 	</div>
 </div>*/
 
+import { text } from '../language.mjs';
 import { formatCompact3Digits } from '../utils.mjs';
 const numberToWord = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five' };
 
@@ -66,7 +67,9 @@ class ElementsBuilder {
 
 		const tooltip = document.createElement('div');
 		tooltip.classList = 'tooltip';
-		tooltip.textContent = `${resourceName} ${type === 'input' ? 'consumption' : 'production'}`;
+		const translatedName = text(resourceName);
+		const translatedType = type === 'input' ? text('consumption') : text('production');
+		tooltip.textContent = `${translatedName.charAt(0).toUpperCase() + translatedName.slice(1)} ${translatedType}`;
 		resourceElement.appendChild(tooltip);
 
 		const resourceIcon = document.createElement('div');

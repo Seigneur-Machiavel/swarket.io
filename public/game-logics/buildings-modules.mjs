@@ -1,9 +1,4 @@
-
-
-/** @param {number} reactorLevel @param {string} moduleKey */
-export function getModuleMaxLevel(reactorLevel, moduleKey) {
-	console.log('getModuleMaxLevel', reactorLevel, moduleKey);
-}
+import { text, getModuleTranslatedDescription } from '../language.mjs';
 
 class ModuleLevelEffect { 								// TYPEDEF
 	/** @type {string} */ 				description; 	// Tooltip description
@@ -29,6 +24,7 @@ class FabricatorModuleLevelEffect extends ModuleLevelEffect { // TYPEDEF
 	productTier;
 }
 
+// NOTE: ALL DESCRITIONS ARE IN language.mjs => HERE FALLBACKS REMAINS FOR LEGACY PURPOSES
 export class TRADE_HUB_MODULES {
 	/** @returns {Array<number>} */
 	static emptyModulesArray() {
@@ -56,8 +52,16 @@ export class TRADE_HUB_MODULES {
 	}
 	/** @returns {string} */
 	static getModuleDescription(moduleKey = 'connectivity', level = 0) {
-		let description = TRADE_HUB_MODULES[moduleKey]?.levelEffect[level]?.description;
+		let description = getModuleTranslatedDescription('tradeHub', moduleKey, level);
+		if (!description) {
+			description = getModuleTranslatedDescription('tradeHub', moduleKey, level - 1);
+			if (description) description += ` (${text('maxLevelReached')})`;
+		}
+	
+		// DESCRIPTION NOT FOUND: FALLBACK
+		if (!description) description = TRADE_HUB_MODULES[moduleKey]?.levelEffect[level]?.description;
 		if (!description) description = `${TRADE_HUB_MODULES[moduleKey]?.levelEffect[level - 1]?.description} (Max level reached)`;
+
 		return description;
 	}
 	
@@ -182,8 +186,16 @@ export class REACTOR_MODULES {
 	}
 	/** @returns {string} */
 	static getModuleDescription(moduleKey = 'efficiency', level = 0) {
-		let description = REACTOR_MODULES[moduleKey]?.levelEffect[level]?.description;
+		let description = getModuleTranslatedDescription('reactor', moduleKey, level);
+		if (!description) {
+			description = getModuleTranslatedDescription('reactor', moduleKey, level - 1);
+			if (description) description += ` (${text('maxLevelReached')})`;
+		}
+	
+		// DESCRIPTION NOT FOUND: FALLBACK
+		if (!description) description = REACTOR_MODULES[moduleKey]?.levelEffect[level]?.description;
 		if (!description) description = `${REACTOR_MODULES[moduleKey]?.levelEffect[level - 1]?.description} (Max level reached)`;
+
 		return description;
 	}
 
@@ -202,7 +214,7 @@ export class REACTOR_MODULES {
 		minBuildingLevel: 0,
 		levelEffect: [
 			{ outputCoef: 1.3, inputCoef: 1.1, description: 'Produces 30% more but consumes 10% more resources' },
-			{ outputCoef: 1.5, inputCoef: 1.3, description: 'Produces 50% more but consumes 30% more resources' },
+			{ outputCoef: 1.5, inputCoef: 1.3, description: 'Production: 30% > 50%, Consumption: 10% > 30%' },
 			{ outputCoef: 2, inputCoef: 1.6, description: 'Production: 50% > 100%, Consumption: 30% > 60%' },
 			{ outputCoef: 2.5, inputCoef: 1.9, description: 'Production: 100% > 150%, Consumption: 60% > 90%' },
 			{ outputCoef: 3, inputCoef: 2.2, description: 'Production: 150% > 220%, Consumption: 90% > 120%' }
@@ -226,8 +238,8 @@ export class REACTOR_MODULES {
 			{ breakdownRiskCoef: .75, description: 'Decreases breakdown risk by 25%' },
 			{ breakdownRiskCoef: .5, description: 'Breakdown risk reduction: 25% > 50%' },
 			{ breakdownRiskCoef: .3, description: 'Breakdown risk reduction: 50% > 70%' },
-			{ breakdownRiskCoef: .15, description: 'Breakdown risk reduction: 30% > 15%' },
-			{ breakdownRiskCoef: .05, description: 'Breakdown risk reduction: 15% > 5%' }
+			{ breakdownRiskCoef: .15, description: 'Breakdown risk reduction: 70% > 85%' },
+			{ breakdownRiskCoef: .05, description: 'Breakdown risk reduction: 85% > 95%' }
 		]
 	}
 
@@ -285,8 +297,16 @@ export class FABRICATOR_MODULES {
 	}
 	/** @returns {string} */
 	static getModuleDescription(moduleKey = 'efficiency', level = 0) {
-		let description = FABRICATOR_MODULES[moduleKey]?.levelEffect[level]?.description;
+		let description = getModuleTranslatedDescription('fabricator', moduleKey, level);
+		if (!description) {
+			description = getModuleTranslatedDescription('fabricator', moduleKey, level - 1);
+			if (description) description += ` (${text('maxLevelReached')})`;
+		}
+	
+		// DESCRIPTION NOT FOUND: FALLBACK
+		if (!description) description = FABRICATOR_MODULES[moduleKey]?.levelEffect[level]?.description;
 		if (!description) description = `${FABRICATOR_MODULES[moduleKey]?.levelEffect[level - 1]?.description} (Max level reached)`;
+		
 		return description;
 	}
 
@@ -329,8 +349,8 @@ export class FABRICATOR_MODULES {
 			{ breakdownRiskCoef: .75, description: 'Decreases breakdown risk by 25%' },
 			{ breakdownRiskCoef: .5, description: 'Breakdown risk reduction: 25% > 50%' },
 			{ breakdownRiskCoef: .3, description: 'Breakdown risk reduction: 50% > 70%' },
-			{ breakdownRiskCoef: .15, description: 'Breakdown risk reduction: 30% > 15%' },
-			{ breakdownRiskCoef: .05, description: 'Breakdown risk reduction: 15% > 5%' }
+			{ breakdownRiskCoef: .15, description: 'Breakdown risk reduction: 70% > 85%' },
+			{ breakdownRiskCoef: .05, description: 'Breakdown risk reduction: 85% > 95%' }
 		]
 	}
 

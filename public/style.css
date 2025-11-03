@@ -562,10 +562,21 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	pointer-events: none;
 	position: absolute;
     width: max-content;
-    top: 120%;
+    top: 150%;
     left: 50%;
+	width: 260px;
 	text-align: center;
 	transform: translateX(-50%);
+}
+.upgrade-offers-wrapper .helper-bar {
+	position: absolute;
+	bottom: 140%;
+	left: 50%;
+    height: 12px;
+    width: 280px;
+    border: solid 4px var(--color2);
+    border-top: none;
+    transform: translateX(-50%);
 }
 
 /* === ENERGY BAR === */
@@ -1128,9 +1139,35 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 
 .modules-wrapper {
+	position: relative;
 	margin-bottom: 12px;
 	padding-bottom: 12px;
 	border-bottom: 1px solid var(--border-light);
+}
+.modules-wrapper .helper-text {
+    z-index: 2;
+    position: absolute;
+    top: 49%;
+    left: 1px;
+    height: 50%;
+}
+.modules-wrapper .helper-text.visible {
+	display: block;
+}
+.modules-wrapper .helper-text span {
+	display: block;
+    position: absolute;
+    width: 260px;
+    bottom: 3%;
+    left: 120px;
+}
+.modules-wrapper .helper-bar {
+	position: absolute;
+    top: -10px;
+    left: -16px;
+    height: calc(100% + 10px + 10px - 12px);
+    width: 110px;
+    border: solid 4px var(--color2);
 }
 .modules-tree-component {
 	display: flex;
@@ -1602,6 +1639,31 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	color: var(--border-light);
     font-weight: bold;
 }
+.trade-offers-title {
+	font-size: 13px;
+}
+.my-offers-header {
+    position: absolute;
+	display: flex;
+    justify-content: space-between;
+    top: 86%;
+    left: 12px;
+    width: 46%;
+    font-size: 10px;
+}
+
+.myOfferHeaderIGive, .myOfferHeaderIReceive, .myOfferHeaderMinStock {
+	border-right: solid 1px var(--border-dark);
+}
+.myOfferHeaderIGive {
+	width: 32%;
+}
+.myOfferHeaderIReceive {
+	width: 26%;
+}
+.myOfferHeaderMinStock, .myOfferHeaderState {
+	width: 14%;
+}
 .trade-menu-header .separator {
 	position: absolute;
 	top: 0;
@@ -1618,7 +1680,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	display: flex;
 	flex-direction: column;
 	width: 48%;
-	margin-bottom: 6px;
+	margin: 6px 0;
 }
 /*=== MY TRADE OFFERS === */
 .my-trade-offer-lines-wrapper {
@@ -1725,12 +1787,12 @@ input[type="range"]:focus::-webkit-slider-thumb {
 	position: relative;
 	justify-content: space-between;
 	flex-direction: row-reverse;
-	width: 150px;
-    height: 46px;
+	width: 160px;
+    height: 50px;
 	padding: 0 16px;
     border-radius: 10px;
     border: 1px solid var(--border-dark);
-	transform: translateY(-24px);
+	transform: translateY(-18px);
 }
 .swap-wrapper .resource:first-child {
 	transform: none;
@@ -1752,18 +1814,30 @@ input[type="range"]:focus::-webkit-slider-thumb {
     opacity: .6;
     color: var(--text-darker);
 }
+.swap-wrapper .resource .tooltip {
+	top: 80%;
+    left: 70%;
+}
 .swap-wrapper .resource.sold .resource-value:before {
-	content: 'Sell:';
+	content: 'Sell';
+}
+body.fr .swap-wrapper .resource.sold .resource-value:before {
+	content: 'Vendre';
 }
 .swap-wrapper .resource.bought .resource-value:before {
-	content: 'Buy:';
+	content: 'Buy';
+}
+body.fr .swap-wrapper .resource.bought .resource-value:before {
+	content: 'Acheter';
 }
 .swap-wrapper .taxRate {
+	pointer-events: none;
     position: absolute;
     font-family: system-ui;
 	top: calc(100% + 12px);
-    right: -22px;
+    right: 0;
     color: var(--border-main);
+	font-size: 11px;
     font-weight: bold;
 }
 .swap-wrapper .arrow {
@@ -1775,9 +1849,9 @@ input[type="range"]:focus::-webkit-slider-thumb {
     margin: -4px -6px;
     line-height: 16px;
     border: 2px solid var(--border-dark);
-    border-radius: 10px;
+    border-radius: 8px;
     color: var(--text-dim);
-	transform: translateY(-12px);
+	transform: translateY(-10px);
 }
 .swap-wrapper .arrow:hover {
 	border-color: var(--text-main);

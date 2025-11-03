@@ -1,3 +1,4 @@
+import { text } from '../language.mjs';
 import { SeededRandom } from './consensus.mjs';
 import { RAW_RESOURCES, RAW_RESOURCES_PROD_BASIS } from './resources.mjs';
 import { Reactor, Fabricator, TradeHub } from './buildings.mjs';
@@ -8,28 +9,27 @@ import { Reactor, Fabricator, TradeHub } from './buildings.mjs';
  * @property {Object<string, number>} [playerStats] Player stats requirements (ex: lifetime)
  */
 
-
 // When adding a new upgrade => also update UpgradeSet
 /** @type {Object<string, {maxLevel: number, requirement?: Requirement, tooltip: string, subClass?: string}>} */
 const upgradesInfo = {
-	producer: { maxLevel: 10, tooltip: 'Increases the production rate of your raw resources by 25%' },
-	multiProducer: { maxLevel: 3, requirement: { upgrades: { producer: 5 } }, tooltip: 'Add a random raw resource production' },
-	energyDrop: { maxLevel: Infinity, tooltip: 'Instantly refills energy to maximum' },
-	cleaner: { maxLevel: 5, tooltip: 'Increases the resources recycled by 10%' },
-	maxEnergy: { maxLevel: 5, tooltip: 'Maximum energy x2' },
+	producer: { maxLevel: 10 },
+	multiProducer: { maxLevel: 3, requirement: { upgrades: { producer: 5 } } },
+	energyDrop: { maxLevel: Infinity },
+	cleaner: { maxLevel: 5 },
+	maxEnergy: { maxLevel: 5 },
 
 	// AUTOMATISATION
-	autoCleaner: { maxLevel: 1, requirement: { upgrades: { cleaner: 5 } }, tooltip: 'Automatically select a random node to recycle' },
+	autoCleaner: { maxLevel: 1, requirement: { upgrades: { cleaner: 5 } } },
 
 	// BUILDINGS CONSTRUCTION
-	buildTradeHub: { maxLevel: 1, tooltip: 'Build a TradeHub to increase connectivity' },
-	buildReactor: { maxLevel: 1, tooltip: 'Build a Reactor to produce energy' },
-	buildFabricator: { maxLevel: 1, tooltip: 'Build a Fabricator to produce high tier resources' },
+	buildTradeHub: { maxLevel: 1 },
+	buildReactor: { maxLevel: 1 },
+	buildFabricator: { maxLevel: 1 },
 	
 	// BUILDINGS UPGRADE
-	tradeHub: { maxLevel: 25, requirement: { upgrades: { buildTradeHub: 1 } }, tooltip: 'Give module point to trade-hub', subClass: 'levelUp' },
-	reactor: { maxLevel: 20, requirement: { upgrades: { buildReactor: 1 } }, tooltip: 'Give module point to reactor', subClass: 'levelUp' },
-	fabricator: { maxLevel: 20, requirement: { upgrades: { buildFabricator: 1 } }, tooltip: 'Give module point to fabricator', subClass: 'levelUp' },
+	tradeHub: { maxLevel: 25, requirement: { upgrades: { buildTradeHub: 1 } }, subClass: 'levelUp' },
+	reactor: { maxLevel: 20, requirement: { upgrades: { buildReactor: 1 } }, subClass: 'levelUp' },
+	fabricator: { maxLevel: 20, requirement: { upgrades: { buildFabricator: 1 } }, subClass: 'levelUp' },
 }
 export class UpgradeSet {
 	producer = 0;
@@ -69,8 +69,9 @@ export class UpgradesTool {
 		return upgradeSet[upgradeName] >= upgradesInfo[upgradeName].maxLevel;
 	}
 	static getUpgradeTooltipText(upgradeName = 'tradeHub') {
-		if (!upgradesInfo[upgradeName]) return { tooltip: 'Unknown upgrade', subClass: undefined };
-		const { tooltip, subClass } = upgradesInfo[upgradeName];
+		if (!upgradesInfo[upgradeName]) return { tooltip: text('unknownUpgradeTooltip'), subClass: undefined };
+		const { subClass } = upgradesInfo[upgradeName];
+		const tooltip = text(`${upgradeName}Tooltip`);
 		return { tooltip, subClass };
 	}
 } 
@@ -131,7 +132,7 @@ export class Upgrader {
 					const r = SeededRandom.pickOne(RAW_RESOURCES, randomSeed + `-multi-prod-${i}`);
 					if (player.rawProductions[r] || !RAW_RESOURCES_PROD_BASIS[r]) continue;
 					player.rawProductions[r] = RAW_RESOURCES_PROD_BASIS[r];
-					consoleText = `# New production line: ${r}`;
+					consoleText = `${text('multiProducerUpgradeFeedback')} ${r}`;
 					return true;
 				}
 				console.error('Failed to add multiProducer upgrade: no available resource found');
@@ -139,42 +140,42 @@ export class Upgrader {
 			case 'buildReactor':
 				if (player.reactor) return;
 				player.reactor = new Reactor();
-				consoleText = '✓ Reactor built';
+				consoleText = text('buildReactorUpgradeFeedback');
 				break;
 			case 'buildFabricator':
 				if (player.fabricator) return;
 				player.fabricator = new Fabricator();
-				consoleText = '✓ Fabricator built';
+				consoleText = text('buildFabricatorUpgradeFeedback');
 				break;
 			case 'buildTradeHub':
 				if (player.tradeHub) return;
 				player.tradeHub = new TradeHub();
-				consoleText = '✓ Trade Hub built';
+				consoleText = text('buildTradeHubUpgradeFeedback');
 				break;
 			case 'reactor':
 				if (!player.reactor) return;
 				player.reactor.upgradePoints += 1;
-				consoleText = '✓ Reactor upgraded';
+				consoleText = text('reactorUpgradeFeedback');
 				break;
 			case 'fabricator':
 				if (!player.fabricator) return;
 				player.fabricator.upgradePoints += 1;
-				consoleText = '✓ Fabricator upgraded';
+				consoleText = text('fabricatorUpgradeFeedback');
 				break;
 			case 'tradeHub':
 				if (!player.tradeHub) return;
 				player.tradeHub.upgradePoints += 1;
-				consoleText = '✓ Trade Hub upgraded';
+				consoleText = text('tradeHubUpgradeFeedback');
 				break;
 			case 'energyDrop':
 				player.inventory.addAmount('energy', player.maxEnergy, player.maxEnergy);
-				consoleText = '> Energy fully refilled!';
+				consoleText = text('energyDropUpgradeFeedback');
 				break;
 			case 'maxEnergy':
 				const max = player.maxEnergy;
 				player.maxEnergy += max; // x2
 				player.inventory.addAmount('energy', max); // add the difference
-				consoleText = `✓ Max Energy increased to ${player.maxEnergy}`;
+				consoleText = `${text('maxEnergyUpgradeFeedback')} ${player.maxEnergy}`;
 				break;
 		}
 

@@ -6,6 +6,7 @@
 	<!-- PRELOAD FILES IN ONE STACK -->
 	<!-- <script src="./hive-config.json" type="json"></script> -->
 	<script src="./utils.mjs" type="module"></script>
+	<script src="./language.mjs" type="module"></script>
 	<script src="./components/console.mjs" type="module"></script>
 	<script src="./hive-p2p/libs/xxhash32.mjs" type="module"></script>
 	<script src="./visualizer.mjs" type="module"></script>
@@ -45,16 +46,21 @@
 		<!-- Dynamic Inventory Display -->
 		<div class="inventories-wrapper">
 			<div class="resources-bar">
-				<div class="resource-bar-title"><span class="me">Me</span><span class="my-inventory">My inventory</span></div>
+				<div class="resource-bar-title">
+					<span class="me" data-l="myInventoryShortTitle">Me</span>
+					<span class="my-inventory" data-l="myInventoryTitle">My inventory</span>
+				</div>
 			</div>
-			<!-- Dynamic OtherNode Inventory Display for Spectators -->
 			<div class="resources-bar spectator hidden">
 				<div class="resource-bar-title">Jacques</div>
 			</div>
 		</div>
 
 		<div class="upgrade-offers-wrapper" id ="upgrade-offers-wrapper">
-			<div class="helper-text">Pick one upgrade to boost your node!</div>
+			<div class="helper-text">
+				<div class="helper-bar"></div>
+				<span data-l="pickOneUpgrade">Pick one upgrade to boost your node!</span>
+			</div>
 			<div class="upgrade-offer trade-hub" id="upgrade-offer-1">
 				<div class="tooltip">Connection +1</div>
 			</div>
@@ -68,39 +74,43 @@
 	
 		<div id="energy-bar-wrapper" class="hoverable-tooltip">
 			<div class="resource-icon energy"></div>
-			<div class="tooltip" id="energy-tooltip">Your energy is precious, your die if it reaches zero.</div>
+			<div class="tooltip" id="energy-tooltip" data-l="energyBarTooltip">
+				Your energy is precious, your die if it reaches zero.
+			</div>
 			<div class="energy-bar">
 				<div class="energy-fill" id="energy-fill"></div>
 				<div class="energy-text" id="energy-text"></div>
 			</div>
 		</div>
 
-		<div class="inputs-wrapper">
+		<div class="inputs-wrapper" style="display: none;"> <!-- UNUSED -->
 			<input type="range" id="energyStorageFactor" min="1" max="5" step="0.1" value="2" title="Energy Storage Factor">
 		</div>
 
 		<div class="player-info">
-			<div class="player-name"><span id="player-name" contenteditable="true">PlayerName</span></div>
+			<div class="player-name">
+				<span id="player-name" contenteditable="true">PlayerName</span>
+			</div>
 			<div class="player-id hoverable-tooltip">
-				<div class="tooltip">My player/node identifier</div>
+				<div class="tooltip" data-l="playerIdTooltip">My player/node identifier</div>
 				<span id="player-id">...</span>
 			</div>
 			<div class="player-stats-wrapper">
 				<div class="player-stat hoverable-tooltip" id="lifetimeCountWrapper">
-					<div class="tooltip">Lifetime</div>
+					<div class="tooltip" data-l="lifetimeCountTooltip">Lifetime</div>
 					<img src="./assets/lifetime.png" alt="Lifetime">
 					<span id="lifetimeCount">0</span>
 				</div>
 
 				<div class="player-stat hoverable-tooltip" id="connectionCountWrapper">
-					<div class="tooltip">Connection Status</div>
+					<div class="tooltip" data-l="connectionCountTooltip">Connection Status</div>
 					<img src="./assets/connections.png" alt="Connection Capacity" style="transform: scale(.9);">
 					<span id="connectionCount">0</span>/<span id="connectionMax">0</span>
 					<div id="connection-offer-notification">!</div>
 				</div>
 
 				<div class="player-stat hoverable-tooltip" id="playerLevelWrapper">
-					<div class="tooltip">Player Level</div>
+					<div class="tooltip" data-l="playerLevelTooltip">Player Level</div>
 					<img src="./assets/star.png" alt="Player Level" style="transform: scale(.9);">
 					<span id="playerLevel">1</span>
 				</div>
@@ -114,7 +124,7 @@
 			<div class="console-body" id="console-log"></div>
 		</div>
 
-		<div id="dead-nodes-helper" class="helper-text">
+		<div id="dead-nodes-helper" class="helper-text" data-l="deadNodesHelper">
 			Click on dead nodes to intent resources recycling!
 		</div>
 		<div id="dead-nodes-wrapper">
@@ -172,7 +182,7 @@
 			</div>
 			
 			<div class="node-actions">
-				<button id="node-card-chat-btn">Open chat</button>
+				<button id="node-card-chat-btn" data-l="openChatButton">Open chat</button>
 				<button id="node-card-connect-btn" disabled>
 					<span id="node-card-connect-btn-text">Offer connection</span>
 					<div id="node-card-connect-btn-cost">
@@ -180,46 +190,57 @@
 						<span id="node-card-connect-btn-cost-value">10</span>
 					</div>
 				</button>
-				<button id="node-card-trade-offer-btn" disabled>Offer trade</button>
-				<button id="node-card-remote-offer-btn" disabled>View remote offer</button>
+				<button id="node-card-trade-offer-btn" disabled data-l="tradeOfferButton">Offer trade</button>
+				<button id="node-card-remote-offer-btn" disabled data-l="remoteOfferButton">View remote offer</button>
 			</div>
 		</div>
 	
 		<div class="buildings-wrapper">
 			<div id="buildings-helper-text" class="helper-text">
-				Click on buildings to manage them!
+				<span data-l="buildingsHelperText">Click on buildings to manage them!</span>
 				<div class="helper-bar"></div>
 			</div>
 			<div id="trade-hub-icon" class="building-icon hoverable-tooltip">
 				<div class="building-upgradePoints" id="trade-hub-upgrade-points">0</div>
-				<div class="tooltip">TradeHub: Networking building</div>
+				<div class="tooltip" data-l="tradeHubIconTooltip">TradeHub: Networking building</div>
 				<img src="./assets/buildings/trade-hub.png" alt="TradeHub">
 			</div>
 			<div id="reactor-icon" class="building-icon hoverable-tooltip">
 				<div class="building-upgradePoints" id="reactor-upgrade-points">0</div>
-				<div class="tooltip">Reactor: Produces energy over time</div>
+				<div class="tooltip" data-l="reactorIconTooltip">Reactor: Produces energy over time</div>
 				<img src="./assets/buildings/reactor.png" alt="Reactor">
 			</div>
 			<div id="fabricator-icon" class="building-icon hoverable-tooltip">
 				<div class="building-upgradePoints" id="fabricator-upgrade-points">0</div>
-				<div class="tooltip">Fabricator: Produces high tier resources</div>
+				<div class="tooltip" data-l="fabricatorIconTooltip">Fabricator: Produces high tier resources</div>
 				<img src="./assets/buildings/fabricator.png" alt="Fabricator">
 			</div>
 		</div>
 
 		<div id ="trade-hub-modal" class="building-modal modal">
 			<div class="close-btn">x</div>
-			<div class="modules-wrapper"></div>
+			<div class="modules-wrapper">
+				<div class="helper-text">
+					<span data-l="modulesHelperText">Use your building upgrade point by selecting a module!</span>
+					<div class="helper-bar"></div>
+				</div>
+			</div>
 			<div class="trade-menu-wrapper">
 				<div class="trade-menu-header">
-					<div class="my-trade-offers-title hoverable-tooltip">
-						<div class="tooltip">Buyers can buy as long as you keep active & min. stock</div>
-						My Trade Offers
+					<div class="trade-offers-title hoverable-tooltip">
+						<div class="tooltip" data-l="myTradeOffersTooltip">Buyers can buy as long as you keep active & min. stock</div>
+						<span data-l="myTradeOffersTitle">My Offers (persistent)</span>
+					</div>
+					<div class="my-offers-header">
+						<div class="myOfferHeaderIGive" data-l="myOfferHeaderIGive">Give</div>
+						<div class="myOfferHeaderIReceive" data-l="myOfferHeaderIReceive">Receive</div>
+						<div class="myOfferHeaderMinStock" data-l="myOfferHeaderMinStock">Min.</div>
+						<div class="myOfferHeaderState" data-l="myOfferHeaderState">State</div>
 					</div>
 					<div class="separator"></div>
-					<div class="world-trade-offers-title hoverable-tooltip">
-						<div class="tooltip">More connected > more offers aggregated here</div>
-						Swap
+					<div class="trade-offers-title hoverable-tooltip">
+						<div class="tooltip" data-l="worldTradeOffersTooltip">More connected > more offers aggregated here</div>
+						<span data-l="worldTradeOffersTitle">(immediate) Swap</span>
 					</div>
 				</div>
 				<div class="my-trade-offer-lines-wrapper">
@@ -277,11 +298,11 @@
 		<div id="connections-list-wrapper">
 			<div class="close-btn" id="connections-list-close-btn">x</div>
 			<div class="connections-list-header">
-				<div class="connection-item-name">Name</div>
-				<div class="connection-item-id">Node ID</div>
-				<div class="connection-item-status">Status</div>
-				<div class="connection-item-action accept">Action</div>
-				<div class="connection-item-view-card">Show</div>
+				<div class="connection-item-name" data-l="connectionsListHeaderName">Name</div>
+				<div class="connection-item-id" data-l="connectionsListHeaderId">Node ID</div>
+				<div class="connection-item-status" data-l="connectionsListHeaderStatus">Status</div>
+				<div class="connection-item-action accept" data-l="connectionsListHeaderAction">Action</div>
+				<div class="connection-item-view-card" data-l="connectionsListHeaderView">Show</div>
 			</div>
 			<div class="connections-list-body" id="connections-list">
 				<div class="connection-item"> <!-- TEMPLATE -->

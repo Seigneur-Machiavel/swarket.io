@@ -1,5 +1,6 @@
 // IN THIS FILE WE GROUPED THE LIGHTS UI COMPONENTS USED IN THE GAME
 // OTHER COMPLEX COMPONENTS ARE IN SEPARATE FILES, BUT IMPORTED > EXPORTED HERE
+import { setLanguage, text } from '../language.mjs';
 import { formatCompact2Digits, formatCompact3Digits, nameAcceptedChars } from '../utils.mjs';
 import { UpgradesTool } from '../game-logics/upgrades.mjs';
 import { NodeInteractor } from '../game-logics/node-interactions.mjs';
@@ -93,7 +94,7 @@ export class ConnectionsListComponent {
 		if (Object.keys(this.connections).length === 0) {
 			const noConnectionsElem = document.createElement('div');
 			noConnectionsElem.classList = 'connection-item';
-			noConnectionsElem.textContent = 'No connections, no offers...';
+			noConnectionsElem.textContent = text('noConnectionsNoOffers');
 			noConnectionsElem.style.opacity = '0.5';
 			noConnectionsElem.style.fontSize = '0.9em';
 			noConnectionsElem.style.padding = '8px';
@@ -107,8 +108,8 @@ export class ConnectionsListComponent {
 		const item = this.connectionsItemTemplate.cloneNode(true);
 		item.querySelector('.connection-item-name').textContent = playerName;
 		item.querySelector('.connection-item-id').textContent = nodeId;
-		item.querySelector('.connection-item-status').textContent = connStatus;
-		item.querySelector('.connection-item-action').textContent = connStatus === 'Pending' ? 'Accept' : 'Kick';
+		item.querySelector('.connection-item-status').textContent = text(connStatus);
+		item.querySelector('.connection-item-action').textContent = connStatus === 'Pending' ? text('Accept') : text('Kick');
 		item.querySelector('.connection-item-action').classList = `connection-item-action ${connStatus === 'Pending' ? 'accept' : 'remove'}`;
 		item.querySelector('.connection-item-action').onclick = () => {
 			if (connStatus === 'Connected') this.gameClient.node.kickPeer(nodeId);
@@ -207,7 +208,6 @@ export class EnergyBarComponent {
 		const p = `${formatCompact2Digits(percentage)}%`;
 		const a = `${formatCompact2Digits(energy)}/${formatCompact2Digits(maxEnergy)}`;
 		this.text.textContent = this.mode === 'percent' ? p : a;
-		//this.tooltip.textContent = this.mode === 'percent' ? a : p;
 		this.lastValues = { energy, maxEnergy };
 	}
 }

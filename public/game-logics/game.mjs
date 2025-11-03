@@ -140,6 +140,7 @@ export class GameClient {
 		} else if (topic === 'pto') { // 'public-trade-offers'
 			const player = this.players[senderId];
 			if (!player) return console.warn(`No player associated to gossip sender ${senderId}, ignoring 'public-trade-offers' message.`);
+			if (!player.tradeHub) return this.node.arbiter.adjustTrust(senderId, -600_000, 'Peer sent public trade offers without having a Trade Hub upgrade');
 			if (player.tradeHub.getSignalRange < HOPS) return this.node.arbiter.adjustTrust(senderId, -600_000, 'Peer sent public trade offers with insufficient signal range');
 			if (data[1] <= this.height) return; // expired offers
 			player.tradeHub.handleIncomingPublicOffers(senderId, data[0], data[1] - this.height);

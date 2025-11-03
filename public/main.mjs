@@ -25,7 +25,7 @@ try {
   const { default: overrides } = await import('./hive-config.json', { with: { type: 'json' } });
   HiveP2P.mergeConfig(HiveP2P.CONFIG, overrides);
 } catch (e) { console.log('No hive-config.json found, using default configuration.'); }
-gameConsole.renderConnectionLogs();
+gameConsole.renderEventLogs('CONNECTION');
 
 // NODE & GAMECLIENT SETUP
 // get domain from url params or use default
@@ -122,7 +122,7 @@ window.gameClient = gameClient; // Expose for debugging
 while(!node.peerStore.neighborsList.length)
 	await new Promise(resolve => setTimeout(resolve, 100));
 
-gameConsole.renderConnectedLogs();
+gameConsole.renderEventLogs('CONNECTED');
 uiWrapper.classList.add('started');
 
 // AUTO-PLAY SETUP (DEBUG ONLY)

@@ -1,3 +1,4 @@
+import { text } from '../language.mjs';
 import { formatCompact3Digits } from '../utils.mjs';
 import { NodeInteractor } from '../game-logics/node-interactions.mjs';
 
@@ -112,21 +113,22 @@ export class NodeCardComponent {
 			const existingOffer = this.gameClient.myPlayer.tradeHub?.getPrivateTradeOffer(this.gameClient.showingCardOfId) || null;
 			this.nodeCardCancelOfferBtn.disabled = existingOffer ? false : true;
 		};
-		/** @param {HTMLElement} elementIcon @param {HTMLElement} elementValue @param {HTMLElement} elementTooltip @param {string} resName @param {number} value @param {string} pronoun */
-		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value, pronoun = 'I') => {
+		/** @param {HTMLElement} elementIcon @param {HTMLElement} elementValue @param {HTMLElement} elementTooltip @param {string} resName @param {number} value */
+		const handleResourceNameAndValue = (elementIcon, elementValue, elementTooltip, resName, value) => {
 			elementIcon.classList = `resource-icon ${resName.toLowerCase()}`;
 			const defaultVal = resName === 'energy' ? value / 2 : value;
 			//elementValue.textContent = formatCompact3Digits(defaultVal);
 			elementValue.textContent = defaultVal;
-			elementTooltip.textContent = `${pronoun} send: ${resName.charAt(0).toUpperCase() + resName.slice(1)}`;
+			const translatedName = text(resName);
+			elementTooltip.textContent = `${translatedName.charAt(0).toUpperCase() + translatedName.slice(1)}`;
 			toogleButtonsState();
 		};
 		this.resourceAIcon.onclick = () => this.myResourcesBar.handleNextResourceClick((resName, value) => {
-			handleResourceNameAndValue(this.resourceAIcon, this.resourceAValue, this.resourceATooltip, resName, value, 'I');
+			handleResourceNameAndValue(this.resourceAIcon, this.resourceAValue, this.resourceATooltip, resName, value);
 			console.log('Offered resource A changed to', resName, value);
 		});
 		this.resourceBIcon.onclick = () => this.spectatorResourcesBar.handleNextResourceClick((resName, value) => {
-			handleResourceNameAndValue(this.resourceBIcon, this.resourceBValue, this.resourceBTooltip, resName, value, 'He');
+			handleResourceNameAndValue(this.resourceBIcon, this.resourceBValue, this.resourceBTooltip, resName, value);
 			console.log('Offered resource B changed to', resName, value);
 		});
 		this.resourceAValue.oninput = () => toogleButtonsState();
