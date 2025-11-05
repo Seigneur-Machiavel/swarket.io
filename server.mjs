@@ -72,7 +72,7 @@ async function createPlayer() {
 const bees = [];
 const clients = [];
 let playerCreationDelay = 0;
-for (let i = 0; i < 4; i++) {
+for (let i = 0; i < 5; i++) {
 	setTimeout(async () => {
 		console.log(`Creating player bee${i + 1}...`)
 		const { bee, client } = await createPlayer();

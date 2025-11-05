@@ -85,7 +85,7 @@ gameClient.onExecutedTurn.push(async (height = 0) => {
 	playerStats.setPlayerId(player.id);
 	playerStats.update(player, node.peerStore.standardNeighborsList.length);
 	connectionsList.update();
-	energyBar.update(player.getEnergy, player.maxEnergy);
+	energyBar.update(player);
 	myResourcesBar.update(player);
 	spectatorResourcesBar.update(gameClient.getSpectatingPlayer);
 	buildings.update();

@@ -149,11 +149,12 @@ export class UpgradeOffersComponent {
 		for (let i = 1; i <= 3; i++) {
 			const offerName = offers[i - 1];
 			const offerElem = this[`offer${i}`];
-			const { tooltip, subClass } = UpgradesTool.getUpgradeTooltipText(offerName);
+			const { tooltip, subClass, rarity } = UpgradesTool.getUpgradeTooltipText(offerName);
 			offerElem.classList = `upgrade-offer ${offers[i - 1]}`;
+			if (rarity) offerElem.classList.add(rarity);
 			if (subClass) offerElem.classList.add(subClass);
 			offerElem.onclick = () => this.onOfferClick(i, offerName);
-			offerElem.querySelector('.tooltip').textContent = tooltip;
+			offerElem.querySelector('.tooltip').textContent = `${tooltip}${rarity ? ` (${rarity})` : ''}`;
 		}
 		this.upgradeOffersWrapper.classList.add('visible');
 		this.#displayHelperIfNeeded();
@@ -192,23 +193,30 @@ export class EnergyBarComponent {
 
 	/** @type {'percent' | 'absolute'} */
 	mode = 'absolute';
-	lastValues = { energy: 0, maxEnergy: 0 };
+	lastValues = { energy: 0, maxEnergy: 0, overloaded: false };
 
 	constructor() {
 		this.wrapper.onclick = () => {
 			this.mode = this.mode === 'percent' ? 'absolute' : 'percent';
-			this.update(this.lastValues.energy, this.lastValues.maxEnergy);
+			this.update({ 
+				getEnergy: this.lastValues.energy,
+				maxEnergy: this.lastValues.maxEnergy,
+				isOverloaded: this.lastValues.overloaded
+			});
 		}
 	}
 
-	update(energy, maxEnergy) {
+	/** @param {import('../game-logics/player.mjs').PlayerNode} player */
+	update(player) {
+		const { getEnergy: energy, maxEnergy, isOverloaded: overloaded } = player;
 		const percentage = (energy / maxEnergy) * 100;
 		this.fill.style.width = `${percentage}%`;
 		this.fill.style.filter = `brightness(${30 + percentage * .8}%)`;
 		const p = `${formatCompact2Digits(percentage)}%`;
 		const a = `${formatCompact2Digits(energy)}/${formatCompact2Digits(maxEnergy)}`;
 		this.text.textContent = this.mode === 'percent' ? p : a;
-		this.lastValues = { energy, maxEnergy };
+		this.wrapper.classList.toggle('overload', overloaded);
+		this.lastValues = { energy, maxEnergy, overloaded };
 	}
 }
 
@@ -217,6 +225,7 @@ export class BuildingsComponent {
 	myResourcesBar;
 	buildingsHelperText = document.getElementById('buildings-helper-text');
 	displayHelper = true;
+	buildingDisplayed = null;
 	icons = {
 		reactor: document.getElementById('reactor-icon'),
 		fabricator: document.getElementById('fabricator-icon'),
@@ -244,6 +253,13 @@ export class BuildingsComponent {
 		this.icons.reactor.onclick = () => this.#handleIconClick('reactor');
 		this.icons.fabricator.onclick = () => this.#handleIconClick('fabricator');
 		this.icons.tradeHub.onclick = () => this.#handleIconClick('tradeHub');
+		// test with onhover (to much complexity for nothing?)
+		/*this.icons.reactor.onmouseenter = () => this.#handleIconHover('reactor');
+		this.icons.fabricator.onmouseenter = () => this.#handleIconHover('fabricator');
+		this.icons.tradeHub.onmouseenter = () => this.#handleIconHover('tradeHub');
+		this.icons.reactor.onmouseleave = () => this.#handleIconLeave('reactor');
+		this.icons.fabricator.onmouseleave = () => this.#handleIconLeave('fabricator');
+		this.icons.tradeHub.onmouseleave = () => this.#handleIconLeave('tradeHub');*/
 	}
 
 	update() {
@@ -273,18 +289,39 @@ export class BuildingsComponent {
 			this[b].update();
 		}
 	}
-
-	/** @param {'reactor' | 'fabricator' | 'tradeHub'} buildingName */
+		/** @param {'reactor' | 'fabricator' | 'tradeHub'} buildingName */
 	#handleIconClick(buildingName) {
 		if (!this[buildingName]) return;
-		
-		for (const b in this.icons)
-			if (b === buildingName) this[b].toggle();
-			else this[b].hide();
 		// hide helper for ever
 		this.displayHelper = false;
 		this.buildingsHelperText.classList.remove('visible');
+
+		for (const b in this.icons)
+			if (b !== buildingName) this[b].hide();
+			else this[b].show();
+		
+		/*const isDisplayed = this[buildingName].isDisplayed;
+		for (const b in this.icons)
+			if (b !== buildingName || isDisplayed) this[b].hide();
+			else this[b].show();
+
+		this[buildingName].isDisplayed = this[buildingName].modal.classList.contains('visible');*/
 	}
+	/*get getDisplayedBuildingName() {
+		for (const b in this.icons) if (this[b].isDisplayed) return b;
+		return null;
+	}
+	#handleIconHover(buildingName) {
+		if (!this[buildingName]) return;
+		for (const b in this.icons)
+			if (b === buildingName) this[b].show();
+			else this[b].hide();
+	}
+	#handleIconLeave(buildingName) {
+		if (!this[buildingName]) return;
+		if (this.buildingDisplayed !== buildingName) this[buildingName].hide();
+		if (this.buildingDisplayed) this[this.buildingDisplayed].show();
+	}*/
 }
 
 export class DeadNodesComponent {

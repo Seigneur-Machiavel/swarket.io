@@ -184,7 +184,8 @@ export class Building {
 			inputs[r] = inputs[r] * productionRate * mod.inputCoef;
 
 		for (const r in outputs) // APPLY EFFICIENCY/OVERLOAD COEF
-			outputs[r] = outputs[r] * productionRate * mod.outputCoef;
+			if (r !== 'outputCoef') outputs[r] = outputs[r] * productionRate * mod.outputCoef;
+			else outputs[r] = (((outputs[r] - 1) * productionRate) + 1) * mod.outputCoef;
 
 		return { inputs, outputs, stopped: productionRate === 0 };
 	}
@@ -534,8 +535,8 @@ export class Reactor extends Building {
 	modulesLevel = REACTOR_MODULES.emptyModulesArray();
 
 	get getEnergyPerRawResource() { // default : 0
-		const efficiencyModuleIndex = this.getModuleIndex('efficiency');
-		const { energyPerRawResource } = REACTOR_MODULES.getModuleEffect('efficiency', this.modulesLevel[efficiencyModuleIndex]) || {};
+		const efficiencyModuleIndex = this.getModuleIndex('synergy');
+		const { energyPerRawResource } = REACTOR_MODULES.getModuleEffect('synergy', this.modulesLevel[efficiencyModuleIndex]) || {};
 		return energyPerRawResource || 0;
 	}
 	get getBreakdownRiskCoef() { // default : 1

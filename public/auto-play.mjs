@@ -38,6 +38,7 @@ export class AutoPlayer {
 
 	// AUTO PLAY WITH FRONTEND
 	#onExecAutoPlay(height) {
+		if (!this.gameClient.alive) return;
 		const firstDeadNodeId = Array.from(this.gameClient.deadPlayers)[0];
 		const upgradeName = this.gameClient.myPlayer.upgradeOffers[0]?.[0];
 		const { node, turnSystem, myPlayer, alive, selectedDeadNodeId } = this.gameClient;
@@ -63,6 +64,7 @@ export class AutoPlayer {
 
 	// AUTO PLAY WITHOUT FRONTEND
 	#onExecAutoPlayNoFront(height) {
+		if (!this.gameClient.alive) return;
 		const firstDeadNodeId = Array.from(this.gameClient.deadPlayers)[0];
 		const upgradeName = this.gameClient.myPlayer.upgradeOffers[0]?.[0];
 		const { node, turnSystem, myPlayer, alive, selectedDeadNodeId } = this.gameClient;
@@ -102,7 +104,7 @@ export class AutoPlayer {
 			for (const requestedResource in RRPB) {
 				if (requestedResource === offeredResource) continue;
 				
-				const rnd = Math.random() * .95 + 1.05; // random from 1.05 to 2.0
+				const rnd = Math.random() * 1.2 + .8; // random from .8 to 2.0
 				const requestedBasis = RRPB[requestedResource];
 				const price = parseFloat((requestedBasis / offeredBasis * rnd).toFixed(2));
 				if (price <= 0) continue;

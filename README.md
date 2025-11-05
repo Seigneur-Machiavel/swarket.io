@@ -43,8 +43,6 @@ hivetrade.io, mycelium.io, confluence.io, ataraxie.io..
 - [x] Offers (broadcast)
 - [x] Trade offer (unicast)
 - [x] Accept/reject (intent)
-- [ ] Curseur taxation (0-100%)
-- [ ] Commission relay automatique
 
 **7. Énergie system**
 - [x] State: énergie par joueur

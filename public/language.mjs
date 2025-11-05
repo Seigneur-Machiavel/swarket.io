@@ -1,3 +1,4 @@
+// GENERIC TEXT TRANSLATIONS
 const TEXT_TRANSLATIONS = {
 	Me: {
 		en: "Me",
@@ -299,15 +300,16 @@ const TEXT_TRANSLATIONS = {
 	agiCells: { en: 'AGI Cells', fr: 'Cellules AGI' }
 };
 
+// DEFAULT LANGUAGE DETECTION => BROWSER SETTINGS
 const availableLanguages = ['en', 'fr'];
 let currentLang = 'en';
-// DEFAULT LANGUAGE DETECTION => BROWSER SETTINGS
 if (typeof window !== 'undefined') {
 	currentLang = navigator.language.slice(0, 2) || 'en';
 	window.currentLang = currentLang;
 	translatePage();
 }
 
+// TEXT LANGUAGE TRANSLATION FUNCTIONS
 function getLanguage() {
 	if (typeof window === 'undefined') return 'en';
 	return window.currentLang || currentLang;
@@ -514,18 +516,18 @@ const BUILDING_MODULE_DESCRIPTION_TRANSLATIONS = {
 		},
 		synergy: {
 			en: [
-				'Produce 0.05 energy per each raw resource produced',
-				'Produce 0.1 energy per each raw resource produced',
-				'Produce 0.2 energy per each raw resource produced',
-				'Produce 0.3 energy per each raw resource produced',
-				'Produce 0.5 energy per each raw resource produced'
+				'Generate 0.05 energy per each raw resource produced',
+				'Generate 0.1 energy per each raw resource produced',
+				'Generate 0.2 energy per each raw resource produced',
+				'Generate 0.3 energy per each raw resource produced',
+				'Generate 0.5 energy per each raw resource produced'
 			],
 			fr: [
-				'Produire 0,05 énergie par ressource brute produite',
-				'Produire 0,1 énergie par ressource brute produite',
-				'Produire 0,2 énergie par ressource brute produite',
-				'Produire 0,3 énergie par ressource brute produite',
-				'Produire 0,5 énergie par ressource brute produite'
+				'Génère 0,05 énergie par ressource brute produite',
+				'Génère 0,1 énergie par ressource brute produite',
+				'Génère 0,2 énergie par ressource brute produite',
+				'Génère 0,3 énergie par ressource brute produite',
+				'Génère 0,5 énergie par ressource brute produite'
 			]
 		},
 		stability: {
@@ -761,7 +763,6 @@ const BUILDING_MODULE_DESCRIPTION_TRANSLATIONS = {
 		}
 	}
 };
-
 /**
  * @param {'tradeHub' | 'reactor' | 'fabricator'} buildingName
  * @param {string} moduleKey @param {number} moduleLevel @returns {string} */

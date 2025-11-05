@@ -61,14 +61,14 @@ export const BLUEPRINT = {
 		inputs: { chips: RAW_PROD.chips, engineers: RAW_PROD.engineers },
 		outputs: { energy: 2 }
 	}),
-	catalyst_1: () => ({ inputs: { catalyzers: 1 }, outputs: { outputCoef: 1.2 } }),
-	catalyst_2: () => ({ inputs: { catalyzers: 1.8 }, outputs: { outputCoef: 1.5 } }),
-	catalyst_3: () => ({ inputs: { catalyzers: 2.5 }, outputs: { outputCoef: 1.8 } }),
-	catalyst_4: () => ({ inputs: { catalyzers: 5 }, outputs: { outputCoef: 2.1 } }),
-	catalyst_5: () => ({ inputs: { catalyzers: 10 }, outputs: { outputCoef: 2.5 } }),
-	burst_1: () => ({ inputs: { prototypes: 1 }, outputs: { energy: 20 } }),
-	burst_2: () => ({ inputs: { prototypes: 2 }, outputs: { energy: 50 } }),
-	burst_3: () => ({ inputs: { prototypes: 3 }, outputs: { energy: 100 } }),
+	catalyst_1: () => ({ inputs: { catalyzers: .1 }, outputs: { outputCoef: 1.2 } }),
+	catalyst_2: () => ({ inputs: { catalyzers: .15 }, outputs: { outputCoef: 1.5 } }),
+	catalyst_3: () => ({ inputs: { catalyzers: .2 }, outputs: { outputCoef: 1.8 } }),
+	catalyst_4: () => ({ inputs: { catalyzers: .3 }, outputs: { outputCoef: 2.1 } }),
+	catalyst_5: () => ({ inputs: { catalyzers: .4 }, outputs: { outputCoef: 2.5 } }),
+	burst_1: () => ({ inputs: { prototypes: .05 }, outputs: { energy: 20 } }),
+	burst_2: () => ({ inputs: { prototypes: .09 }, outputs: { energy: 50 } }),
+	burst_3: () => ({ inputs: { prototypes: .16 }, outputs: { energy: 100 } }),
 	quantum_1: () => ({ inputs: { energy: 100, aiModules: 1 }, outputs: { energy: 500 } }),
 
 	// FABRICATOR PRODUCTION LINES
@@ -117,6 +117,10 @@ export class Inventory {
 	/** Get a resource amount from the inventory @param {string} resourceName */
 	getAmount(resourceName) {
 		return RESOURCE_INDEX[resourceName] === undefined ? 0 : this.resources[RESOURCE_INDEX[resourceName]];
+	}
+	/** Get the excess amount of a resource generated this turn @param {string} resourceName */
+	getTurnExcess(resourceName) {
+		return RESOURCE_INDEX[resourceName] === undefined ? 0 : this.turnExcess[RESOURCE_INDEX[resourceName]];
 	}
 	/** Add a resource amount to the inventory
 	 * @param {'energy' | 'chips' | 'datas' | 'models' | 'engineers' | 'algorithms' | 'datasets' | 'prototypes' | 'catalyzers' | 'aiModules' | 'robots' | 'experts' | 'aiCores' | 'drones' | 'superconductors' | 'geniuses' | 'agiCells'} resourceName

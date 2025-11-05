@@ -6,6 +6,7 @@ export class FabricatorComponent {
 	gameClient;
 	modal = document.getElementById('fabricator-modal');
 	closeBtn = this.modal.querySelector('.close-btn');
+	isDisplayed = false;
 
 	/** @type {Record<string, ProductionLineComponent>} */
 	productionsLines = {};
@@ -14,7 +15,7 @@ export class FabricatorComponent {
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
 	constructor(gameClient) {
 		this.gameClient = gameClient;
-		this.closeBtn.onclick = () => this.hide();
+		this.closeBtn.onclick = () => { this.hide(); this.isDisplayed = false; };
 		this.#initModulesTree();
 	}
 

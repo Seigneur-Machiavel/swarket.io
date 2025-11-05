@@ -225,7 +225,7 @@ export class GameClient {
 
 			// CHECK IF WE HAVE HALFWAY INTENTS TO SEND FOR THE CURRENT TURN
 			const turnDuration = this.turnSystem.turnDuration;
-			const [min, max] = [scheduleTime - (turnDuration * .6), scheduleTime - (turnDuration * .55)];
+			const [min, max] = [scheduleTime - (turnDuration * .65), scheduleTime - (turnDuration * .55)];
 			if (!myIntentsSent && time > min && time < max) {
 				const { fills, count } = this.myPlayer.tradeHub?.prepareAuthorizedFill(this) || {}; // prepare authorized fills for taker orders
 				if (count && count > 0) this.digestMyAction({ type: 'authorized-fills', fills });
@@ -283,7 +283,7 @@ export class GameClient {
 		this.#removeDeadPlayers();
 
 		// MANAGE OUR NODE DEATH IF WE HAVE NO ENERGY LEFT
-		if (!this.myPlayer.getEnergy) {
+		if (!this.myPlayer || !this.myPlayer.getEnergy) {
 			this.alive = false; // stop the game client
 			this.connectionOffers = {}; // clear offers if dead
 			this.node.topologist.automation.incomingOffer = false; // disable auto-accept if dead

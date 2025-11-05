@@ -378,6 +378,7 @@ export class TradeHubComponent {
 	myResourcesBar;
 	modal = document.getElementById('trade-hub-modal');
 	closeBtn = this.modal.querySelector('.close-btn');
+	isDisplayed = false;
 	helperText = this.modal.querySelector('.helper-text');
 	helperShown = false;
 	
@@ -393,12 +394,12 @@ export class TradeHubComponent {
 		this.gameClient = gameClient;
 		this.myResourcesBar = myResourcesBar;
 		this.swapComponent = new SwapComponent(gameClient, myResourcesBar);
-		this.closeBtn.onclick = () => this.hide();
+		this.closeBtn.onclick = () => { this.hide(); this.isDisplayed = false; };
 		this.#initModulesTree();
 		this.myTradeOfferLinesWrapper.innerHTML = '';
 
 		this.modal.onkeydown = (e) => {
-			const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+			const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', '.'];
 			if ((e.key >= '0' && e.key <= '9') || allowedKeys.includes(e.key)) return;
 			e.preventDefault();
 		};

@@ -21,6 +21,7 @@ export class PlayerNode {
 	turnEnergyChanges = { consumptions: [], productions: [] }; // filled only during turn exec
 
 	inventory; 			// inventory for resources
+	get isOverloaded() { return this.inventory.getTurnExcess('energy') > 0; }
 	upgradeSet;			// current upgrade set
 	upgradeOffers = []; // upgrade offers
 
@@ -302,7 +303,7 @@ export class PlayerNode {
 
 		// ENERGY FROM RAW RESOURCES (if reactor has the synergy module)
 		const getEnergyPerRawResource = this.reactor?.getEnergyPerRawResource || 0;
-		if (totalProd && getEnergyPerRawResource) this.inventory.addAmount('energy', totalProd * getEnergyPerRawResource);
+		if (totalProd && getEnergyPerRawResource) this.inventory.addAmount('energy', totalProd * getEnergyPerRawResource, this.maxEnergy);
 
 		return totalConso;
 	}
@@ -324,7 +325,7 @@ export class PlayerNode {
 	}
 	/** @param {import('./game.mjs').GameClient} gameClient @param {string} text @param {'info' | 'success' | 'error'} type */
 	#logIfSelf(gameClient, text, type = 'info') {
-		if (gameClient.myPlayer.id !== this.id) return;
+		if (gameClient.myPlayer?.id !== this.id) return;
 		if (typeof window === 'undefined' || !window.gameConsole) return;
 		window.gameConsole.addLog(text, type);
 	}
