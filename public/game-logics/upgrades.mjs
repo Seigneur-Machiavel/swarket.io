@@ -27,9 +27,9 @@ const upgradesInfo = {
 	buildFabricator: { maxLevel: 1, rarity: 'common' },
 
 	// BUILDINGS UPGRADE
-	tradeHub: { maxLevel: 25, requirement: { upgrades: { buildTradeHub: 1 } }, subClass: 'levelUp', rarity: 'common' },
-	reactor: { maxLevel: 20, requirement: { upgrades: { buildReactor: 1 } }, subClass: 'levelUp', rarity: 'common' },
-	fabricator: { maxLevel: 20, requirement: { upgrades: { buildFabricator: 1 } }, subClass: 'levelUp', rarity: 'common' },
+	tradeHub: { maxLevel: 30, requirement: { upgrades: { buildTradeHub: 1 } }, subClass: 'levelUp', rarity: 'common' },
+	reactor: { maxLevel: 25, requirement: { upgrades: { buildReactor: 1 } }, subClass: 'levelUp', rarity: 'common' },
+	fabricator: { maxLevel: 25, requirement: { upgrades: { buildFabricator: 1 } }, subClass: 'levelUp', rarity: 'common' },
 }
 export class UpgradeSet {
 	producer = 0;
@@ -62,18 +62,17 @@ export class UpgradeSet {
 	10350, 11070, 11790, 12510, 13230, 13950, 14670	// every 720sec	- 244min	- 56upgrades
 ]);*/
 const UPGRADE_TRIGGERS = new Set([ 					// upgrades 7 per lines, based on lifetime
-	5, 60, 120, 180, 240, 300, 360, 				// every 60sec	- 6min 		- 7upgrades
-	420, 480, 540, 600, 660, 720, 780,				// every 60sec	- 13min		- 14upgrades
-	840, 900, 960, 1020, 1080, 1140, 1200,			// every 60sec	- 20min 	- 21upgrades
-	1260, 1320, 1380, 1440, 1500, 1560, 1620,		// every 60sec	- 27min		- 28upgrades
-	1680, 1740, 1800, 1860, 1920, 1980, 2040,		// every 60sec	- 34min		- 35upgrades
-	2160, 2280, 2400, 2520, 2640, 2760, 2880,		// every 120sec	- 48min		- 42upgrades
-	3000, 3120, 3240, 3360, 3480, 3600, 3720,		// every 120sec	- 62min		- 49upgrades
-	3840, 3960, 4080, 4200, 4320, 4440, 4560,		// every 120sec	- 76min		- 56upgrades
-	4680, 4800, 4920, 5040, 5160, 5280, 5400,		// every 120sec	- 90min		- 63upgrades
-	5520, 5640, 5760, 5880, 6000, 6120, 6240,		// every 120sec	- 104min	- 70upgrades
-	6360, 6480, 6600, 6720, 6840, 6960, 7080,		// every 120sec	- 118min	- 77upgrades
-	7200 											// every 120sec	- 120min	- 78upgrades
+	5, 30, 60, 90, 120, 150, 180, 					// every 30sec  - 3min 		- 7upgrades
+	240, 300, 360, 420, 480, 540, 600,				// every 60sec	- 10min		- 14upgrades
+	660, 720, 780, 840, 900, 960, 1020,				// every 60sec	- 17min 	- 21upgrades
+	1080, 1140, 1200, 1260, 1320, 1380, 1440,		// every 60sec	- 24min		- 28upgrades
+	1500, 1560, 1620, 1680, 1740, 1800, 1860,		// every 60sec	- 31min		- 35upgrades
+	1980, 2100, 2220, 2340, 2460, 2580, 2700,		// every 120sec	- 45min		- 42upgrades
+	2820, 2940, 3060, 3180, 3300, 3420, 3540,		// every 120sec	- 59min		- 49upgrades
+	3660, 3780, 3900, 4020, 4140, 4260, 4380,		// every 120sec	- 73min		- 56upgrades
+	4500, 4620, 4740, 4860, 4980, 5100, 5220,		// every 120sec	- 87min		- 63upgrades
+	5340, 5460, 5580, 5700, 5820, 5940, 6060,		// every 120sec	- 101min	- 70upgrades
+	6180, 6300, 6420, 6540, 6660, 6780, 6900,		// every 120sec	- 115min	- 77upgrades
 ]);
 
 const upgradeNames = Object.keys(upgradesInfo);

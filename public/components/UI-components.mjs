@@ -225,7 +225,6 @@ export class BuildingsComponent {
 	myResourcesBar;
 	buildingsHelperText = document.getElementById('buildings-helper-text');
 	displayHelper = true;
-	buildingDisplayed = null;
 	icons = {
 		reactor: document.getElementById('reactor-icon'),
 		fabricator: document.getElementById('fabricator-icon'),
@@ -253,13 +252,6 @@ export class BuildingsComponent {
 		this.icons.reactor.onclick = () => this.#handleIconClick('reactor');
 		this.icons.fabricator.onclick = () => this.#handleIconClick('fabricator');
 		this.icons.tradeHub.onclick = () => this.#handleIconClick('tradeHub');
-		// test with onhover (to much complexity for nothing?)
-		/*this.icons.reactor.onmouseenter = () => this.#handleIconHover('reactor');
-		this.icons.fabricator.onmouseenter = () => this.#handleIconHover('fabricator');
-		this.icons.tradeHub.onmouseenter = () => this.#handleIconHover('tradeHub');
-		this.icons.reactor.onmouseleave = () => this.#handleIconLeave('reactor');
-		this.icons.fabricator.onmouseleave = () => this.#handleIconLeave('fabricator');
-		this.icons.tradeHub.onmouseleave = () => this.#handleIconLeave('tradeHub');*/
 	}
 
 	update() {
@@ -299,29 +291,7 @@ export class BuildingsComponent {
 		for (const b in this.icons)
 			if (b !== buildingName) this[b].hide();
 			else this[b].show();
-		
-		/*const isDisplayed = this[buildingName].isDisplayed;
-		for (const b in this.icons)
-			if (b !== buildingName || isDisplayed) this[b].hide();
-			else this[b].show();
-
-		this[buildingName].isDisplayed = this[buildingName].modal.classList.contains('visible');*/
 	}
-	/*get getDisplayedBuildingName() {
-		for (const b in this.icons) if (this[b].isDisplayed) return b;
-		return null;
-	}
-	#handleIconHover(buildingName) {
-		if (!this[buildingName]) return;
-		for (const b in this.icons)
-			if (b === buildingName) this[b].show();
-			else this[b].hide();
-	}
-	#handleIconLeave(buildingName) {
-		if (!this[buildingName]) return;
-		if (this.buildingDisplayed !== buildingName) this[buildingName].hide();
-		if (this.buildingDisplayed) this[this.buildingDisplayed].show();
-	}*/
 }
 
 export class DeadNodesComponent {
@@ -393,5 +363,37 @@ export class DeadNodesComponent {
 		this.deadNodes[nodeId].remove();
 		delete this.deadNodes[nodeId];
 		console.log(`Dead node notification removed: ${nodeId}`);
+	}
+}
+
+export class ToolsComponent {
+	helpModal = document.getElementById('help-modal');
+	helpBtn = document.getElementById('help-btn');
+	nodeSearchBtn = document.getElementById('node-search-btn');
+	nodeSearchInput = document.getElementById('node-search-input');
+	closeBtn = this.helpModal.querySelector('.close-btn');
+
+	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
+	constructor(gameClient) {
+		this.helpBtn.onclick = () => this.show();
+		this.closeBtn.onclick = () => this.hide();
+		this.nodeSearchBtn.onclick = () => this.searchNode();
+	}
+
+	show() { this.helpModal.classList.add('visible'); }
+	hide() { this.helpModal.classList.remove('visible'); }
+	searchNode() {
+		// if input empty, make it visible
+		const input = this.nodeSearchInput;
+		if (!input.classList.contains('visible')) {
+			input.classList.add('visible');
+			input.focus();
+			return;
+		}
+
+		const nodeId = input.value.trim();
+		if (nodeId.length === 0) return;
+
+		// TODO...
 	}
 }

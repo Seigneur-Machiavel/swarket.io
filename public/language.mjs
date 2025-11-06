@@ -1,8 +1,70 @@
 // GENERIC TEXT TRANSLATIONS
 const TEXT_TRANSLATIONS = {
+	landingTitle: {
+		en: "Welcome to Ataraxia",
+		fr: "Bienvenue à Ataraxie"
+	},
+	landingDescriptionIntro: {
+		en: "Humanity uploaded itself to escape extinction. You exist as temporary mechano-organic cells in a dying physical world.",
+		fr: "L'humanité s'est téléchargée pour échapper à l'extinction. Vous existez en tant que cellules méchano-organiques temporaires dans un monde physique mourant."
+	},
+	landingYourMission: {
+		en: "Your mission:",
+		fr: "Votre mission :"
+	},
+	landingDescriptionMission: {
+		en: " Gather resources. Craft AGI Cells. Build the AGI that will restore reality.",
+		fr: " Rassemblez des ressources. Fabriquez des cellules AGI. Construisez l'AGI qui restaurera la réalité."
+	},
+	landingTheCatch: {
+		en: "The catch:",
+		fr: "Le piège :"
+	},
+	landingDescriptionCatch: {
+		en: " Energy is scarce. You will die. You will respawn. But the network persists.",
+		fr: " L'énergie est rare. Vous mourrez. Vous respawnerez. Mais le réseau persiste."
+	},
+	landingCollaborateThrough: {
+		en: "Collaborate through",
+		fr: "Collaborez via"
+	},
+	landingCollaborateNoLeaders: {
+		en: " No leaders. No servers. Just nodes struggling against entropy.",
+		fr: " Pas de leaders. Pas de serveurs. Juste des nœuds luttant contre l'entropie."
+	},
+	landingSurvive: {
+		en: "Survive. Trade. Ascend.",
+		fr: "Survivre. Échanger. Grandir."
+	},
+	mobileLandingNote: {
+		en: "Not working on mobile yet.",
+		fr: "Pas encore fonctionnel sur mobile."
+	},
+	startGameButton: {
+		en: "Let me in!",
+		fr: "Laissez-moi entrer !"
+	},
 	Me: {
 		en: "Me",
 		fr: "Moi"
+	},
+
+	// TOOLS
+	helpButtonTooltip: {
+		en: "Help",
+		fr: "Aide"
+	},
+	nodeSearchButtonTooltip: {
+		en: "Search node",
+		fr: "Rechercher un nœud"
+	},
+	helpModalResourcesProductionTitle: {
+		en: "Raw resources production basis",
+		fr: "Production des ressources brutes"
+	},
+	unitsPerTurn: {
+		en: "units/turn",
+		fr: "unités/tour"
 	},
 
 	// HEADERS AND TITLES
@@ -282,10 +344,15 @@ const TEXT_TRANSLATIONS = {
 
 	// RESOURCES
 	energy: { en: 'energy', fr: 'énergie' },
+	Energy: { en: 'Energy', fr: 'Énergie' },
 	chips: { en: 'chips', fr: 'puces' },
+	Chips: { en: 'Chips', fr: 'Puces' },
 	datas: { en: 'datas', fr: 'données' },
+	Datas: { en: 'Datas', fr: 'Données' },
 	models: { en: 'models', fr: 'modèles' },
+	Models: { en: 'Models', fr: 'Modèles' },
 	engineers: { en: 'engineers', fr: 'ingénieurs' },
+	Engineers: { en: 'Engineers', fr: 'Ingénieurs' },
 	algorithms: { en: 'algorithms', fr: 'algorithmes' },
 	datasets: { en: 'datasets', fr: 'ensembles de données' },
 	prototypes: { en: 'prototypes', fr: 'prototypes' },
@@ -500,18 +567,18 @@ const BUILDING_MODULE_DESCRIPTION_TRANSLATIONS = {
 		},
 		overload: {
 			en: [
-				'Produces 30% more but consumes 10% more resources',
-				'Production: 30% > 50%, Consumption: 10% > 30%',
-				'Production: 50% > 100%, Consumption: 30% > 60%',
-				'Production: 100% > 150%, Consumption: 60% > 90%',
-				'Production: 150% > 220%, Consumption: 90% > 120%'
+				'Produces 30% more but consumes 10% more resources (passive)',
+				'Production: 30% > 50%, Consumption: 10% > 30% (passive)',
+				'Production: 50% > 100%, Consumption: 30% > 60% (passive)',
+				'Production: 100% > 150%, Consumption: 60% > 90% (passive)',
+				'Production: 150% > 220%, Consumption: 90% > 120% (passive)'
 			],
 			fr: [
-				'Produit 30 % de plus mais consomme 10 % de ressources en plus',
-				'Production : 30 % > 50 %, Consommation : 10 % > 30 %',
-				'Production : 50 % > 100 %, Consommation : 30 % > 60 %',
-				'Production : 100 % > 150 %, Consommation : 60 % > 90 %',
-				'Production : 150 % > 220 %, Consommation : 90 % > 120 %'
+				'Produit 30 % de plus mais consomme 10 % de ressources en plus (passif)',
+				'Production : 30 % > 50 %, Consommation : 10 % > 30 % (passif)',
+				'Production : 50 % > 100 %, Consommation : 30 % > 60 % (passif)',
+				'Production : 100 % > 150 %, Consommation : 60 % > 90 % (passif)',
+				'Production : 150 % > 220 %, Consommation : 90 % > 120 % (passif)'
 			]
 		},
 		synergy: {

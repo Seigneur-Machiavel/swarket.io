@@ -315,6 +315,50 @@
 				</div>
 			</div>
 		</div>
+
+		<div id="landing-modal" class="modal visible">
+			<h1 data-l="landingTitle">Welcome to Ataraxia</h1>
+			<p>
+				<span data-l="landingDescriptionIntro">Humanity uploaded itself to escape extinction. You exist as temporary mechano-organic cells in a dying physical world.</span>
+				<br><br>
+				<span data-l="landingYourMission" class="pre-text">Your mission:</span><span data-l="landingDescriptionMission"> Gather resources. Craft AGI Cells. Build the AGI that will restore reality.</span>
+				<br><br>
+				<span data-l="landingTheCatch" class="pre-text">The catch:</span><span data-l="landingDescriptionCatch"> Energy is scarce. You will die. You will respawn. But the network persists.</span>
+				<br><br>
+				<span data-l="landingCollaborateThrough">Collaborate through</span>
+				<a href="https://github.com/Seigneur-Machiavel/hive-p2p" target="_blank">HiveP2P</a>.
+				<span data-l="landingCollaborateNoLeaders"> No leaders. No servers. Just nodes struggling against entropy.</span>
+				<br><br>
+				<span data-l="landingSurvive" class="pre-text">Survive. Trade. Ascend.</span>
+				<br><br>
+				<span data-l="mobileLandingNote" class="not-on-mobile">Not working on mobile yet.</span>
+			</p>
+			<div class="buttons-wrapper">
+				<button id="start-game-btn" data-l="startGameButton">Let me in!</button>
+			</div>
+		</div>
+		<div id="help-modal" class="modal">
+			<div class="close-btn">x</div>
+			<h2 data-l="helpModalResourcesProductionTitle">Raw resources production basis</h2>
+			<ul>
+				<li><div class="resource-icon chips"></div> <span data-l="Chips">Chips</span> => 5 <span data-l="unitsPerTurn">units/turn</span></li>
+				<li><div class="resource-icon datas"></div> <span data-l="Datas">Datas</span> => 11 <span data-l="unitsPerTurn">units/turn</span></li>
+				<li><div class="resource-icon models"></div> <span data-l="Models">Models</span> => 3 <span data-l="unitsPerTurn">units/turn</span></li>
+				<li><div class="resource-icon engineers"></div> <span data-l="Engineers">Engineers</span> => 1 <span data-l="unitsPerTurn">units/turn</span></li>
+			</ul>
+		</div>
+
+		<div id="top-right-tools-wrapper">
+			<div id="node-search-btn" class="tool-btn hoverable-tooltip" style="display: none;">
+				<div class="tooltip" data-l="nodeSearchButtonTooltip">Search node by ID</div>
+				<input type="text" placeholder="Enter Name or ID" id="node-search-input">
+				<img src="./assets/search-icon.png" alt="Search Node">
+			</div>
+			<div id="help-btn" class="tool-btn hoverable-tooltip">
+				<div class="tooltip" data-l="helpButtonTooltip">Help</div>
+				<img src="./assets/help-icon.png" alt="Help">
+			</div>
+		</div>
 	</div>
 	<canvas id="particles-canvas"></canvas>
 </body>

@@ -139,7 +139,8 @@ export class GameClient {
 			this.digestPlayerIntents(intents, height, prevHash, senderId);
 		} else if (topic === 'pto') { // 'public-trade-offers'
 			const player = this.players[senderId];
-			if (!player) return console.warn(`No player associated to gossip sender ${senderId}, ignoring 'public-trade-offers' message.`);
+			if (!player)
+				return console.warn(`No player associated to gossip sender ${senderId}, ignoring 'public-trade-offers' message.`);
 			if (!player.tradeHub) return this.node.arbiter.adjustTrust(senderId, -600_000, 'Peer sent public trade offers without having a Trade Hub upgrade');
 			if (player.tradeHub.getSignalRange < HOPS) return this.node.arbiter.adjustTrust(senderId, -600_000, 'Peer sent public trade offers with insufficient signal range');
 			if (data[1] <= this.height) return; // expired offers
@@ -206,15 +207,20 @@ export class GameClient {
 	}
 	#sendSyncToAskers(turnExecTime = 0) {
 		if (this.syncAskedBy.length === 0) return;
-		for (const fromId of this.syncAskedBy) // small message for clock synchronization
-			this.node.sendMessage(fromId, { type: 'game-state-incoming', data: turnExecTime });
-		
-		const data = this.#extractGameState();
-		for (const fromId of this.syncAskedBy) // heavy data
-			this.node.sendMessage(fromId, { type: 'game-state', data });
 
-		if (this.verb > 1) console.log(`%cSent game state #${this.height} to ${this.syncAskedBy.length} askers: ${this.syncAskedBy.join(', ')}`, 'color: green');
+		const askers = this.syncAskedBy.slice();
 		this.syncAskedBy = []; // reset
+
+		for (const id of askers) // small message for clock synchronization
+			this.node.sendMessage(id, { type: 'game-state-incoming', data: turnExecTime });
+
+		setTimeout(() => {
+			const data = this.#extractGameState();
+			for (const id of askers) // heavy data
+				this.node.sendMessage(id, { type: 'game-state', data });
+
+			if (this.verb > 1) console.log(`%cSent game state #${this.height} to ${askers.length} askers: ${askers.join(', ')}`, 'color: green');
+		}, 50); // delay to avoid congestion
 	}
 	async #turnExecutionLoop(frequency = 10) {
 		let myIntentsSent = false;
