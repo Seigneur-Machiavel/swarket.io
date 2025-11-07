@@ -33,8 +33,8 @@ const TEXT_TRANSLATIONS = {
 		fr: " Pas de leaders. Pas de serveurs. Juste des nœuds luttant contre l'entropie."
 	},
 	landingSurvive: {
-		en: "Survive. Trade. Ascend.",
-		fr: "Survivre. Échanger. Grandir."
+		en: "Survive. Trade. Ascend together.",
+		fr: "Survivre. Échanger. Grandir ensemble."
 	},
 	mobileLandingNote: {
 		en: "Not working on mobile yet.",

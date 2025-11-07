@@ -295,6 +295,7 @@ export class NodeCardComponent {
 	}
 	#updateCardConnectionButton(isConnected) {
 		const playerId = this.gameClient.showingCardOfId;
+		if (!this.gameClient.players[playerId]) return this.hide();
 		const canConnect = NodeInteractor.canTryToConnect(this.gameClient, playerId);
 		const hasOffer = this.gameClient.connectionOffers[playerId];
 		this.connectBtn.disabled = !canConnect && !isConnected;

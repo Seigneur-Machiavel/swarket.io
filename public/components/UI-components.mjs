@@ -367,33 +367,52 @@ export class DeadNodesComponent {
 }
 
 export class ToolsComponent {
+	gameClient;
 	helpModal = document.getElementById('help-modal');
 	helpBtn = document.getElementById('help-btn');
+	nodeSearchWrap = document.getElementById('node-search-wrapper');
 	nodeSearchBtn = document.getElementById('node-search-btn');
 	nodeSearchInput = document.getElementById('node-search-input');
 	closeBtn = this.helpModal.querySelector('.close-btn');
 
 	/** @param {import('../game-logics/game.mjs').GameClient} gameClient */
 	constructor(gameClient) {
+		this.gameClient = gameClient;
 		this.helpBtn.onclick = () => this.show();
 		this.closeBtn.onclick = () => this.hide();
-		this.nodeSearchBtn.onclick = () => this.searchNode();
+		this.nodeSearchBtn.onclick = () => this.#toggleSearchInput();
+		this.nodeSearchInput.onkeyup = (e) => {
+			if (e.key === 'Escape') this.#toggleSearchInput();
+			else this.searchNode();
+		};
 	}
 
 	show() { this.helpModal.classList.add('visible'); }
 	hide() { this.helpModal.classList.remove('visible'); }
+	#toggleSearchInput() {
+		this.nodeSearchInput.value = '';
+		this.nodeSearchInput.classList.toggle('visible');
+		if (this.nodeSearchInput.classList.contains('visible')) this.nodeSearchInput.focus();
+	}
 	searchNode() {
-		// if input empty, make it visible
-		const input = this.nodeSearchInput;
-		if (!input.classList.contains('visible')) {
-			input.classList.add('visible');
-			input.focus();
-			return;
-		}
+		const query = this.nodeSearchInput.value.trim();
+		if (query.length === 0) return;
 
-		const nodeId = input.value.trim();
-		if (nodeId.length === 0) return;
+		// FIND CLOSEST MATCHING NODE
+		const foundId = this.#findClosestNodeByName(query) || this.#findClosestNodeById(query);
+		if (foundId) this.gameClient.showingCardOfId = foundId;
+	}
+	#findClosestNodeByName(query = 'toto') {
+		const lowerQuery = query.toLowerCase();
+		for (const id in this.gameClient.players)
+			if (this.gameClient.players[id].name.toLowerCase().startsWith(lowerQuery)) return id;
 
-		// TODO...
+		return null;
+	}
+	#findClosestNodeById(query = '') {
+		const lowerQuery = query.toLowerCase();
+		for (const id in this.gameClient.players)
+			if (id.toLowerCase().startsWith(lowerQuery)) return id;
+		return null;
 	}
 }

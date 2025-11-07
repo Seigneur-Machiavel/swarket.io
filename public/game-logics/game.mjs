@@ -187,7 +187,7 @@ export class GameClient {
 	}
 	/** @param {Set<string>} nodeIds */
 	#handleDesync(nodeIds = new Set()) {
-		console.warn(`%cDesync detected! => trying to resync`, 'color: yellow');
+		console.warn(`%c[${this.node.id}] Desync detected! => trying to resync`, 'color: yellow');
 
 		let peerId = this.node.peerStore.publicNeighborsList[0]; // prefer public nodes
 

@@ -8,7 +8,7 @@ export class NodeInteractor {
 		const { node, players } = gameClient;
 		const player = players[nodeId];
 		//if (player.isBot) return; // do not connect to bots
-		if (player.name.includes('(Bot)')) return; // do not connect to bots
+		if (player?.name?.includes('(Bot)')) return; // do not connect to bots
 		if (nodeId === node.id || !node.peerStore.known[nodeId] || !player) return;
 		if (node.peerStore.standardNeighborsList.includes(nodeId)) return; // already connected
 		const selfCanConnect = node.peerStore.standardNeighborsList.length < players[node.id].getMaxConnections;

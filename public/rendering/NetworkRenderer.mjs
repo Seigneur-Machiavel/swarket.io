@@ -602,7 +602,7 @@ export class NetworkRenderer {
 			if (this.hoveredNodeId === null) return;
 			this.onNodeLeftClick?.(this.hoveredNodeId);
 		});
-        document.addEventListener('contextmenu', (e) => {
+        domElement.addEventListener('contextmenu', (e) => {
 			e.preventDefault();
 			if (domElement.style.cursor === 'grabbing') return;
 			this.onNodeRightClick?.(this.hoveredNodeId)

@@ -16,7 +16,8 @@ const upgradesInfo = {
 	multiProducer: { maxLevel: 3, requirement: { upgrades: { producer: 5 }, rarity: 'rare' } },
 	energyDrop: { maxLevel: Infinity, rarity: 'common' },
 	cleaner: { maxLevel: 5, rarity: 'common' },
-	maxEnergy: { maxLevel: 5, rarity: 'rare' },
+	maxEnergy50: { maxLevel: 5, rarity: 'uncommon' },
+	maxEnergy100: { maxLevel: 3, rarity: 'rare' },
 
 	// AUTOMATISATION
 	autoCleaner: { maxLevel: 1, requirement: { upgrades: { cleaner: 5 }, rarity: 'uncommon' } },
@@ -36,7 +37,8 @@ export class UpgradeSet {
 	multiProducer = 0;
 	energyDrop = 0;
 	cleaner = 0;
-	maxEnergy = 0;
+	maxEnergy50 = 0;
+	maxEnergy100 = 0;
 
 	// AUTOMATISATION
 	autoCleaner = 0;
@@ -76,7 +78,7 @@ const UPGRADE_TRIGGERS = new Set([ 					// upgrades 7 per lines, based on lifeti
 ]);
 
 const upgradeNames = Object.keys(upgradesInfo);
-const rarityScores = { common: 1, uncommon: .5, rare: .3, epic: .15, legendary: .07 };
+const rarityScores = { common: 1, uncommon: .7, rare: .5, epic: .3, legendary: .2 };
 export class UpgradesTool {
 	/** @param {UpgradeSet} upgradeSet @param {string} upgradeName */
 	static isMaxedUpgrade(upgradeSet, upgradeName) {
@@ -107,10 +109,10 @@ export class Upgrader {
 			if (offers.includes(u)) continue;
 			if (!Upgrader.#canApplyUpgrade(player, u)) continue;
 			const { rarity } = upgradesInfo[u];
-			const minScore = rarityScores[rarity] || 1;
+			const maxScore = rarityScores[rarity] || 1;
 			const rnd = SeededRandom.randomFloat(`${offerSeed}-chance-${i * 128}`);
-			if (rnd > minScore) continue; // rarity check
-			
+			if (rnd > maxScore) continue; // rarity check
+
 			offers.push(u);
 			if (offers.length >= count) break;
 		}
@@ -190,10 +192,16 @@ export class Upgrader {
 				player.inventory.addAmount('energy', player.maxEnergy, player.maxEnergy);
 				consoleText = text('energyDropUpgradeFeedback');
 				break;
-			case 'maxEnergy':
+			case 'maxEnergy50':
 				const max = player.maxEnergy;
-				player.maxEnergy += max; // x2
-				player.inventory.addAmount('energy', max); // add the difference
+				player.maxEnergy += (max * 0.5); // x1.5
+				player.inventory.addAmount('energy', max * 0.5); // add the difference
+				consoleText = `${text('maxEnergyUpgradeFeedback')} ${player.maxEnergy}`;
+				break;
+			case 'maxEnergy100':
+				const max2 = player.maxEnergy;
+				player.maxEnergy += max2; // x2
+				player.inventory.addAmount('energy', max2);
 				consoleText = `${text('maxEnergyUpgradeFeedback')} ${player.maxEnergy}`;
 				break;
 		}

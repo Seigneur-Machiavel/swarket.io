@@ -53,6 +53,7 @@ gameClient.onExecutedTurn.push(async(height = 0) => {
 			bees[i] = bee;
 			clients[i] = client;
 			console.log(`%c${currentId} respawned as ${bees[i].id}`, 'color: green');
+			break; // only respawn one per turn to avoid consensus conflicts
 		}
 	}
 
